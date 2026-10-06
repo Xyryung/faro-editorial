@@ -5,35 +5,14 @@ Los archivos de tests/datos/t01/ son sintéticos: cada fila inválida está ahí
 """
 
 import json
-import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
 import duckdb
 import pytest
 
-from faro_editorial.carga import cargar_snapshot, sha256_archivo
+from faro_editorial.carga import cargar_snapshot
 from faro_editorial.contrato import parse_fecha_utc
-
-DATOS_T01 = Path(__file__).parent / "datos" / "t01"
-
-
-def _escribir_manifest(raw: Path) -> None:
-    archivos = {p.name: {"sha256": sha256_archivo(p)} for p in sorted(raw.iterdir()) if p.is_file()}
-    manifest = {
-        "version": "sintetico-t01",
-        "fecha_corte_utc": "2025-10-01T00:00:00Z",
-        "archivos": archivos,
-    }
-    (raw / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
-
-
-@pytest.fixture
-def raw(tmp_path: Path) -> Path:
-    destino = tmp_path / "raw"
-    shutil.copytree(DATOS_T01, destino)
-    _escribir_manifest(destino)
-    return destino
 
 
 @pytest.fixture

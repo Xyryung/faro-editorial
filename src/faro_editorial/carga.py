@@ -89,7 +89,7 @@ class ResultadoArchivo:
     error: str | None = None
 
     def resumen(self) -> dict[str, Any]:
-        motivos = Counter(_motivo_corto(m) for r in self.rechazos for m in r.motivos)
+        motivos = Counter(motivo_corto(m) for r in self.rechazos for m in r.motivos)
         nulos: dict[str, int] = {}
         if self.validos:
             for campo in type(self.validos[0]).model_fields:
@@ -132,7 +132,7 @@ def _motivos(error: ValidationError) -> list[str]:
     return motivos
 
 
-def _motivo_corto(motivo: str) -> str:
+def motivo_corto(motivo: str) -> str:
     """Agrupa motivos para el reporte: 'fecha_publicacion: fecha inválida: 'x'' -> sin el valor."""
     return motivo.split(": '", 1)[0].split(': "', 1)[0]
 
@@ -411,6 +411,7 @@ def cargar_snapshot(
 
 
 def main() -> None:
+    # Importaciones locales: catalogo importa este módulo y settings no se necesita en pruebas.
     from faro_editorial.settings import get_settings
 
     s = get_settings()
@@ -433,6 +434,11 @@ def main() -> None:
             + (f" ({info['error']})" if info["error"] else "")
         )
     print(f"Reporte: {resultado.rutas['reporte']}")
+
+    from faro_editorial.catalogo import escribir_catalogo, generar_catalogo
+
+    rutas = escribir_catalogo(generar_catalogo(resultado), s.processed_dir)
+    print(f"Catálogo para Notion: {rutas['csv']}")
 
 
 if __name__ == "__main__":

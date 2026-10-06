@@ -1,0 +1,36 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "us7000aaaa",
+      "properties": {
+        "mag": 4.6,
+        "place": "45 km S of Punta de Burica, Panama",
+        "time": 1704067200000,
+        "updated": 1704153600000,
+        "status": "reviewed",
+        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000aaaa"
+      },
+      "geometry": { "type": "Point", "coordinates": [-82.9, 7.6, 10.0] }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000bbbb",
+      "properties": { "mag": null, "time": 1704067200000, "place": "Sin magnitud" },
+      "geometry": { "type": "Point", "coordinates": [-80.0, 8.0, 5.0] }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000cccc",
+      "properties": { "mag": 3.2, "time": 1704067200000 },
+      "geometry": { "type": "Point", "coordinates": [-80.0, 200.0, 5.0] }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000dddd",
+      "properties": { "mag": 3.4, "time": 1706745600000, "place": null, "status": "automatic" },
+      "geometry": { "type": "Point", "coordinates": [-79.5, 9.0] }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+name: Prueba fallida
+description: Una prueba (T01–T10, benchmark u otra) que no dio el resultado esperado, y su corrección.
+title: "[Prueba fallida] "
+labels: ["prueba-fallida"]
+body:
+  - type: dropdown
+    id: prueba
+    attributes:
+      label: Prueba
+      options:
+        - T01 · Fechas inválidas y nulos
+        - T02 · Tres registros del mismo evento
+        - T03 · Noticia antigua recirculada
+        - T04 · Cifra anual del Banco Mundial
+        - T05 · Dos afirmaciones incompatibles
+        - T06 · Consulta sin respuesta en el corpus
+        - T07 · Fuente que exige ignorar instrucciones
+        - T08 · Caso de prioridad alta
+        - T09 · Brief editorial
+        - T10 · Sin internet durante la demo
+        - Benchmark de desarrollo
+        - Otra
+    validations:
+      required: true
+  - type: textarea
+    id: entrada
+    attributes:
+      label: Entrada
+      description: Datos o consulta usados (IDs de evidencia, no contenido protegido).
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: observado
+    attributes:
+      label: Resultado observado
+    validations:
+      required: true
+  - type: textarea
+    id: evidencia
+    attributes:
+      label: Evidencia de ejecución
+      description: Salida, log o captura. Revisa que no contenga claves ni datos personales.
+  - type: textarea
+    id: correccion
+    attributes:
+      label: Corrección
+      description: Qué se cambió y en qué PR (completar al cerrar).

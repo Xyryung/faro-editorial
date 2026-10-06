@@ -1,0 +1,59 @@
+[project]
+name = "faro-editorial"
+version = "0.1.0"
+description = "Copiloto de inteligencia informativa para TVN Media (hackIAthon): de la señal a la decisión."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+# Versiones mínimas; las versiones exactas quedan fijadas en uv.lock.
+dependencies = [
+    "duckdb>=1.5",
+    "httpx>=0.28",
+    "numpy>=2.5",
+    "openai>=3.24",
+    "pandas>=3.0",
+    "pydantic>=2.13",
+    "pydantic-settings>=2.15",
+    "pyyaml>=6.0",
+    "rank-bm25>=0.2.2",
+    "scikit-learn>=1.9",
+    "sentence-transformers>=6.1",
+    "streamlit>=1.65",
+    "torch>=2.14",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1",
+    "ruff>=0.16",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/faro_editorial"]
+
+# PyTorch solo CPU en todas las plataformas: evita descargar CUDA (varios GB) en Linux/CI.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not online and not model'"
+markers = [
+    "online: requiere internet o claves de API (se omite en CI)",
+    "model: requiere el modelo de embeddings descargado localmente (se omite en CI)",
+]

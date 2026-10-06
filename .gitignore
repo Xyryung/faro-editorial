@@ -1,0 +1,40 @@
+# --- Secretos y entorno local (NUNCA subir) ---
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Datos (ver data/README.md) ---
+# El repo es público: ningún dato entra hasta confirmar condiciones de
+# redistribución con la organización. Se conservan solo los .gitkeep.
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/cache/*
+!data/cache/.gitkeep
+*.duckdb
+*.duckdb.wal
+
+# --- Modelos descargados ---
+models/
+
+# --- Editor y sistema operativo ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db

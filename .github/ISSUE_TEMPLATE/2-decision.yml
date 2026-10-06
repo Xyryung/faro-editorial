@@ -1,0 +1,37 @@
+name: Decisión
+description: Decisión técnica o de producto justificada (el reto exige al menos 3 registradas durante el evento).
+title: "[Decisión] "
+labels: ["decision"]
+body:
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: Qué problema o pregunta obliga a decidir.
+    validations:
+      required: true
+  - type: textarea
+    id: opciones
+    attributes:
+      label: Opciones consideradas
+      description: Al menos dos, con pros y contras.
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decisión
+    validations:
+      required: true
+  - type: textarea
+    id: justificacion
+    attributes:
+      label: Justificación y evidencia
+      description: Datos, prueba o métrica que la respalda (enlaza resultados, PRs o issues).
+    validations:
+      required: true
+  - type: textarea
+    id: consecuencias
+    attributes:
+      label: Consecuencias y riesgos
+      description: Qué se gana, qué se pierde y cómo se revertiría.

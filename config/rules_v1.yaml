@@ -1,0 +1,43 @@
+# Reglas del puntaje de atención. Cualquier cambio de pesos crea una versión nueva
+# (rules_v2.yaml) y se justifica en un issue con la etiqueta "decision".
+version: "reglas-v1.0"
+descripcion: >-
+  Puntaje de atención 0-100. Es una herramienta de ordenamiento,
+  no una probabilidad de verdad ni de pérdida.
+
+pesos:
+  R: 30 # Relevancia: relación con Panamá y con los temas editoriales
+  I: 25 # Impacto potencial: interés público o alcance, justificado con datos
+  U: 20 # Urgencia: tiempo disponible para revisar la información
+  N: 15 # Novedad: diferencia frente a eventos ya agrupados
+  E: 10 # Evidencia disponible: fuentes pertinentes, primarias y con procedencia
+
+# Límite superior abierto, excepto "alto", que incluye 100.
+rangos:
+  bajo: { min: 0, max: 40 }
+  medio: { min: 40, max: 70 }
+  alto: { min: 70, max: 100 }
+
+# Empates: mayor urgencia y luego ID.
+desempate: ["U", "id"]
+
+temas:
+  - economia
+  - logistica_canal
+  - turismo
+  - servicios_publicos
+  - eventos_naturales
+  - regulacion
+  - otro
+
+estados_evidencia:
+  - insuficiente
+  - parcial
+  - suficiente_para_borrador
+
+estados_revision:
+  - nuevo
+  - en_revision
+  - requiere_evidencia
+  - aprobado_como_borrador
+  - descartado

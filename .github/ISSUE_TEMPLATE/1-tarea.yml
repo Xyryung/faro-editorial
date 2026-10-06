@@ -1,0 +1,43 @@
+name: Tarea
+description: Trabajo del backlog (funcionalidad, datos, interfaz, documentación).
+title: "[Tarea] "
+labels: ["tarea"]
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+      description: Qué se entrega y para qué sirve, en una o dos frases.
+    validations:
+      required: true
+  - type: dropdown
+    id: etapa
+    attributes:
+      label: Etapa del flujo
+      options:
+        - 1 · Cargar
+        - 2 · Organizar
+        - 3 · Contextualizar
+        - 4 · Priorizar
+        - 5 · Explicar
+        - 6 · Producir
+        - 7 · Revisar
+        - Infraestructura / repositorio
+        - Evaluación y métricas
+        - Notion / pitch
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Lista verificable. Menciona pruebas T01–T10 o casos CU-01–CU-05 si aplica.
+      value: |
+        - [ ] 
+    validations:
+      required: true
+  - type: input
+    id: relacionados
+    attributes:
+      label: Pruebas o casos relacionados
+      placeholder: "T02, CU-03"

@@ -27,6 +27,9 @@ Cuando se confirme, se registra la decisión en un issue con la etiqueta `decisi
    - `faro.duckdb`: tablas `noticias`, `indicadores` y `eventos` (fechas en UTC, nulos como NULL).
    - `rechazos.jsonl`: cada fila inválida con su archivo, número de fila, ID, motivos y datos crudos.
    - `reporte_calidad.json`: integridad, conteos por archivo, motivos de rechazo y nulos por campo.
+   - `catalogo_datos.csv` y `.md`: una fila por fuente para la página "Catálogo de datos" de
+     Notion (en Notion: Importar → CSV). Los datos fijos (URL, licencia) están en
+     `config/fuentes_catalogo.yaml`; lo demás se calcula en la carga.
 
 Una fila inválida nunca detiene la carga (prueba T01): se separa y el resto se carga.
 La ventana de fechas de noticias se configura con `NOTICIAS_DESDE` y `NOTICIAS_HASTA` en `.env`;

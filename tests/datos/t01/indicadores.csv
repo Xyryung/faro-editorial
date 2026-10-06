@@ -1,0 +1,7 @@
+pais_iso3,indicador_id,anio,valor,unidad,fuente_url,fecha_extraccion,licencia
+PAN,NY.GDP.MKTP.KD.ZG,2023,7.3,% anual,https://api.worldbank.org/v2/country/PAN/indicator/NY.GDP.MKTP.KD.ZG,2025-10-01T00:00:00Z,CC BY 4.0
+PAN,NY.GDP.MKTP.KD.ZG,2024,,% anual,https://api.worldbank.org/v2/country/PAN/indicator/NY.GDP.MKTP.KD.ZG,2025-10-01T00:00:00Z,CC BY 4.0
+PAN,SL.UEM.TOTL.ZS,2024,0,% de la fuerza laboral,https://api.worldbank.org/v2/country/PAN/indicator/SL.UEM.TOTL.ZS,2025-10-01T00:00:00Z,CC BY 4.0
+Pan,FP.CPI.TOTL.ZG,2024,1.1,% anual,https://api.worldbank.org/v2/country/PAN/indicator/FP.CPI.TOTL.ZG,2025-10-01T00:00:00Z,CC BY 4.0
+CRI,FP.CPI.TOTL.ZG,dos mil,1.1,% anual,https://api.worldbank.org/v2/country/CRI/indicator/FP.CPI.TOTL.ZG,2025-10-01T00:00:00Z,CC BY 4.0
+MEX,FP.CPI.TOTL.ZG,2024,abc,% anual,https://api.worldbank.org/v2/country/MEX/indicator/FP.CPI.TOTL.ZG,2025-10-01T00:00:00Z,CC BY 4.0

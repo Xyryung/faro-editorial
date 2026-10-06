@@ -1,0 +1,9 @@
+id_noticia,titulo,url,medio,idioma,fecha_publicacion,fecha_deteccion,fecha_extraccion,tema,origen,alcance_texto
+n001,Tránsito por el Canal se mantiene estable,https://www.tvn-2.com/nacionales/canal-001,TVN,es,"Mon, 15 Sep 2025 14:30:00 -0500",,2025-10-01T00:00:00Z,,tvn_rss,titular_metadatos
+n002,Panama tourism arrivals rise,https://example.org/panama-tourism,example.org,en,,20250916T120000Z,2025-10-01T00:00:00Z,turismo,gdelt,titular_metadatos
+n003,Fecha imposible,https://www.tvn-2.com/nacionales/003,TVN,es,2025-02-30T10:00:00Z,,2025-10-01T00:00:00Z,,tvn_rss,titular_metadatos
+n004,,https://www.tvn-2.com/nacionales/004,TVN,es,2025-09-10T10:00:00Z,,2025-10-01T00:00:00Z,,tvn_rss,titular_metadatos
+n005,URL rota,no-es-una-url,TVN,es,2025-09-10T10:00:00Z,,2025-10-01T00:00:00Z,,tvn_rss,titular_metadatos
+n001,Duplicado del primer registro,https://www.tvn-2.com/nacionales/canal-001-bis,TVN,es,2025-09-15T19:30:00Z,,2025-10-01T00:00:00Z,,tvn_rss,titular_metadatos
+n006,Publicada después de la extracción,https://www.tvn-2.com/nacionales/006,TVN,es,2025-10-05T10:00:00Z,,2025-10-01T00:00:00Z,,tvn_rss,titular_metadatos
+n007,"Lluvias, crecidas y alertas en Chiriquí",https://www.tvn-2.com/nacionales/007,TVN,es,2025-09-20T08:00:00-05:00,2025-09-20T13:05:00Z,2025-10-01T00:00:00Z,eventos_naturales,tvn_rss,null

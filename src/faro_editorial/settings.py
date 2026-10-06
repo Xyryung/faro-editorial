@@ -4,11 +4,14 @@ Las claves se guardan como SecretStr para que nunca aparezcan en logs,
 reprs ni capturas de la interfaz.
 """
 
+from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from faro_editorial.contrato import parse_fecha_utc
 
 # src/faro_editorial/settings.py -> parents[2] es la raíz del repositorio.
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -35,6 +38,16 @@ class Settings(BaseSettings):
     data_dir: Path = ROOT_DIR / "data"
     rules_path: Path = ROOT_DIR / "config" / "rules_v1.yaml"
     display_timezone: str = "America/Panama"
+
+    # Ventana de noticias [desde, hasta). Vacía = sin filtro: las secciones 6 y 7 del reto
+    # se contradicen y la ventana se confirma con la organización (issue #3).
+    noticias_desde: datetime | None = None
+    noticias_hasta: datetime | None = None
+
+    @field_validator("noticias_desde", "noticias_hasta", mode="before")
+    @classmethod
+    def _fecha_utc(cls, valor: object) -> datetime | None:
+        return parse_fecha_utc(valor)
 
     @property
     def raw_dir(self) -> Path:

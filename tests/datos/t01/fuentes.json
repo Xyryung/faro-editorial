@@ -1,0 +1,4 @@
+[
+  { "medio": "TVN", "dominio": "tvn-2.com", "origen": "tvn_rss" },
+  { "medio": "example.org", "dominio": "example.org", "origen": "gdelt" }
+]

@@ -1,0 +1,90 @@
+# Reglas para vincular noticias con contexto oficial (issue #12, etapa 3 · Contextualizar).
+# Cualquier cambio crea una versión nueva (contexto_v2.yaml) y se justifica en un issue
+# con la etiqueta "decision".
+#
+# Principio: si no hay relación sustentada, no se vincula. Una noticia se relaciona con un
+# indicador solo si su titular menciona explícitamente lo que el indicador mide; el tema
+# por sí solo no basta. Las palabras clave se comparan sin tildes ni mayúsculas y como
+# palabras completas.
+version: "contexto-v1.0"
+
+pais: PAN
+
+indicadores:
+  NY.GDP.MKTP.KD.ZG:
+    nombre: Crecimiento del PIB
+    palabras_clave:
+      - pib
+      - producto interno bruto
+      - crecimiento economico
+      - crecimiento de la economia
+      - gdp
+      - economic growth
+  FP.CPI.TOTL.ZG:
+    nombre: Inflación, precios al consumidor
+    palabras_clave:
+      - inflacion
+      - ipc
+      - indice de precios
+      - costo de la vida
+      - inflation
+  SL.UEM.TOTL.ZS:
+    nombre: Desempleo
+    palabras_clave:
+      - desempleo
+      - desocupacion
+      - tasa de empleo
+      - mercado laboral
+      - unemployment
+  SP.POP.TOTL:
+    nombre: Población total
+    # Sin "poblacion" ni "habitantes" sueltos: "población afectada" o "habitantes de
+    # Colón" no tratan sobre el tamaño de la población.
+    palabras_clave:
+      - censo
+      - poblacion total
+      - crecimiento poblacional
+      - demografia
+      - population
+  IT.NET.USER.ZS:
+    nombre: Personas que usan Internet
+    # Sin "internet" suelto: "estafas por internet" no trata sobre el acceso a internet.
+    palabras_clave:
+      - acceso a internet
+      - uso de internet
+      - usuarios de internet
+      - conectividad
+      - banda ancha
+      - brecha digital
+      - broadband
+  NE.EXP.GNFS.ZS:
+    nombre: Exportaciones de bienes y servicios
+    palabras_clave:
+      - exportaciones
+      - exportacion
+      - exportar
+      - exports
+
+# Años anteriores al último dato disponible que se muestran como serie de contexto.
+anios_serie: 5
+
+usgs:
+  palabras_clave:
+    - sismo
+    - sismos
+    - temblor
+    - temblores
+    - terremoto
+    - movimiento telurico
+    - actividad sismica
+    - earthquake
+    - quake
+    - seismic
+  # Un sismo se vincula si ocurrió en las horas previas a la noticia (o poco después,
+  # por diferencias entre la hora del evento y la de publicación).
+  horas_antes: 72
+  horas_despues: 6
+  limitacion: >-
+    Catálogo USGS en la caja regional latitud 5 a 12, longitud -86 a -76, magnitud 3 o
+    mayor. La caja no equivale al territorio de Panamá: la ubicación del evento es la que
+    reporta USGS. Solo respalda hechos sísmicos, nunca inundaciones, daños ni pérdidas.

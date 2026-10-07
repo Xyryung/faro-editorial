@@ -48,7 +48,7 @@ ESQUEMAS = {
         id_noticia VARCHAR PRIMARY KEY, titulo VARCHAR NOT NULL, url VARCHAR NOT NULL,
         medio VARCHAR NOT NULL, idioma VARCHAR, fecha_publicacion TIMESTAMP,
         fecha_deteccion TIMESTAMP, fecha_extraccion TIMESTAMP NOT NULL, tema VARCHAR,
-        origen VARCHAR NOT NULL, alcance_texto VARCHAR""",
+        origen VARCHAR NOT NULL, alcance_texto VARCHAR, descripcion VARCHAR""",
     "indicadores": """
         pais_iso3 VARCHAR NOT NULL, indicador_id VARCHAR NOT NULL, anio INTEGER NOT NULL,
         valor DOUBLE, unidad VARCHAR, fuente_url VARCHAR NOT NULL,
@@ -183,15 +183,17 @@ def _validar_filas(
 
 
 def _filtro_ventana(
-    desde: datetime | None, hasta: datetime | None
+    desde: datetime | None,
+    hasta: datetime | None,
+    fecha_de: Callable[[Any], datetime | None],
 ) -> Callable[[BaseModel], str | None] | None:
-    """Excluye noticias fuera de [desde, hasta). Usa la fecha de publicación y, si falta,
-    la de detección. Sin ventana configurada no se excluye nada."""
+    """Excluye registros fuera de [desde, hasta). Un registro sin fecha no se excluye (el
+    reporte cuenta sus nulos). Sin ventana configurada no se excluye nada."""
     if desde is None and hasta is None:
         return None
 
-    def filtro(noticia: BaseModel) -> str | None:
-        fecha = noticia.fecha_publicacion or noticia.fecha_deteccion
+    def filtro(modelo: BaseModel) -> str | None:
+        fecha = fecha_de(modelo)
         if fecha is None:
             return None
         if (desde and fecha < desde) or (hasta and fecha >= hasta):
@@ -199,6 +201,11 @@ def _filtro_ventana(
         return None
 
     return filtro
+
+
+def _fecha_noticia(noticia: Noticia) -> datetime | None:
+    # La publicación manda; si falta (GDELT), se usa la detección.
+    return noticia.fecha_publicacion or noticia.fecha_deteccion
 
 
 def cargar_noticias(
@@ -214,7 +221,7 @@ def cargar_noticias(
         Noticia.model_validate,
         lambda f: f.get("id_noticia"),
         lambda n: n.id_noticia,
-        _filtro_ventana(desde, hasta),
+        _filtro_ventana(desde, hasta, _fecha_noticia),
     )
     return resultado
 
@@ -234,7 +241,9 @@ def cargar_indicadores(ruta: Path) -> ResultadoArchivo:
     return resultado
 
 
-def cargar_eventos(ruta: Path) -> ResultadoArchivo:
+def cargar_eventos(
+    ruta: Path, desde: datetime | None = None, hasta: datetime | None = None
+) -> ResultadoArchivo:
     resultado = ResultadoArchivo(ruta.name)
     if not ruta.exists():
         return resultado
@@ -251,6 +260,7 @@ def cargar_eventos(ruta: Path) -> ResultadoArchivo:
         Evento.desde_feature,
         lambda f: f.get("id") if isinstance(f, dict) else None,
         lambda e: e.id,
+        _filtro_ventana(desde, hasta, lambda e: e.time),
     )
     return resultado
 
@@ -353,14 +363,17 @@ def cargar_snapshot(
     desde: datetime | None = None,
     hasta: datetime | None = None,
 ) -> ResultadoCarga:
-    """Ejecuta la etapa completa de carga y escribe las salidas en processed_dir."""
+    """Ejecuta la etapa completa de carga y escribe las salidas en processed_dir.
+
+    La ventana [desde, hasta) se aplica a noticias y sismos; los indicadores del Banco
+    Mundial son anuales e históricos y no se filtran."""
     raw_dir, processed_dir = Path(raw_dir), Path(processed_dir)
     processed_dir.mkdir(parents=True, exist_ok=True)
 
     integridad = verificar_integridad(raw_dir)
     noticias = cargar_noticias(raw_dir / ARCHIVO_NOTICIAS, desde, hasta)
     indicadores = cargar_indicadores(raw_dir / ARCHIVO_INDICADORES)
-    eventos = cargar_eventos(raw_dir / ARCHIVO_EVENTOS)
+    eventos = cargar_eventos(raw_dir / ARCHIVO_EVENTOS, desde, hasta)
     fuentes = leer_fuentes(raw_dir / ARCHIVO_FUENTES)
 
     rutas = {
@@ -385,9 +398,10 @@ def cargar_snapshot(
     reporte = {
         "version_contrato": VERSION_CONTRATO,
         "generado_utc": datetime.now(UTC).isoformat(timespec="seconds"),
-        "ventana_noticias": {
+        "ventana": {
             "desde": desde.isoformat() if desde else None,
             "hasta": hasta.isoformat() if hasta else None,
+            "aplica_a": [ARCHIVO_NOTICIAS, ARCHIVO_EVENTOS],
         },
         "integridad": integridad,
         "archivos": {
@@ -415,7 +429,10 @@ def main() -> None:
     from faro_editorial.settings import get_settings
 
     s = get_settings()
-    resultado = cargar_snapshot(s.raw_dir, s.processed_dir, s.noticias_desde, s.noticias_hasta)
+    resultado = cargar_snapshot(s.raw_dir, s.processed_dir, s.ventana_desde, s.ventana_hasta)
+    desde = s.ventana_desde.isoformat() if s.ventana_desde else "sin límite"
+    hasta = s.ventana_hasta.isoformat() if s.ventana_hasta else "sin límite"
+    print(f"Ventana de noticias y sismos: [{desde}, {hasta})")
     integridad = resultado.integridad
     print(f"Integridad del snapshot: {'OK' if integridad['ok'] else 'REVISAR'}")
     for nombre, info in integridad.get("archivos", {}).items():

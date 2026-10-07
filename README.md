@@ -14,7 +14,7 @@ se vincula con su fuente, fecha y alcance; cuando no hay evidencia suficiente, e
 | 1 · Cargar | `carga.py`, `contrato.py`, `catalogo.py` | Implementada (#5, #4) |
 | 2 · Organizar | | En desarrollo (#9, #10) |
 | 3 · Contextualizar | `contexto.py` | Implementada (#12) |
-| 4 · Priorizar | `puntaje.py`, `rules.py` | Implementada con reglas; R, I y U admiten Jev (#11, #8) |
+| 4 · Priorizar | `puntaje.py`, `rules.py`, `bandeja.py` | Implementada con reglas; R, I y U admiten Jev (#11, #8) |
 | 5 · Explicar | | En desarrollo (#13, #14, #18) |
 | 6 · Producir | | En desarrollo (#15) |
 | 7 · Revisar | | En desarrollo (#16, #17) |
@@ -84,7 +84,15 @@ Completa `.env` solo si vas a hacer llamadas en vivo. Sin `.env`, la app arranca
    uv run python -m faro_editorial.carga
    ```
 
-2. Abre la interfaz:
+2. Genera la bandeja priorizada (`data/processed/bandeja.json`) y muestra los cinco temas que
+   merecen revisión (CU-01). Si existe `data/processed/grupos.jsonl` (agrupación, #9), lo usa;
+   si no, cada noticia es un grupo:
+
+   ```powershell
+   uv run python -m faro_editorial.bandeja --top 5
+   ```
+
+3. Abre la interfaz:
 
    ```powershell
    uv run streamlit run app/main.py

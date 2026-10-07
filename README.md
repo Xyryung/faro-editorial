@@ -14,7 +14,7 @@ se vincula con su fuente, fecha y alcance; cuando no hay evidencia suficiente, e
 | 1 · Cargar | `carga.py`, `contrato.py`, `catalogo.py` | Implementada (#5, #4) |
 | 2 · Organizar | | En desarrollo (#9, #10) |
 | 3 · Contextualizar | `contexto.py` | Implementada (#12) |
-| 4 · Priorizar | `rules.py` (reglas v1) | En desarrollo (#11) |
+| 4 · Priorizar | `puntaje.py`, `rules.py` | Implementada con reglas; R, I y U admiten Jev (#11, #8) |
 | 5 · Explicar | | En desarrollo (#13, #14, #18) |
 | 6 · Producir | | En desarrollo (#15) |
 | 7 · Revisar | | En desarrollo (#16, #17) |
@@ -117,7 +117,7 @@ descargado) se omiten por defecto. Para ejecutarlas: `uv run pytest -m online`.
 | T05 | Dos afirmaciones incompatibles | | Pendiente (#14) |
 | T06 | Consulta sin respuesta | | Pendiente (#13) |
 | T07 | Fuente que exige ignorar instrucciones | | Pendiente (#15) |
-| T08 | Caso de prioridad alta | | Pendiente (#11) |
+| T08 | Caso de prioridad alta | `tests/test_puntaje.py` | Automatizada |
 | T09 | Brief editorial | | Pendiente (#15) |
 | T10 | Sin internet durante la demo | | Pendiente (#21) |
 
@@ -159,7 +159,7 @@ registro oficial del reto.
 
 ```
 app/                 Interfaz Streamlit
-config/              Reglas versionadas: puntaje, contexto oficial y catálogo de fuentes
+config/              Reglas versionadas: puntaje y sus criterios, contexto oficial y catálogo
 data/                raw/ (snapshot), processed/ (regenerable), cache/ (respuestas IA)
                      y CONTRATO.md (diccionario de datos)
 src/faro_editorial/  Paquete principal

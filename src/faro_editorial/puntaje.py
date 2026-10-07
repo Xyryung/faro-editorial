@@ -19,7 +19,7 @@ from urllib.parse import urlparse
 import yaml
 from pydantic import BaseModel, Field
 
-from faro_editorial.contexto import Contexto, ContextoOficial, buscar_palabra
+from faro_editorial.contexto import Contexto, ContextoOficial, Vinculo, buscar_palabra
 from faro_editorial.contrato import Noticia
 from faro_editorial.rules import COMPONENTES, Reglas, load_rules
 from faro_editorial.settings import ROOT_DIR, get_settings
@@ -141,6 +141,7 @@ class Puntuacion(BaseModel):
     motivo_estado: str
     procedencias: list[str]
     ids_noticias: list[str]
+    vinculos: list[Vinculo] = []  # evidencia oficial con su cita (etapa 3)
     pendientes: list[str]
     version_reglas: str
     version_criterios: str
@@ -319,6 +320,7 @@ class MotorPuntaje:
             motivo_estado=motivo,
             procedencias=sorted(grupo.procedencias),
             ids_noticias=[n.id_noticia for n in grupo.noticias],
+            vinculos=contexto.vinculos if contexto else [],
             pendientes=contexto.pendientes if contexto else [],
             version_reglas=self.reglas.version,
             version_criterios=c.version,

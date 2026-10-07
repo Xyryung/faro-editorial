@@ -189,7 +189,11 @@ def clave_cache(
         "estado": estado,
         "preguntas": {k: p.model_dump(mode="json") for k, p in preguntas.items()},
     }
-    texto = json.dumps(contenido, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    # default=str: un estado con fechas u otros objetos (p. ej. noticia.model_dump()) da una
+    # clave estable en vez de lanzar TypeError fuera del manejo de errores del cliente.
+    texto = json.dumps(
+        contenido, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str
+    )
     return hashlib.sha256(texto.encode("utf-8")).hexdigest()
 
 
@@ -245,7 +249,9 @@ class CacheDecisiones:
         ruta.parent.mkdir(parents=True, exist_ok=True)
         contenido = {"decision": decision.model_dump(mode="json"), "solicitud": solicitud}
         temporal = ruta.with_suffix(".tmp")
-        temporal.write_text(json.dumps(contenido, ensure_ascii=False, indent=2), encoding="utf-8")
+        temporal.write_text(
+            json.dumps(contenido, ensure_ascii=False, indent=2, default=str), encoding="utf-8"
+        )
         os.replace(temporal, ruta)  # escritura atómica: nunca queda un JSON a medias
 
 

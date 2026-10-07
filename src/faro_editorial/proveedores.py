@@ -10,6 +10,7 @@ El estado (texto de las fuentes) siempre viaja separado de las instrucciones: en
 """
 
 import json
+import re
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -156,9 +157,15 @@ def esquema_json(preguntas: dict[str, Pregunta]) -> dict[str, Any]:
     }
 
 
+_CIERRE_DATOS = re.compile(r"<\s*/\s*datos\s*>", re.IGNORECASE)
+
+
 def mensajes_llm(estado: Estado, preguntas: dict[str, Pregunta]) -> list[dict[str, str]]:
-    texto = estado if isinstance(estado, str) else json.dumps(estado, ensure_ascii=False)
-    texto = texto.replace("</datos>", "<\\/datos>")  # el dato no puede cerrar el bloque
+    texto = (
+        estado if isinstance(estado, str) else json.dumps(estado, ensure_ascii=False, default=str)
+    )
+    # El dato no puede cerrar el bloque: cubre mayúsculas y espacios (</DATOS>, </datos >).
+    texto = _CIERRE_DATOS.sub("<\\/datos>", texto)
     descripcion = "\n".join(_describir(k, p) for k, p in preguntas.items())
     return [
         {"role": "system", "content": PROMPT_SISTEMA.format(preguntas=descripcion)},

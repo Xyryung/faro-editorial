@@ -218,3 +218,22 @@ def test_score_normalizado_para_el_motor_de_puntaje():
     r = RespuestaScore(valor=1.99, niveles=3)
     assert r.nivel == 2
     assert r.normalizado == pytest.approx(0.995)
+
+
+def test_estado_con_fechas_no_lanza_excepcion_y_se_guarda(tmp_path):
+    """Un estado armado con noticia.model_dump() trae datetime: debe decidir y cachear, no
+    lanzar TypeError fuera del manejo de errores del cliente."""
+    from datetime import UTC, datetime
+
+    estado = {"titulo": ESTADO, "fecha_publicacion": datetime(2026, 3, 15, 14, 30, tzinfo=UTC)}
+    p = ProveedorSimulado(RESPUESTAS_OK)
+    c = cliente(tmp_path, p)
+
+    primera = c.decidir(estado, PREGUNTAS, VERSION)
+    segunda = c.decidir(estado, PREGUNTAS, VERSION)
+
+    assert not primera.abstencion
+    assert segunda.desde_cache and p.llamadas == 1
+    assert clave_cache("simulado", "m", VERSION, estado, PREGUNTAS) == clave_cache(
+        "simulado", "m", VERSION, dict(estado), PREGUNTAS
+    )

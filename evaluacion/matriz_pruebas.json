@@ -1,7 +1,7 @@
 {
   "version": "matriz-v1",
-  "generado_utc": "2026-10-07T14:44:30+00:00",
-  "commit": "30da82b",
+  "generado_utc": "2026-10-07T14:58:02+00:00",
+  "commit": "6ed17f8",
   "advertencias": [],
   "casos": [
     {
@@ -36,7 +36,7 @@
         "tests/test_carga.py::test_t01_rechazos_con_motivo": "pasa",
         "tests/test_carga.py::test_t01_reporte_de_calidad": "pasa"
       },
-      "evidencia": "2026-10-07 14:44 UTC, commit 30da82b: 21/21 pruebas",
+      "evidencia": "2026-10-07 14:58 UTC, commit 6ed17f8: 21/21 pruebas",
       "correcciones": [],
       "issues": [
         "#5"
@@ -55,7 +55,7 @@
         "tests/test_bandeja.py::test_grupos_de_la_agrupacion_y_advertencias": "pasa",
         "tests/test_puntaje.py::test_duplicar_noticias_no_infla_el_puntaje": "pasa"
       },
-      "evidencia": "2026-10-07 14:44 UTC, commit 30da82b: 2/2 pruebas",
+      "evidencia": "2026-10-07 14:58 UTC, commit 6ed17f8: 2/2 pruebas",
       "correcciones": [],
       "issues": [
         "#9",
@@ -77,12 +77,13 @@
         "tests/test_puntaje.py::test_noticia_recirculada_no_es_novedad": "pasa",
         "tests/test_puntaje.py::test_una_sola_nota_vieja_detectada_hoy_no_es_novedad": "pasa"
       },
-      "evidencia": "2026-10-07 14:44 UTC, commit 30da82b: 4/4 pruebas",
+      "evidencia": "2026-10-07 14:58 UTC, commit 6ed17f8: 4/4 pruebas",
       "correcciones": [
         {
           "fallo": "Una sola nota vieja detectada hoy por GDELT daba novedad máxima, porque solo se usaba la fecha de publicación.",
           "correccion": "La novedad cuenta también la fecha de detección.",
-          "pr": "#37"
+          "pr": "#37",
+          "issue": "#42"
         }
       ],
       "issues": [
@@ -107,7 +108,7 @@
         "tests/test_contexto.py::test_t04_cifra_anual_con_pais_anio_unidad_e_id": "pasa",
         "tests/test_contexto.py::test_t04_nunca_se_presenta_como_dato_de_hoy": "pasa"
       },
-      "evidencia": "2026-10-07 14:44 UTC, commit 30da82b: 6/6 pruebas",
+      "evidencia": "2026-10-07 14:58 UTC, commit 6ed17f8: 6/6 pruebas",
       "correcciones": [],
       "issues": [
         "#12"
@@ -148,7 +149,7 @@
         "tests/test_contexto.py::test_usgs_sin_evento_en_la_ventana_queda_pendiente": "pasa",
         "tests/test_decisiones.py::test_t10_offline_sin_cache_se_abstiene_sin_llamar": "pasa"
       },
-      "evidencia": "2026-10-07 14:44 UTC, commit 30da82b: 8/8 pruebas",
+      "evidencia": "2026-10-07 14:58 UTC, commit 6ed17f8: 8/8 pruebas",
       "correcciones": [],
       "issues": [
         "#12",
@@ -175,12 +176,13 @@
         "tests/test_proveedores.py::test_ninguna_variante_del_cierre_escapa_del_bloque_de_datos[</datos>]": "pasa",
         "tests/test_smoke.py::test_claves_no_aparecen_en_repr": "pasa"
       },
-      "evidencia": "2026-10-07 14:44 UTC, commit 30da82b: 9/9 pruebas",
+      "evidencia": "2026-10-07 14:58 UTC, commit 6ed17f8: 9/9 pruebas",
       "correcciones": [
         {
           "fallo": "El escape del bloque de datos solo cubría </datos> en minúsculas; </DATOS> o </datos > podían cerrarlo antes de tiempo.",
           "correccion": "Expresión regular que ignora mayúsculas y espacios.",
-          "pr": "#40"
+          "pr": "#40",
+          "issue": "#43"
         }
       ],
       "issues": [
@@ -202,7 +204,7 @@
         "tests/test_puntaje.py::test_prioridad_alta_con_evidencia_insuficiente": "pasa",
         "tests/test_puntaje.py::test_t08_prioridad_alta_expone_componentes_y_regla": "pasa"
       },
-      "evidencia": "2026-10-07 14:44 UTC, commit 30da82b: 3/3 pruebas",
+      "evidencia": "2026-10-07 14:58 UTC, commit 6ed17f8: 3/3 pruebas",
       "correcciones": [],
       "issues": [
         "#11"
@@ -240,12 +242,13 @@
         "tests/test_decisiones.py::test_t10_offline_sin_cache_se_abstiene_sin_llamar": "pasa",
         "tests/test_proveedores.py::test_crear_cliente_respeta_offline_y_la_carpeta_de_cache": "pasa"
       },
-      "evidencia": "2026-10-07 14:44 UTC, commit 30da82b: 5/5 pruebas",
+      "evidencia": "2026-10-07 14:58 UTC, commit 6ed17f8: 5/5 pruebas",
       "correcciones": [
         {
           "fallo": "Un estado con fechas lanzaba TypeError en vez de decidir o abstenerse, contra la regla \"nunca un error\".",
           "correccion": "Serialización con default=str en la clave y en la caché.",
-          "pr": "#40"
+          "pr": "#40",
+          "issue": "#44"
         }
       ],
       "issues": [

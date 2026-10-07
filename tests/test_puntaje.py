@@ -211,3 +211,49 @@ def test_evaluador_externo_reemplaza_r_i_u_y_desempate(contexto_oficial):
     assert b.componentes["I"].fuente == "jev"
     # E siempre sale de las reglas deterministas, no del evaluador externo.
     assert b.componentes["E"].fuente == "reglas"
+
+
+def test_una_sola_nota_vieja_detectada_hoy_no_es_novedad(motor):
+    """T03 con una sola noticia: GDELT detecta hoy un artículo publicado hace 40 días."""
+    vieja = noticia("g1", "Récord de tránsito en Panamá", horas_antes=24 * 40)
+    vieja = vieja.model_copy(update={"fecha_deteccion": REFERENCIA - timedelta(hours=1)})
+    n = motor.puntuar(GrupoNoticias.de_noticia(vieja), REFERENCIA).componentes["N"]
+    assert n.valor == 0.0
+    assert "recirculada" in n.criterio
+
+
+@pytest.mark.parametrize(
+    ("url", "panameno"),
+    [
+        ("https://www.tvn-2.com/x", True),
+        ("https://tvn-2.com:443/x", True),
+        ("https://www.prensa.com.pa/x", True),
+        ("https://faketvn-2.com/x", False),
+        ("https://tvn-2.com.evil.org/x", False),
+    ],
+)
+def test_dominio_panameno_sin_falsos_positivos(motor, url, panameno):
+    grupo = GrupoNoticias.de_noticia(noticia("d", "Sube el desempleo", url=url, tema="economia"))
+    criterio = motor.puntuar(grupo, REFERENCIA).componentes["R"].criterio
+    assert ("medio panameño" in criterio) is panameno
+
+
+def test_sismo_se_busca_desde_la_primera_noticia_del_grupo(motor):
+    # Sismo USGS us7000aaaa: 2024-01-01 00:00 UTC. El grupo lo sigue durante 5 días.
+    inicio = datetime(2024, 1, 1, 3, 0, tzinfo=UTC)
+
+    def nota(id_: str, dias: int) -> Noticia:
+        return Noticia(
+            id_noticia=id_,
+            titulo="Sismo en Chiriquí, Panamá: balance",
+            url=f"https://www.tvn-2.com/{id_}",
+            medio="TVN",
+            fecha_publicacion=inicio + timedelta(days=dias),
+            fecha_extraccion=inicio + timedelta(days=10),
+            origen="tvn_rss",
+        )
+
+    grupo = GrupoNoticias(id_grupo="sismo", noticias=[nota("s1", 0), nota("s2", 5)])
+    p = motor.puntuar(grupo, inicio + timedelta(days=5))
+    assert "USGS:us7000aaaa" in p.componentes["E"].criterio
+    assert p.pendientes == []

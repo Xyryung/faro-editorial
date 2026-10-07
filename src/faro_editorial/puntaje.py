@@ -96,7 +96,14 @@ class GrupoNoticias(BaseModel):
 
     @property
     def fechas(self) -> list[datetime]:
+        """Una fecha por noticia: la de publicación o, si falta, la de detección."""
         return [f for n in self.noticias if (f := n.fecha_publicacion or n.fecha_deteccion)]
+
+    @property
+    def todas_las_fechas(self) -> list[datetime]:
+        """Publicación y detección de cada noticia: un artículo viejo detectado hoy (GDELT)
+        muestra que el evento lleva tiempo circulando aunque el grupo tenga una sola nota."""
+        return [f for n in self.noticias for f in (n.fecha_publicacion, n.fecha_deteccion) if f]
 
     @property
     def procedencias(self) -> set[str]:
@@ -158,14 +165,21 @@ def _tramo(horas: float, tramo: _Tramo) -> float:
     return round(1 - (horas - tramo.horas_maxima) / (tramo.horas_cero - tramo.horas_maxima), 4)
 
 
+def _dominio_coincide(dominio: str, patron: str) -> bool:
+    """'.pa' es un sufijo de país; 'tvn-2.com' es el dominio o un subdominio suyo, nunca
+    otro dominio que solo termine igual ('faketvn-2.com')."""
+    if patron.startswith("."):
+        return dominio.endswith(patron)
+    return dominio == patron or dominio.endswith(f".{patron}")
+
+
 def _relacion_panama(grupo: GrupoNoticias, c: _Relevancia) -> str | None:
     if palabra := buscar_palabra(grupo.texto, c.palabras_panama):
         return f"el texto menciona '{palabra}'"
     for n in grupo.noticias:
-        dominio = urlparse(n.url).netloc.lower()
-        for d in c.dominios_panama:
-            if dominio.endswith(d):
-                return f"medio panameño ({dominio})"
+        dominio = (urlparse(n.url).hostname or "").lower()
+        if any(_dominio_coincide(dominio, d) for d in c.dominios_panama):
+            return f"medio panameño ({dominio})"
     return None
 
 
@@ -206,12 +220,14 @@ def urgencia(grupo: GrupoNoticias, referencia: datetime, c: Criterios) -> Compon
 
 
 def novedad(grupo: GrupoNoticias, c: Criterios) -> Componente:
-    if not grupo.fechas:
+    fechas = grupo.todas_las_fechas
+    if not fechas:
         return Componente(valor=0.0, criterio="Sin fecha: no se puede medir la novedad.")
-    horas = (max(grupo.fechas) - min(grupo.fechas)).total_seconds() / 3600
+    horas = (max(fechas) - min(fechas)).total_seconds() / 3600
     criterio = (
-        f"El evento circula desde hace {horas:.0f} h (1 hasta {c.novedad.horas_maxima:.0f} h, "
-        f"0 desde {c.novedad.horas_cero:.0f} h). El número de noticias no suma."
+        f"El evento lleva {horas:.0f} h circulando, de la primera a la última fecha "
+        f"(1 hasta {c.novedad.horas_maxima:.0f} h, 0 desde {c.novedad.horas_cero:.0f} h). "
+        "El número de noticias no suma."
     )
     if horas > c.novedad.horas_maxima:
         criterio += " Posible noticia antigua recirculada: verificar la fecha original."
@@ -269,7 +285,8 @@ class MotorPuntaje:
         c = self.criterios
         contexto = None
         if self.contexto_oficial is not None:
-            fecha = max(grupo.fechas) if grupo.fechas else None
+            # Desde la primera noticia: el sismo ocurrió antes de que empezaran a reportarlo.
+            fecha = min(grupo.fechas) if grupo.fechas else None
             contexto = self.contexto_oficial.vincular(grupo.texto, fecha, grupo.id_grupo)
 
         componentes = {

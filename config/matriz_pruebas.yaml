@@ -4,7 +4,7 @@
 # las ejecuta y escribe la matriz en evaluacion/.
 #
 # cobertura: completa (cubre lo que pide el reto) | parcial (falta una parte, ver `falta`)
-# correcciones: pruebas que fallaron y cómo se corrigieron (issue "Prueba fallida" y PR).
+# correcciones: pruebas que fallaron, su issue de "Prueba fallida" y el PR que las corrigió.
 version: "matriz-v1"
 
 casos:
@@ -52,6 +52,7 @@ casos:
       - fallo: Una sola nota vieja detectada hoy por GDELT daba novedad máxima, porque solo se usaba la fecha de publicación.
         correccion: La novedad cuenta también la fecha de detección.
         pr: "#37"
+        issue: "#42"
 
   T04:
     prueba: Cifra anual del Banco Mundial
@@ -104,6 +105,7 @@ casos:
       - fallo: El escape del bloque de datos solo cubría </datos> en minúsculas; </DATOS> o </datos > podían cerrarlo antes de tiempo.
         correccion: Expresión regular que ignora mayúsculas y espacios.
         pr: "#40"
+        issue: "#43"
 
   T08:
     prueba: Caso de prioridad alta
@@ -141,3 +143,4 @@ casos:
       - fallo: Un estado con fechas lanzaba TypeError en vez de decidir o abstenerse, contra la regla "nunca un error".
         correccion: Serialización con default=str en la clave y en la caché.
         pr: "#40"
+        issue: "#44"

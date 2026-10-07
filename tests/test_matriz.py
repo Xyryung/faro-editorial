@@ -101,7 +101,7 @@ def test_salidas_markdown_csv_y_json(tmp_path: Path):
     with rutas["csv"].open(encoding="utf-8-sig", newline="") as f:
         (fila,) = list(csv.DictReader(f))
     assert fila["ID"] == "T07" and fila["Estado"] == "pasa"
-    assert fila["Corrección"] == "No escapaba </DATOS> → regex (#40)"
+    assert fila["Corrección"] == "No escapaba </DATOS> → regex (PR #40)"
     md = rutas["md"].read_text(encoding="utf-8")
     assert "commit `abc1234`" in md and "`tests/test_a.py::test_t01_ok`: pasa" in md
     assert '"commit": "abc1234"' in rutas["json"].read_text(encoding="utf-8")
@@ -120,3 +120,21 @@ def test_config_real_cubre_t01_a_t10_y_sus_pruebas_existen():
             assert re.search(rf"^def {re.escape(prefijo)}", fuente, re.MULTILINE), (
                 f"{id_caso}: no existe ninguna prueba '{patron}'"
             )
+
+
+def test_cada_prueba_fallida_tiene_su_issue():
+    """Criterio del #19: cada prueba que falló tiene su issue de "Prueba fallida" y su PR."""
+    for id_caso, caso in load_matriz().casos.items():
+        for c in caso.correcciones:
+            assert c.issue and c.pr, f"{id_caso}: corrección sin issue o sin PR: {c.fallo}"
+
+
+def test_correccion_con_issue_en_la_salida(tmp_path: Path):
+    caso = _caso(
+        ["tests/test_a.py::test_t01_"],
+        correcciones=[Correccion(fallo="F", correccion="C", pr="#40", issue="#43")],
+    )
+    config = ConfigMatriz(version="v", casos={"T07": caso})
+    filas, adv = armar_matriz(config, leer_junit(JUNIT), FECHA, "abc1234")
+    rutas = escribir_matriz(filas, adv, config, FECHA, "abc1234", tmp_path)
+    assert "F → C (issue #43; PR #40)" in rutas["md"].read_text(encoding="utf-8")

@@ -35,6 +35,7 @@ class Correccion(BaseModel):
     fallo: str
     correccion: str
     pr: str
+    issue: str | None = None  # issue de "Prueba fallida" que lo registra
 
 
 class Caso(BaseModel):
@@ -195,7 +196,12 @@ def armar_matriz(
 def _correcciones_texto(fila: FilaMatriz) -> str:
     if not fila.correcciones:
         return "—"
-    return " / ".join(f"{c.fallo} → {c.correccion} ({c.pr})" for c in fila.correcciones)
+    return " / ".join(
+        f"{c.fallo} → {c.correccion} ("
+        + (f"issue {c.issue}; PR {c.pr}" if c.issue else f"PR {c.pr}")
+        + ")"
+        for c in fila.correcciones
+    )
 
 
 def _celda(texto: str) -> str:

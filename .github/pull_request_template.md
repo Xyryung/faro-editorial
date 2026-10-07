@@ -2,7 +2,9 @@
 
 <!-- Una o dos frases. -->
 
-Cierra #
+<!-- "Closes #N" cierra el issue al fusionar ("Cierra" no lo reconoce GitHub).
+     Si el PR no completa el issue, usar "Parte de #N". -->
+Closes #
 
 ## Cómo se probó
 

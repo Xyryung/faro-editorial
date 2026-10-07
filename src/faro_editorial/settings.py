@@ -31,10 +31,13 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr | None = None
 
     jev_model: str = "typesafe/jev-1.13"
+    jev_url: str = "https://openrouter.ai/api/alpha/decisions"
     llm_model: str = ""
     llm_base_url: str = "https://openrouter.ai/api/v1"
     embedding_model: str = "intfloat/multilingual-e5-small"
-
+    # Tiempo máximo por llamada a Jev o al LLM; si se agota, la decisión es una abstención.
+    ia_timeout_s: float = 30.0
+    
     data_dir: Path = ROOT_DIR / "data"
     rules_path: Path = ROOT_DIR / "config" / "rules_v1.yaml"
     display_timezone: str = "America/Panama"

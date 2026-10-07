@@ -7,7 +7,17 @@ Convierte noticias públicas e indicadores oficiales en una **bandeja de temas p
 **fichas de evidencia** y **borradores editoriales** listos para revisión humana. Cada afirmación
 se vincula con su fuente, fecha y alcance; cuando no hay evidencia suficiente, el sistema se abstiene.
 
-> Estado: esqueleto inicial. Las funcionalidades se construyen durante el evento.
+## Estado
+
+| Etapa | Módulo | Estado |
+|---|---|---|
+| 1 · Cargar | `carga.py`, `contrato.py`, `catalogo.py` | Implementada (#5, #4) |
+| 2 · Organizar | | En desarrollo (#9, #10) |
+| 3 · Contextualizar | `contexto.py` | Implementada (#12) |
+| 4 · Priorizar | `rules.py` (reglas v1) | En desarrollo (#11) |
+| 5 · Explicar | | En desarrollo (#13, #14, #18) |
+| 6 · Producir | | En desarrollo (#15) |
+| 7 · Revisar | | En desarrollo (#16, #17) |
 
 ## Modalidad y usuario
 
@@ -66,9 +76,19 @@ Completa `.env` solo si vas a hacer llamadas en vivo. Sin `.env`, la app arranca
 
 ## Ejecución
 
-```powershell
-uv run streamlit run app/main.py
-```
+1. Copia el snapshot en `data/raw/` (formato en [`data/CONTRATO.md`](data/CONTRATO.md)) y cárgalo.
+   Valida cada fila, verifica los SHA-256 contra el manifest y genera la base DuckDB, el reporte
+   de calidad y el catálogo de datos en `data/processed/`:
+
+   ```powershell
+   uv run python -m faro_editorial.carga
+   ```
+
+2. Abre la interfaz:
+
+   ```powershell
+   uv run streamlit run app/main.py
+   ```
 
 ### Modo offline
 
@@ -86,17 +106,50 @@ uv run ruff format --check .
 Las pruebas marcadas `online` (requieren claves) y `model` (requieren el modelo de embeddings
 descargado) se omiten por defecto. Para ejecutarlas: `uv run pytest -m online`.
 
+### Pruebas de aceptación del reto (T01–T10)
+
+| ID | Prueba | Dónde | Estado |
+|---|---|---|---|
+| T01 | Fechas inválidas y nulos | `tests/test_carga.py` | Automatizada |
+| T02 | Tres registros del mismo evento | | Pendiente (#9) |
+| T03 | Noticia antigua recirculada | | Pendiente (#14) |
+| T04 | Cifra anual del Banco Mundial | `tests/test_contexto.py` | Automatizada |
+| T05 | Dos afirmaciones incompatibles | | Pendiente (#14) |
+| T06 | Consulta sin respuesta | | Pendiente (#13) |
+| T07 | Fuente que exige ignorar instrucciones | | Pendiente (#15) |
+| T08 | Caso de prioridad alta | | Pendiente (#11) |
+| T09 | Brief editorial | | Pendiente (#15) |
+| T10 | Sin internet durante la demo | | Pendiente (#21) |
+
+Las métricas de la ejecución final (cobertura de citas, abstención, macro-F1, Precision@5 y
+tiempos) se registran en #19.
+
 ## Datos
 
-Ver [`data/README.md`](data/README.md). El snapshot oficial no se versiona en este repo público
-hasta confirmar las condiciones de redistribución.
+Ver [`data/README.md`](data/README.md) y el diccionario de datos en
+[`data/CONTRATO.md`](data/CONTRATO.md). El snapshot no se versiona en este repo público hasta
+confirmar las condiciones de redistribución; se entrega como paquete aparte:
+
+```powershell
+uv run python -m faro_editorial.paquete
+```
+
+Genera en `dist/` un `.zip` con el snapshot, el manifest, el diccionario, el catálogo con las
+licencias y condiciones de cada fuente y el reporte de calidad.
+
+## Decisiones
+
+Las decisiones técnicas y de producto se registran como issues con la etiqueta
+[`decision`](https://github.com/Xyryung/faro-editorial/issues?q=label%3Adecision).
 
 ## Flujo de trabajo del equipo
 
 1. Cada trabajo nace como **issue** (plantillas: Tarea, Decisión, Prueba fallida).
 2. Rama desde `main`: `feat/12-agrupacion`, `fix/18-fechas-nulas`, `docs/...`, `test/...`, `chore/...`.
 3. Commits con [Conventional Commits](https://www.conventionalcommits.org/es/): `feat(puntaje): ...`.
-4. **Pull request** con `Cierra #<issue>`; el CI debe pasar para poder fusionar.
+4. **Pull request** con `Closes #<issue>` (GitHub solo cierra el issue al fusionar con las
+   palabras en inglés; si el PR no completa el issue, `Parte de #<issue>`). El CI debe pasar
+   para poder fusionar.
 5. Fusión con *squash*; el título del PR queda como mensaje del commit.
 
 Los issues y PRs se sincronizan con Notion (base de datos sincronizada de GitHub), que es el
@@ -106,8 +159,9 @@ registro oficial del reto.
 
 ```
 app/                 Interfaz Streamlit
-config/              Reglas versionadas del puntaje
+config/              Reglas versionadas: puntaje, contexto oficial y catálogo de fuentes
 data/                raw/ (snapshot), processed/ (regenerable), cache/ (respuestas IA)
+                     y CONTRATO.md (diccionario de datos)
 src/faro_editorial/  Paquete principal
 tests/               Pruebas (incluirán T01–T10 del reto)
 .github/             CI, plantillas de issues y de PR
@@ -122,8 +176,8 @@ tests/               Pruebas (incluirán T01–T10 del reto)
 ## Equipo
 
 - Kenneth ([@Xyryung](https://github.com/Xyryung))
-- _Integrante 2_
-- _Integrante 3_
+- Rafael Aboulafia ([@rafael23231](https://github.com/rafael23231))
+- [@Cod7777](https://github.com/Cod7777)
 
 ## Licencia
 

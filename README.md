@@ -116,18 +116,16 @@ descargado) se omiten por defecto. Para ejecutarlas: `uv run pytest -m online`.
 
 ### Pruebas de aceptación del reto (T01–T10)
 
-| ID | Prueba | Dónde | Estado |
-|---|---|---|---|
-| T01 | Fechas inválidas y nulos | `tests/test_carga.py` | Automatizada |
-| T02 | Tres registros del mismo evento | | Pendiente (#9) |
-| T03 | Noticia antigua recirculada | | Pendiente (#14) |
-| T04 | Cifra anual del Banco Mundial | `tests/test_contexto.py` | Automatizada |
-| T05 | Dos afirmaciones incompatibles | | Pendiente (#14) |
-| T06 | Consulta sin respuesta | | Pendiente (#13) |
-| T07 | Fuente que exige ignorar instrucciones | | Pendiente (#15) |
-| T08 | Caso de prioridad alta | `tests/test_puntaje.py` | Automatizada |
-| T09 | Brief editorial | | Pendiente (#15) |
-| T10 | Sin internet durante la demo | | Pendiente (#21) |
+La matriz con caso, entrada, resultado esperado, resultado observado, evidencia de ejecución y
+corrección está en [`evaluacion/matriz_pruebas.md`](evaluacion/matriz_pruebas.md) (y en CSV para
+importar en Notion). Se regenera ejecutando las pruebas:
+
+```powershell
+uv run python -m faro_editorial.matriz
+```
+
+Qué pruebas cubren cada caso se define en `config/matriz_pruebas.yaml`; una prueba que falla
+queda en la matriz junto a su issue de "Prueba fallida" y el PR que la corrigió.
 
 Las métricas de la ejecución final (cobertura de citas, abstención, macro-F1, Precision@5 y
 tiempos) se registran en #19.

@@ -13,6 +13,7 @@ import pytest
 
 from faro_editorial.carga import cargar_snapshot
 from faro_editorial.contrato import parse_fecha_utc
+from faro_editorial.settings import Settings
 
 
 @pytest.fixture
@@ -180,3 +181,59 @@ def test_formatos_de_fecha(entrada, esperado):
 def test_fechas_invalidas_fallan(entrada):
     with pytest.raises(ValueError):
         parse_fecha_utc(entrada)
+
+
+def test_ventana_por_defecto_es_la_demo_en_hora_de_panama(monkeypatch):
+    monkeypatch.delenv("VENTANA_DESDE", raising=False)
+    monkeypatch.delenv("VENTANA_HASTA", raising=False)
+    s = Settings(_env_file=None)
+    # Medianoche de Panamá (UTC-5) = 05:00 UTC.
+    assert s.ventana_desde == datetime(2025, 10, 1, 5, 0, tzinfo=UTC)
+    assert s.ventana_hasta == datetime(2026, 10, 1, 5, 0, tzinfo=UTC)
+
+
+def test_ventana_vacia_desactiva_el_filtro():
+    s = Settings(_env_file=None, ventana_desde="", ventana_hasta="")
+    assert s.ventana_desde is None and s.ventana_hasta is None
+
+
+def test_ventana_respeta_el_borde_en_hora_de_panama(raw: Path, tmp_path: Path):
+    extraccion = "2026-10-02T00:00:00Z"
+    with (raw / "noticias.csv").open("a", encoding="utf-8") as f:
+        # 30/09 a las 21:00 en Panamá ya es 01/10 en UTC, pero es septiembre: entra.
+        f.write(f"b01,Noche,https://a.org/b01,A,es,2026-09-30T21:00:00-05:00,,{extraccion},,x,\n")
+        # 01/10 a las 00:30 en Panamá ya es octubre: queda fuera.
+        f.write(f"b02,Octubre,https://a.org/b02,A,es,2026-10-01T00:30:00-05:00,,{extraccion},,x,\n")
+    s = Settings(_env_file=None)
+    resultado = cargar_snapshot(raw, tmp_path / "processed", s.ventana_desde, s.ventana_hasta)
+    validas = {n.id_noticia for n in resultado.noticias.validos}
+    assert "b01" in validas
+    assert "b02" not in validas
+    # Las noticias sintéticas de septiembre de 2025 quedan fuera de la ventana de la demo.
+    assert not validas & {"n001", "n002", "n007"}
+
+
+def test_ventana_tambien_filtra_sismos_pero_no_indicadores(raw: Path, tmp_path: Path):
+    resultado = cargar_snapshot(
+        raw, tmp_path / "processed", desde=datetime(2024, 1, 15, tzinfo=UTC), hasta=None
+    )
+    assert [e.id for e in resultado.eventos.validos] == ["us7000dddd"]
+    rechazo = next(r for r in resultado.eventos.rechazos if r.id == "us7000aaaa")
+    assert rechazo.motivos == ["fuera de la ventana de fechas"]
+    assert len(resultado.indicadores.validos) == 3
+    assert resultado.reporte["ventana"]["aplica_a"] == ["noticias.csv", "eventos.geojson"]
+
+
+def test_descripcion_del_rss_se_carga(tmp_path: Path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    (raw / "noticias.csv").write_text(
+        "id_noticia,titulo,url,medio,fecha_extraccion,origen,alcance_texto,descripcion\n"
+        "d01,Titular,https://a.org/d01,TVN,2026-10-02,tvn_rss,titular_descripcion,"
+        '"Resumen del RSS, con coma"\n',
+        encoding="utf-8",
+    )
+    resultado = cargar_snapshot(raw, tmp_path / "processed")
+    assert _consulta(resultado, "SELECT descripcion, alcance_texto FROM noticias") == [
+        ("Resumen del RSS, con coma", "titular_descripcion")
+    ]

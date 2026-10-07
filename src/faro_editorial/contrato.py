@@ -117,6 +117,9 @@ class Noticia(_Modelo):
     tema: TextoOpcional = None
     origen: TextoRequerido
     alcance_texto: TextoOpcional = None
+    # Descripción del RSS: solo para análisis interno, nunca se copia textual en borradores
+    # ni se sube al repo (decisión del equipo, opción B).
+    descripcion: TextoOpcional = None
 
     @model_validator(mode="after")
     def _fechas_coherentes(self) -> "Noticia":

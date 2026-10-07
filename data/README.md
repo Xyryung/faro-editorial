@@ -2,7 +2,7 @@
 
 | Carpeta | Contenido | ¿Se sube al repo? |
 |---|---|---|
-| `raw/` | Snapshot congelado entregado por la organización ("Panamá · Señales y Evidencias v1"): `noticias.csv`, `fuentes.json`, `indicadores.csv`, `eventos.geojson`, `manifest.json`. Nunca se modifica. | No, hasta confirmar condiciones de redistribución |
+| `raw/` | Snapshot congelado que construye el equipo ("Panamá · Señales y Evidencias v1"): `noticias.csv`, `fuentes.json`, `indicadores.csv`, `eventos.geojson`, `manifest.json`. Formato en [`CONTRATO.md`](CONTRATO.md). Nunca se modifica. | No, hasta confirmar condiciones de redistribución |
 | `processed/` | Datos validados y normalizados, base DuckDB, reporte de calidad y archivo de rechazos. Se regenera con el pipeline. | No (regenerable) |
 | `cache/` | Respuestas guardadas de Jev, del LLM y embeddings, indexadas por hash de (modelo + versión de prompt + entrada). Permite la demo sin internet (T10). | Por decidir con la organización |
 
@@ -16,7 +16,7 @@ Cuando se confirme, se registra la decisión en un issue con la etiqueta `decisi
 
 ## Cómo preparar los datos localmente
 
-1. Copia los archivos del snapshot oficial en `data/raw/`.
+1. Copia los archivos del snapshot en `data/raw/` (formato en [`CONTRATO.md`](CONTRATO.md)).
 2. Ejecuta la carga, que también verifica el SHA-256 de cada archivo contra `manifest.json`:
 
    ```powershell
@@ -32,8 +32,17 @@ Cuando se confirme, se registra la decisión en un issue con la etiqueta `decisi
      `config/fuentes_catalogo.yaml`; lo demás se calcula en la carga.
 
 Una fila inválida nunca detiene la carga (prueba T01): se separa y el resto se carga.
-La ventana de fechas de noticias se configura con `NOTICIAS_DESDE` y `NOTICIAS_HASTA` en `.env`;
-vacía, no se filtra nada (pendiente de confirmar con la organización).
+
+### Ventana de fechas
+
+| Fuente | Período | Origen de la decisión |
+|---|---|---|
+| Noticias | 2025-10-01 a 2026-09-30, hora de Panamá | Organización (fechas); equipo (hora de Panamá) |
+| Sismos USGS | Mismo período que las noticias | Equipo: deben coincidir con las noticias para respaldarlas |
+| Banco Mundial | Años 2010–2024 | Organización (sección 6 del reto) |
+
+La ventana se configura con `VENTANA_DESDE` y `VENTANA_HASTA` (ver `.env.example`). Para el
+conjunto de desarrollo, que puede usar otras fechas, se dejan vacías y no se filtra nada.
 
 ## Reglas de integridad (sección 7 del reto)
 

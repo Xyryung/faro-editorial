@@ -39,12 +39,13 @@ class Settings(BaseSettings):
     rules_path: Path = ROOT_DIR / "config" / "rules_v1.yaml"
     display_timezone: str = "America/Panama"
 
-    # Ventana de noticias [desde, hasta). Vacía = sin filtro: las secciones 6 y 7 del reto
-    # se contradicen y la ventana se confirma con la organización (issue #3).
-    noticias_desde: datetime | None = None
-    noticias_hasta: datetime | None = None
+    # Ventana [desde, hasta) de noticias y sismos para la demo: octubre 2025 a septiembre
+    # 2026, confirmada por la organización; los límites van en hora de Panamá (decisión del
+    # equipo, issue #3). Para el conjunto de desarrollo se desactiva dejándola vacía en .env.
+    ventana_desde: datetime | None = datetime.fromisoformat("2025-10-01T00:00:00-05:00")
+    ventana_hasta: datetime | None = datetime.fromisoformat("2026-10-01T00:00:00-05:00")
 
-    @field_validator("noticias_desde", "noticias_hasta", mode="before")
+    @field_validator("ventana_desde", "ventana_hasta", mode="before")
     @classmethod
     def _fecha_utc(cls, valor: object) -> datetime | None:
         return parse_fecha_utc(valor)

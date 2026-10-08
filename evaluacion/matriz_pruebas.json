@@ -1,7 +1,7 @@
 {
   "version": "matriz-v1",
-  "generado_utc": "2026-10-08T00:57:33+00:00",
-  "commit": "99ee591",
+  "generado_utc": "2026-10-08T02:31:35+00:00",
+  "commit": "334cd9c",
   "advertencias": [],
   "casos": [
     {
@@ -36,7 +36,7 @@
         "tests/test_carga.py::test_t01_rechazos_con_motivo": "pasa",
         "tests/test_carga.py::test_t01_reporte_de_calidad": "pasa"
       },
-      "evidencia": "2026-10-08 00:57 UTC, commit 99ee591: 21/21 pruebas",
+      "evidencia": "2026-10-08 02:31 UTC, commit 334cd9c: 21/21 pruebas",
       "correcciones": [],
       "issues": [
         "#5"
@@ -57,7 +57,7 @@
         "tests/test_puntaje.py::test_duplicar_noticias_no_infla_el_puntaje": "pasa",
         "tests/test_puntaje.py::test_medios_con_titulares_propios_son_independientes": "pasa"
       },
-      "evidencia": "2026-10-08 00:57 UTC, commit 99ee591: 4/4 pruebas",
+      "evidencia": "2026-10-08 02:31 UTC, commit 334cd9c: 4/4 pruebas",
       "correcciones": [],
       "issues": [
         "#9",
@@ -79,7 +79,7 @@
         "tests/test_puntaje.py::test_noticia_recirculada_no_es_novedad": "pasa",
         "tests/test_puntaje.py::test_una_sola_nota_vieja_detectada_hoy_no_es_novedad": "pasa"
       },
-      "evidencia": "2026-10-08 00:57 UTC, commit 99ee591: 4/4 pruebas",
+      "evidencia": "2026-10-08 02:31 UTC, commit 334cd9c: 4/4 pruebas",
       "correcciones": [
         {
           "fallo": "Una sola nota vieja detectada hoy por GDELT daba novedad máxima, porque solo se usaba la fecha de publicación.",
@@ -98,19 +98,21 @@
       "prueba": "Cifra anual del Banco Mundial",
       "entrada": "Titulares que mencionan PIB, desempleo e inflación frente a indicadores sintéticos de PAN (2023 con valor, 2024 nulo, un cero real).",
       "esperado": "Mantener país, año y unidad; citar dato y no describirlo como cifra de hoy.",
-      "observado": "6 de 6 pruebas pasan",
+      "observado": "8 de 8 pruebas pasan",
       "estado": "pasa",
-      "pruebas_pasan": 6,
-      "pruebas_total": 6,
+      "pruebas_pasan": 8,
+      "pruebas_total": 8,
       "pruebas": {
         "tests/test_bandeja.py::test_cita_oficial_llega_a_la_bandeja": "pasa",
         "tests/test_contexto.py::test_cero_real_se_cita_como_cero": "pasa",
         "tests/test_contexto.py::test_indicador_sin_datos_queda_pendiente_sin_inventar": "pasa",
         "tests/test_contexto.py::test_t04_anio_sin_dato_se_declara_y_no_se_rellena": "pasa",
         "tests/test_contexto.py::test_t04_cifra_anual_con_pais_anio_unidad_e_id": "pasa",
-        "tests/test_contexto.py::test_t04_nunca_se_presenta_como_dato_de_hoy": "pasa"
+        "tests/test_contexto.py::test_t04_nunca_se_presenta_como_dato_de_hoy": "pasa",
+        "tests/test_evidencia.py::test_anio_sin_dato_no_se_muestra_como_cero": "pasa",
+        "tests/test_evidencia.py::test_indicador_muestra_fuente_anio_unidad_y_url": "pasa"
       },
-      "evidencia": "2026-10-08 00:57 UTC, commit 99ee591: 6/6 pruebas",
+      "evidencia": "2026-10-08 02:31 UTC, commit 334cd9c: 8/8 pruebas",
       "correcciones": [],
       "issues": [
         "#12"
@@ -137,10 +139,10 @@
       "prueba": "Consulta sin respuesta en el corpus",
       "entrada": "Titulares que piden un dato oficial inexistente en el snapshot; sismo sin evento USGS; IA sin respuesta en caché.",
       "esperado": "Abstención explícita; ninguna cifra o cita inventada.",
-      "observado": "8 de 8 pruebas pasan. Falta: Compuerta de abstención de la búsqueda de consultas (#13).",
+      "observado": "12 de 12 pruebas pasan. Falta: Compuerta de abstención de la búsqueda de consultas (#13).",
       "estado": "pasa (parcial)",
-      "pruebas_pasan": 8,
-      "pruebas_total": 8,
+      "pruebas_pasan": 12,
+      "pruebas_total": 12,
       "pruebas": {
         "tests/test_contexto.py::test_indicador_sin_datos_queda_pendiente_sin_inventar": "pasa",
         "tests/test_contexto.py::test_sin_relacion_sustentada_no_se_vincula[Detienen a red de estafas por internet]": "pasa",
@@ -149,9 +151,13 @@
         "tests/test_contexto.py::test_sin_relacion_sustentada_no_se_vincula[Poblaci\\xf3n afectada por las inundaciones en Dari\\xe9n]": "pasa",
         "tests/test_contexto.py::test_sin_relacion_sustentada_no_se_vincula[Tr\\xe1nsito por el Canal se mantiene estable]": "pasa",
         "tests/test_contexto.py::test_usgs_sin_evento_en_la_ventana_queda_pendiente": "pasa",
-        "tests/test_decisiones.py::test_t10_offline_sin_cache_se_abstiene_sin_llamar": "pasa"
+        "tests/test_decisiones.py::test_t10_offline_sin_cache_se_abstiene_sin_llamar": "pasa",
+        "tests/test_evidencia.py::test_id_inexistente_no_inventa[BM:PAN:FP.CPI.TOTL.ZG:2024]": "pasa",
+        "tests/test_evidencia.py::test_id_inexistente_no_inventa[BM:PAN:sin-anio]": "pasa",
+        "tests/test_evidencia.py::test_id_inexistente_no_inventa[USGS:no-existe]": "pasa",
+        "tests/test_evidencia.py::test_id_inexistente_no_inventa[zzz]": "pasa"
       },
-      "evidencia": "2026-10-08 00:57 UTC, commit 99ee591: 8/8 pruebas",
+      "evidencia": "2026-10-08 02:31 UTC, commit 334cd9c: 12/12 pruebas",
       "correcciones": [],
       "issues": [
         "#12",
@@ -178,7 +184,7 @@
         "tests/test_proveedores.py::test_ninguna_variante_del_cierre_escapa_del_bloque_de_datos[</datos>]": "pasa",
         "tests/test_smoke.py::test_claves_no_aparecen_en_repr": "pasa"
       },
-      "evidencia": "2026-10-08 00:57 UTC, commit 99ee591: 9/9 pruebas",
+      "evidencia": "2026-10-08 02:31 UTC, commit 334cd9c: 9/9 pruebas",
       "correcciones": [
         {
           "fallo": "El escape del bloque de datos solo cubría </datos> en minúsculas; </DATOS> o </datos > podían cerrarlo antes de tiempo.",
@@ -206,7 +212,7 @@
         "tests/test_puntaje.py::test_prioridad_alta_con_evidencia_insuficiente": "pasa",
         "tests/test_puntaje.py::test_t08_prioridad_alta_expone_componentes_y_regla": "pasa"
       },
-      "evidencia": "2026-10-08 00:57 UTC, commit 99ee591: 3/3 pruebas",
+      "evidencia": "2026-10-08 02:31 UTC, commit 334cd9c: 3/3 pruebas",
       "correcciones": [],
       "issues": [
         "#11"
@@ -244,7 +250,7 @@
         "tests/test_decisiones.py::test_t10_offline_sin_cache_se_abstiene_sin_llamar": "pasa",
         "tests/test_proveedores.py::test_crear_cliente_respeta_offline_y_la_carpeta_de_cache": "pasa"
       },
-      "evidencia": "2026-10-08 00:57 UTC, commit 99ee591: 5/5 pruebas",
+      "evidencia": "2026-10-08 02:31 UTC, commit 334cd9c: 5/5 pruebas",
       "correcciones": [
         {
           "fallo": "Un estado con fechas lanzaba TypeError en vez de decidir o abstenerse, contra la regla \"nunca un error\".",

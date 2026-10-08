@@ -76,13 +76,20 @@ Completa `.env` solo si vas a hacer llamadas en vivo. Sin `.env`, la app arranca
 
 ## Ejecución
 
-1. Copia el snapshot en `data/raw/` (formato en [`data/CONTRATO.md`](data/CONTRATO.md)) y cárgalo.
-   Valida cada fila, verifica los SHA-256 contra el manifest y genera la base DuckDB, el reporte
-   de calidad y el catálogo de datos en `data/processed/`:
+1. Copia el snapshot en `data/raw/` y cárgalo. El snapshot no está en este repositorio público:
+   si recibiste el paquete de datos (`faro-editorial-datos-<versión>.zip`), copia el contenido de
+   su carpeta `raw/` en `data/raw/`. El formato está en [`data/CONTRATO.md`](data/CONTRATO.md).
+   La carga valida cada fila, verifica los SHA-256 contra el manifest y genera la base DuckDB, el
+   reporte de calidad y el catálogo de datos en `data/processed/`. Debe decir
+   `Integridad del snapshot: OK`:
 
    ```powershell
    uv run python -m faro_editorial.carga
    ```
+
+   Por defecto se cargan noticias y sismos del 2025-10-01 al 2026-09-30 en hora de Panamá
+   (período de la demo). Para datos de otras fechas, deja `VENTANA_DESDE` y `VENTANA_HASTA`
+   vacías en `.env`.
 
 2. Genera la bandeja priorizada (`data/processed/bandeja.json`) y muestra los cinco temas que
    merecen revisión (CU-01). Si existe `data/processed/grupos.jsonl` (agrupación, #9), lo usa;

@@ -77,3 +77,26 @@ def test_manifest_del_paquete_coincide_con_lo_empaquetado(paquete: ZipFile):
     assert manifest["columnas_excluidas"] == {"noticias.csv": ["descripcion"]}
     for nombre, info in manifest["archivos"].items():
         assert hashlib.sha256(paquete.read(nombre)).hexdigest() == info["sha256"], nombre
+
+
+def test_raw_del_paquete_pasa_la_verificacion_de_integridad(
+    paquete: ZipFile, raw_con_descripcion: Path, tmp_path: Path
+):
+    """Clon limpio (#21): quien copie raw/ del paquete en data/raw/ debe ver 'Integridad: OK',
+    no 'hash distinto', aunque noticias.csv vaya sin la descripción del RSS."""
+    from faro_editorial.carga import verificar_integridad
+
+    destino = tmp_path / "data_raw_del_jurado"
+    destino.mkdir()
+    for nombre in paquete.namelist():
+        if nombre.startswith("raw/"):
+            (destino / nombre.removeprefix("raw/")).write_bytes(paquete.read(nombre))
+
+    integridad = verificar_integridad(destino)
+    assert integridad["ok"] is True, integridad
+    # El manifest original se conserva intacto para trazabilidad.
+    original = (raw_con_descripcion / "manifest.json").read_bytes()
+    assert (destino / "manifest_original.json").read_bytes() == original
+    manifest = json.loads((destino / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["columnas_excluidas"] == {"noticias.csv": ["descripcion"]}
+    assert any("decisión #35" in t for t in manifest["transformaciones"])

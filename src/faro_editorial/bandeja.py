@@ -231,10 +231,22 @@ def main(argv: list[str] | None = None) -> None:
     for advertencia in bandeja["advertencias"]:
         print(f"  Aviso: {advertencia}")
     if not bandeja["temas"]:
-        print(
-            "\nNo hay noticias en la base. Revisa en reporte_calidad.json los rechazos "
-            "(p. ej. 'fuera de la ventana de fechas') y la ventana VENTANA_DESDE/HASTA."
+        reporte = s.processed_dir / NOMBRE_REPORTE
+        archivos = (
+            json.loads(reporte.read_text(encoding="utf-8")).get("archivos", {})
+            if reporte.exists()
+            else {}
         )
+        if not archivos.get("noticias.csv", {}).get("presente"):
+            print(
+                f"\nNo hay snapshot cargado: copia los archivos en {s.raw_dir} (o la carpeta "
+                "raw/ del paquete de datos) y ejecuta  uv run python -m faro_editorial.carga"
+            )
+        else:
+            print(
+                "\nNo hay noticias válidas en la base. Revisa en reporte_calidad.json los "
+                "rechazos (p. ej. 'fuera de la ventana de fechas') y VENTANA_DESDE/HASTA."
+            )
         return
     print(f"\nLos {min(args.top, len(bandeja['temas']))} temas que merecen revisión:")
     for t in bandeja["temas"][: args.top]:

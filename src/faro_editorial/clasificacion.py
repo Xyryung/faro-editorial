@@ -57,6 +57,7 @@ class ConfigClasificacion(BaseModel):
     metodo: Literal["jev", "palabras"] = "jev"
     hilos: int = 8
     titulares_por_grupo: int = 3
+    idioma: Idioma = "es"  # idioma de la pregunta para Jev al clasificar los grupos
     pregunta: dict[Idioma, Pregunta]
     palabras_clave: dict[str, list[str]]
 
@@ -235,7 +236,7 @@ def clasificar_grupos(
     config = config or load_config()
     noticias = leer_noticias(processed_dir / NOMBRE_DB)
     grupos = leer_grupos(processed_dir, noticias)
-    clasificador = ClasificadorTema(config, cliente)
+    clasificador = ClasificadorTema(config, cliente, config.idioma)
     lotes = [[n.titulo for n in miembros[: config.titulares_por_grupo]] for _, miembros in grupos]
     resultados = clasificador.clasificar_varios(lotes, progreso=progreso)
 

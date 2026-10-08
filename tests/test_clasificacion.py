@@ -347,3 +347,13 @@ def test_comandos(processed, monkeypatch, capsys):
         assert "| palabras | 1.000 |" in capsys.readouterr().out
     finally:
         get_settings.cache_clear()
+
+
+def test_el_idioma_de_la_config_llega_a_la_pregunta(processed, tmp_path):
+    config = CONFIG.model_copy(update={"idioma": "en"})
+    c, proveedor = cliente(tmp_path)
+    clasificar_grupos(processed, config, c)
+    cache = list((tmp_path / "cache" / "decisiones").rglob("*.json"))
+    solicitud = json.loads(cache[0].read_text(encoding="utf-8"))
+    assert solicitud["decision"]["version_prompt"] == "clasificacion-v1.0-en"
+    assert solicitud["solicitud"]["preguntas"]["tema"]["instrucciones"].startswith("What is")

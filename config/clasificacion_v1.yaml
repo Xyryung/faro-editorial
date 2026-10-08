@@ -9,6 +9,10 @@ version: "clasificacion-v1.0"
 metodo: jev
 hilos: 8 # llamadas a Jev en paralelo
 titulares_por_grupo: 3 # cuántos titulares del grupo se envían como estado
+# Idioma de la pregunta para Jev. "en": mejor macro-F1 en la evaluación del 2026-10-08
+# (60 titulares: en 0.805, es 0.741, palabras clave 0.764) y el inglés es el idioma más
+# fuerte documentado de Jev. La diferencia está dentro del margen de error (ver #7).
+idioma: en
 
 # Pregunta para Jev. Las descripciones son lo que el modelo usa para decidir: la clave del
 # tema nunca se envía como significado (el ID de la pregunta tampoco llega al modelo).

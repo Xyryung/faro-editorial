@@ -108,6 +108,7 @@ casos:
       - tests/test_proveedores.py::test_llm_esquema_estricto_con_las_opciones_permitidas
       - tests/test_proveedores.py::test_jev_error_http_se_vuelve_abstencion_sin_filtrar_la_clave
       - tests/test_smoke.py::test_claves_no_aparecen_en_repr
+      - tests/test_interfaz.py::test_titular_malicioso_se_muestra_como_texto
     correcciones:
       - fallo: El escape del bloque de datos solo cubría </datos> en minúsculas; </DATOS> o </datos > podían cerrarlo antes de tiempo.
         correccion: Expresión regular que ignora mayúsculas y espacios.
@@ -123,6 +124,7 @@ casos:
     pruebas:
       - tests/test_puntaje.py::test_t08_
       - tests/test_puntaje.py::test_prioridad_alta_con_evidencia_insuficiente
+      - tests/test_interfaz.py::test_accion_recomendada_nunca_sugiere_publicar
       - tests/test_bandeja.py::test_bandeja_ordenada_con_todo_lo_que_necesita_la_ficha
 
   T09:

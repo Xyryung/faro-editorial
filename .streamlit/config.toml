@@ -1,0 +1,32 @@
+# Tema de la interfaz: institucional azul (issue #16). Todo local: la fuente es la que trae
+# Streamlit (Source Sans), así la demo funciona sin internet.
+
+[theme]
+base = "light"
+primaryColor = "#12355B"
+# Fondo azul pastel en vez de blanco puro: cansa menos la vista en sesiones largas.
+backgroundColor = "#E6EFFB"
+secondaryBackgroundColor = "#D4E3F7"
+textColor = "#26303B"
+linkColor = "#1F5A96"
+font = "sans-serif"
+baseFontSize = 15
+# h1 (título), h2, h3 (titular de la ficha), h4 (secciones de la ficha), h5, h6
+headingFontSizes = ["1.6rem", "1.35rem", "1.3rem", "0.95rem", "0.9rem", "0.85rem"]
+baseRadius = "0.5rem"
+borderColor = "#B9CDE8"
+dataframeBorderColor = "#C9D9EF"
+showWidgetBorder = true
+showSidebarBorder = true
+
+[theme.sidebar]
+backgroundColor = "#D6E5F8"
+secondaryBackgroundColor = "#E6EFFB"
+
+[client]
+# Sin el botón "Deploy" ni las opciones de desarrollo.
+toolbarMode = "minimal"
+
+[browser]
+# La demo no envía estadísticas de uso a Streamlit.
+gatherUsageStats = false

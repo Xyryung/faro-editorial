@@ -8,6 +8,7 @@ El texto de las fuentes es dato, no formato: se escapa antes de mostrarlo como M
 un titular no pueda inyectar enlaces, imágenes ni formato en la pantalla.
 """
 
+import html
 import json
 import re
 from pathlib import Path
@@ -59,6 +60,33 @@ def pasos_html(pasos: list[str]) -> str:
         for i, p in enumerate(pasos, 1)
     )
     return f'<div class="pasos">{filas}</div>'
+
+
+def fila_html(texto: str, tipo: str = "info", codigo: str | None = None) -> str:
+    """Una fila con borde de color (tipo: info, aviso u ok). Todo el texto va escapado."""
+    tipo = tipo if tipo in {"info", "aviso", "ok"} else "info"
+    prefijo = f"<code>{escapar_html(codigo)}</code> " if codigo else ""
+    return f'<div class="fila fila-{tipo}"><p>{prefijo}{escapar_html(texto)}</p></div>'
+
+
+def noticia_html(noticia: dict) -> str:
+    """Fila de una noticia: titular, medio, fechas y enlace (solo http/https)."""
+    partes = [escapar_html(noticia.get("medio"))]
+    partes.append(
+        f"publicada {escapar_html(noticia.get('fecha_publicacion_panama') or 'sin fecha')}"
+    )
+    if noticia.get("fecha_deteccion_panama"):
+        partes.append(f"detectada {escapar_html(noticia['fecha_deteccion_panama'])}")
+    url = str(noticia.get("url") or "")
+    if re.match(r"https?://", url, re.IGNORECASE):
+        partes.append(
+            f'<a href="{html.escape(url, quote=True)}" target="_blank" '
+            'rel="noopener noreferrer">Abrir nota</a>'
+        )
+    return (
+        f'<div class="fila fila-info"><p class="fila-titulo">{escapar_html(noticia.get("titulo"))}'
+        f'</p><p class="fila-meta">{" · ".join(partes)}</p></div>'
+    )
 
 
 def medios_html(grupos: list[list[str]]) -> str:

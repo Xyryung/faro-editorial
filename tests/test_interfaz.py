@@ -253,3 +253,24 @@ def test_medios_y_pasos_no_interpretan_html_ni_markdown():
     assert "TVN + Telemetro<em>posible agencia replicada</em>" in html
     assert pasos_html(["Uno", "<b>dos</b>"]).count('class="paso"') == 2
     assert "<b>dos" not in pasos_html(["<b>dos</b>"])
+
+
+def test_fila_de_noticia_escapa_el_titular_y_solo_enlaza_http():
+    from faro_editorial.interfaz import fila_html, noticia_html
+
+    nota = {
+        "titulo": "<script>x</script> [clic](https://evil.example)",
+        "medio": "TVN",
+        "url": "javascript:alert(1)",
+        "fecha_publicacion_panama": "2025-09-20 08:00",
+        "fecha_deteccion_panama": None,
+    }
+    html = noticia_html(nota)
+    assert "<script>" not in html and "](" not in html and "javascript:" not in html
+    assert "Abrir nota" not in html
+    html = noticia_html({**nota, "url": "https://www.tvn-2.com/a?b=1&c=2"})
+    assert (
+        'href="https://www.tvn-2.com/a?b=1&amp;c=2"' in html and 'rel="noopener noreferrer"' in html
+    )
+    assert "<code>BM&#58;" not in fila_html("cita", "ok", codigo="BM:PAN:x:2024")
+    assert "<code>BM:PAN:x:2024</code>" in fila_html("cita", "ok", codigo="BM:PAN:x:2024")

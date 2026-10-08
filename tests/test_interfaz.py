@@ -107,7 +107,9 @@ def test_cargar_bandeja_la_genera_desde_la_base(data_dir: Path):
     assert (data_dir / "processed" / "bandeja.json").exists()
     filas = filas_bandeja(bandeja["temas"])
     assert [f["#"] for f in filas] == [1, 2, 3]
-    assert set(filas[0]) >= {"Puntaje", "Banda", "Evidencia", "Fecha original (Panamá)"}
+    assert set(filas[0]) >= {"Puntaje", "Prioridad", "Evidencia", "Fecha original"}
+    assert {f["Prioridad"] for f in filas} <= {"Alta", "Media", "Baja"}
+    assert all("_" not in f["Tema"] for f in filas)  # nombres legibles, no claves internas
     # La segunda vez la lee del archivo, salvo que se pida regenerar.
     assert cargar_bandeja(data_dir / "processed")[1] == "Bandeja leída de bandeja.json."
     assert cargar_bandeja(data_dir / "processed", regenerar=True)[1].startswith("Bandeja generada")
@@ -274,3 +276,35 @@ def test_fila_de_noticia_escapa_el_titular_y_solo_enlaza_http():
     )
     assert "<code>BM&#58;" not in fila_html("cita", "ok", codigo="BM:PAN:x:2024")
     assert "<code>BM:PAN:x:2024</code>" in fila_html("cita", "ok", codigo="BM:PAN:x:2024")
+
+
+def test_textos_para_el_editor_sin_jerga_interna():
+    from faro_editorial.interfaz import etiqueta_tema, leyenda_html, texto_datos
+
+    assert etiqueta_tema("logistica_canal") == "Logística y Canal"
+    assert etiqueta_tema(None) == "Sin clasificar"
+    assert etiqueta_tema("tema_nuevo") == "Tema nuevo"
+    bandeja = {
+        "referencia_panama": "2025-09-20 08:00",
+        "origen_referencia": "noticia más reciente; el manifest no trae fecha de corte",
+        "agrupacion": "una noticia por grupo",
+    }
+    texto = texto_datos(bandeja)
+    assert "manifest" not in texto and "2025-09-20 08:00" in texto
+    leyenda = leyenda_html({"<b>x</b>": "#123456", "malo": "red;background:url(x)"})
+    assert "<b>" not in leyenda and "url(" not in leyenda and "#123456" in leyenda
+
+
+def test_periodo_de_las_noticias_segun_el_rango():
+    from faro_editorial.graficos import periodo_noticias
+
+    def tema(*fechas):
+        return {
+            "banda": "alto",
+            "noticias": [{"fecha_publicacion_panama": f"{f} 08:00"} for f in fechas],
+        }
+
+    assert periodo_noticias([tema("2025-09-15", "2025-09-20")]) == "día"
+    assert periodo_noticias([tema("2025-06-01", "2025-09-20")]) == "semana"
+    assert periodo_noticias([tema("2025-01-01", "2025-12-20")]) == "mes"
+    assert periodo_noticias([tema("2025-09-15")]) == "día"

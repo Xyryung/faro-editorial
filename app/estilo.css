@@ -179,3 +179,8 @@ h4 { color: var(--suave); font-size: 0.75rem !important; font-weight: 700; text-
 
 /* Zona de datos de la barra lateral, separada de los filtros. */
 .st-key-zona_datos { border-top: 1px solid var(--borde); padding-top: 1rem; margin-top: 0.5rem; }
+
+/* Leyendas de los gráficos (HTML propio: se acomodan al ancho y no se cortan). */
+.leyenda { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; font-size: 0.78rem; color: var(--texto); }
+.leyenda span { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+.leyenda i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }

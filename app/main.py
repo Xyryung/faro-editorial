@@ -12,10 +12,14 @@ import streamlit as st
 
 from faro_editorial import __version__
 from faro_editorial.graficos import (
+    COLORES_COMPONENTE,
+    colores_evidencia,
+    colores_prioridad,
     grafico_aportes,
     grafico_desglose,
     grafico_evidencia,
     grafico_noticias_por_dia,
+    periodo_noticias,
 )
 from faro_editorial.interfaz import (
     ETIQUETAS_BANDA,
@@ -23,15 +27,18 @@ from faro_editorial.interfaz import (
     accion_recomendada,
     cargar_bandeja,
     escapar_md,
+    etiqueta_tema,
     etiquetas_html,
     fila_html,
     filas_bandeja,
     filas_componentes,
     filtrar,
+    leyenda_html,
     medios_html,
     noticia_html,
     pasos_html,
     resumen_html,
+    texto_datos,
 )
 from faro_editorial.rules import load_rules
 from faro_editorial.settings import get_settings
@@ -172,12 +179,11 @@ if bandeja is not None:
         f'<span class="pastilla">{html.escape(texto)}</span>'
         for texto in (
             f"Corte {bandeja['referencia_panama']} · Panamá",
-            bandeja["version_reglas"],
-            bandeja["version_criterios"],
+            f"{bandeja['version_reglas']} · {bandeja['version_criterios']}",
         )
     )
 with tarjeta("cabecera"):
-    marca, estado = st.columns([2, 3], vertical_alignment="center")
+    marca, estado = st.columns([1, 2], vertical_alignment="center")
     with marca:
         st.title("Faro Editorial")
         st.markdown(
@@ -193,14 +199,14 @@ if bandeja is None:
     st.stop()
 
 with zona_datos:
-    st.caption(
-        f"{mensaje} Corte: {bandeja['origen_referencia']}. Agrupación: {bandeja['agrupacion']}."
-    )
+    st.caption(texto_datos(bandeja))
+if regenerar:
+    st.toast("Bandeja recalculada desde la base cargada.")
 
 with zona_filtros:
     st.subheader("Filtros")
     bandas = st.multiselect(
-        "Banda",
+        "Prioridad",
         list(ETIQUETAS_BANDA),
         format_func=ETIQUETAS_BANDA.get,
         placeholder="Todas",
@@ -213,8 +219,16 @@ with zona_filtros:
         placeholder="Todos",
         key="filtro_estado",
     )
-    temas_disponibles = sorted({t["tema"] or "sin clasificar" for t in bandeja["temas"]})
-    temas_sel = st.multiselect("Tema", temas_disponibles, placeholder="Todos", key="filtro_tema")
+    temas_disponibles = sorted(
+        {t["tema"] or "sin clasificar" for t in bandeja["temas"]}, key=etiqueta_tema
+    )
+    temas_sel = st.multiselect(
+        "Tema",
+        temas_disponibles,
+        format_func=etiqueta_tema,
+        placeholder="Todos",
+        key="filtro_tema",
+    )
 
 pestana_bandeja, pestana_consulta, pestana_borrador, pestana_config = st.tabs(
     ["Bandeja y ficha", "Consulta", "Borrador", "Configuración"]
@@ -229,12 +243,16 @@ with pestana_bandeja:
         with evidencia, tarjeta("g_evidencia"):
             st.markdown("#### Evidencia")
             grafico(grafico_evidencia(visibles), "Temas por estado de evidencia")
+            st.markdown(leyenda_html(colores_evidencia(visibles)), unsafe_allow_html=True)
         with por_dia, tarjeta("g_dias"):
-            st.markdown("#### Noticias por día")
-            grafico(grafico_noticias_por_dia(visibles), "Noticias por día de publicación")
+            periodo = periodo_noticias(visibles)
+            st.markdown(f"#### Noticias por {periodo}")
+            grafico(grafico_noticias_por_dia(visibles), f"Noticias por {periodo} de publicación")
+            st.markdown(leyenda_html(colores_prioridad(visibles)), unsafe_allow_html=True)
         with aportes, tarjeta("g_aportes"):
             st.markdown("#### Qué compone el puntaje")
             grafico(grafico_aportes(visibles), "Aporte de cada componente por tema")
+            st.markdown(leyenda_html(COLORES_COMPONENTE), unsafe_allow_html=True)
 
     with tarjeta("bandeja"):
         st.markdown("#### Bandeja priorizada")
@@ -256,16 +274,18 @@ with pestana_bandeja:
                 hide_index=True,
                 width="stretch",
                 column_config={
-                    "#": st.column_config.NumberColumn(width="small"),
+                    "#": st.column_config.NumberColumn(width=44, alignment="left"),
                     "Puntaje": st.column_config.ProgressColumn(
-                        format="%.1f", min_value=0, max_value=100, width="small"
+                        format="%.1f", min_value=0, max_value=100, width=120
                     ),
-                    "Banda": st.column_config.TextColumn(width="small"),
+                    "Prioridad": st.column_config.TextColumn(width=84),
+                    "Evidencia": st.column_config.TextColumn(width=110),
+                    "Tema": st.column_config.TextColumn(width=140),
+                    "Titular": st.column_config.TextColumn(),  # ocupa el ancho que sobra
                     "Fuentes": st.column_config.NumberColumn(
-                        width="small", help="Procedencias independientes"
+                        width=72, alignment="left", help="Procedencias independientes"
                     ),
-                    "Titular": st.column_config.TextColumn(width="large"),
-                    "Fecha original (Panamá)": st.column_config.TextColumn(width="medium"),
+                    "Fecha original": st.column_config.TextColumn(width=136, help="Hora de Panamá"),
                 },
             )
             por_id = {t["id_grupo"]: t for t in visibles}

@@ -22,9 +22,20 @@ ETIQUETAS_ESTADO = {
     "parcial": "Parcial",
     "suficiente_para_borrador": "Suficiente para borrador",
 }
-ETIQUETAS_BANDA = {"alto": "Alto", "medio": "Medio", "bajo": "Bajo"}
-# "Prioridad" es femenino: "Prioridad alta", no "Prioridad alto".
+# En pantalla la banda se llama "Prioridad" (femenino): Alta, Media, Baja.
+ETIQUETAS_BANDA = {"alto": "Alta", "medio": "Media", "bajo": "Baja"}
 PRIORIDAD = {"alto": "alta", "medio": "media", "bajo": "baja"}
+SIN_TEMA = "sin clasificar"
+ETIQUETAS_TEMA = {
+    "economia": "Economía",
+    "logistica_canal": "Logística y Canal",
+    "turismo": "Turismo",
+    "servicios_publicos": "Servicios públicos",
+    "eventos_naturales": "Eventos naturales",
+    "regulacion": "Regulación",
+    "otro": "Otro",
+    SIN_TEMA: "Sin clasificar",
+}
 NOMBRES_COMPONENTES = {
     "R": "Relevancia",
     "I": "Impacto potencial",
@@ -137,8 +148,14 @@ def filtrar(
         for t in temas
         if (not bandas or t["banda"] in bandas)
         and (not estados or t["estado_evidencia"] in estados)
-        and (not temas_editoriales or (t["tema"] or "sin clasificar") in temas_editoriales)
+        and (not temas_editoriales or (t["tema"] or SIN_TEMA) in temas_editoriales)
     ]
+
+
+def etiqueta_tema(tema: str | None) -> str:
+    """Nombre legible del tema editorial ("logistica_canal" → "Logística y Canal")."""
+    clave = tema or SIN_TEMA
+    return ETIQUETAS_TEMA.get(clave, clave.replace("_", " ").capitalize())
 
 
 def filas_bandeja(temas: list[dict]) -> list[dict[str, Any]]:
@@ -147,15 +164,42 @@ def filas_bandeja(temas: list[dict]) -> list[dict[str, Any]]:
         {
             "#": t["posicion"],
             "Puntaje": t["puntaje"],
-            "Banda": ETIQUETAS_BANDA.get(t["banda"], t["banda"]),
+            "Prioridad": ETIQUETAS_BANDA.get(t["banda"], t["banda"]),
             "Evidencia": ETIQUETAS_ESTADO.get(t["estado_evidencia"], t["estado_evidencia"]),
-            "Tema": t["tema"] or "sin clasificar",
+            "Tema": etiqueta_tema(t["tema"]),
             "Titular": t["titulo"],
             "Fuentes": len(t.get("procedencias_independientes") or t["procedencias"]),
-            "Fecha original (Panamá)": t["fecha_original_panama"] or "sin fecha",
+            "Fecha original": t["fecha_original_panama"] or "sin fecha",
         }
         for t in temas
     ]
+
+
+def texto_datos(bandeja: dict) -> str:
+    """Explica de dónde salen los datos de la bandeja, sin jerga interna."""
+    fecha = bandeja["referencia_panama"]
+    origen = bandeja["origen_referencia"]
+    if origen.startswith("corte del snapshot"):
+        corte = f"Datos con corte al {fecha} (hora de Panamá)."
+    elif origen.startswith("noticia más reciente"):
+        corte = f"Datos hasta la noticia más reciente: {fecha} (hora de Panamá)."
+    else:
+        corte = "El snapshot no tiene fechas; la urgencia se calcula con la hora actual."
+    if bandeja["agrupacion"].startswith("una noticia por grupo"):
+        grupos = "Cada noticia es un tema: todavía no se agrupan las del mismo evento."
+    else:
+        grupos = "Las noticias del mismo evento están agrupadas en un tema."
+    return f"{corte} {grupos}"
+
+
+def leyenda_html(colores: dict[str, str]) -> str:
+    """Leyenda de un gráfico como HTML propio: se acomoda al ancho y no se corta."""
+    items = "".join(
+        f'<span><i style="background:{color}"></i>{escapar_html(nombre)}</span>'
+        for nombre, color in colores.items()
+        if re.fullmatch(r"#[0-9A-Fa-f]{6}", color)
+    )
+    return f'<div class="leyenda">{items}</div>'
 
 
 def filas_componentes(tema: dict) -> list[dict[str, Any]]:

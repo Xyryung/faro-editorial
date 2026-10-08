@@ -393,9 +393,14 @@ def extraer(
                 "conservado_de": (previo or {}).get("fecha_corte_utc"),
             }
 
+    # El corte del snapshot es el fin de la ventana (data/CONTRATO.md), no el momento de la
+    # extracción: la bandeja mide la urgencia desde el corte. Con el momento de extracción,
+    # una ventana que termina días antes deja la urgencia en 0 para todas las noticias.
+    corte = min(hasta, ahora)
     manifest = {
         "version": VERSION_SNAPSHOT,
-        "fecha_corte_utc": _iso(ahora),
+        "fecha_corte_utc": _iso(corte),
+        "fecha_extraccion_utc": _iso(ahora),
         "perfil": perfil,
         "version_config": config.version,
         "ventana": {

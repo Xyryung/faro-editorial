@@ -33,7 +33,7 @@ Una fila por noticia. **Deduplicar por URL** antes de escribir el archivo.
 | `fecha_extraccion` | Sí | Cuándo se descargó. No puede ser anterior a las otras dos fechas | `2026-10-02T12:00:00Z` |
 | `tema` | No | Vacío: lo asigna la clasificación | |
 | `origen` | Sí | `tvn_rss`, `gdelt` u otro. Un origen nuevo se documenta en `config/fuentes_catalogo.yaml` | `tvn_rss` |
-| `alcance_texto` | No | `titular_metadatos` o `titular_descripcion`: qué texto hay disponible | `titular_descripcion` |
+| `alcance_texto` | No | `titular_metadatos` o `titular_descripcion`: qué texto hay disponible. El extractor usa `titulo_imagen_sitemap` cuando el título viene de `image:title` de un sitemap mensual (solo perfil de entrenamiento) | `titular_descripcion` |
 | `descripcion` | No | Descripción del RSS. Solo para análisis interno: no se copia en borradores ni se sube al repo | |
 
 \* Cada noticia debería tener al menos una de las dos fechas; si no tiene ninguna, no se puede
@@ -102,6 +102,11 @@ guardar los CSV en Excel: cambia los bytes y el hash deja de coincidir.
 
 Hash de un archivo: `Get-FileHash data\raw\noticias.csv -Algorithm SHA256` (PowerShell) o
 `sha256sum data/raw/noticias.csv`.
+
+## Cómo se genera
+
+`uv run python -m faro_editorial.extraccion` escribe estos cinco archivos con este formato
+(fuentes en `config/extraccion_v1.yaml`; uso en [`README.md`](README.md)).
 
 ## Cómo comprobar que el snapshot está bien
 

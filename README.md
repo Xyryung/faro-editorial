@@ -12,7 +12,7 @@ se vincula con su fuente, fecha y alcance; cuando no hay evidencia suficiente, e
 | Etapa | Módulo | Estado |
 |---|---|---|
 | 1 · Cargar | `carga.py`, `contrato.py`, `catalogo.py` | Implementada (#5, #4) |
-| 2 · Organizar | | En desarrollo (#9, #10) |
+| 2 · Organizar | `agrupacion.py` | Agrupación implementada (#9); clasificación en desarrollo (#10) |
 | 3 · Contextualizar | `contexto.py` | Implementada (#12) |
 | 4 · Priorizar | `puntaje.py`, `rules.py`, `bandeja.py` | Implementada con reglas; R, I y U admiten Jev (#11, #8) |
 | 5 · Explicar | `app/main.py`, `interfaz.py` | Bandeja y ficha de evidencia en Streamlit (#16); consulta y contradicciones en desarrollo (#13, #14) |
@@ -91,9 +91,16 @@ Completa `.env` solo si vas a hacer llamadas en vivo. Sin `.env`, la app arranca
    (período de la demo). Para datos de otras fechas, deja `VENTANA_DESDE` y `VENTANA_HASTA`
    vacías en `.env`.
 
-2. Genera la bandeja priorizada (`data/processed/bandeja.json`) y muestra los cinco temas que
-   merecen revisión (CU-01). Si existe `data/processed/grupos.jsonl` (agrupación, #9), lo usa;
-   si no, cada noticia es un grupo:
+2. Agrupa las noticias del mismo evento (`data/processed/grupos.jsonl` y un resumen en
+   `agrupacion.json`). Usa el modelo de embeddings local si está disponible y, si no, TF-IDF:
+
+   ```powershell
+   uv run python -m faro_editorial.agrupacion
+   ```
+
+   Genera la bandeja priorizada (`data/processed/bandeja.json`) y muestra los cinco temas que
+   merecen revisión (CU-01). Si existe `data/processed/grupos.jsonl`, lo usa; si no, cada
+   noticia es un grupo:
 
    ```powershell
    uv run python -m faro_editorial.bandeja --top 5

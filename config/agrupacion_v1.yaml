@@ -1,0 +1,29 @@
+# Agrupación de noticias del mismo evento (issue #9, etapa 2 · Organizar, T02, CU-03).
+# Cualquier cambio de método o umbrales crea una versión nueva (agrupacion_v2.yaml) y se
+# justifica en un issue con la etiqueta "decision".
+version: "agrupacion-v1.0"
+
+# auto: intenta el modelo de embeddings local (multilingual-e5-small, CPU) y, si no está
+# disponible, usa TF-IDF de caracteres; el método usado queda en agrupacion.json.
+# e5 o tfidf: fuerza uno de los dos.
+metodo: auto
+
+# Similitud coseno mínima entre dos titulares para unirlos. Depende del método: los
+# embeddings de e5 dan valores altos incluso entre temas distintos; TF-IDF, más bajos.
+# Calibrar con  uv run python -m faro_editorial.agrupacion --muestra 15  sobre datos reales.
+umbral:
+  e5: 0.90
+  tfidf: 0.55
+
+# Para unir dos grupos ya formados, la similitud promedio entre todos sus titulares debe
+# alcanzar el umbral menos este margen. Evita el "encadenamiento": A se parece a B, B a C,
+# pero A no tiene nada que ver con C.
+margen_promedio: 0.05
+
+# Dos notas solo se comparan si sus fechas están a lo sumo a estas horas una de otra, y un
+# grupo no puede abarcar más de max_horas_grupo entre su primera y su última nota.
+ventana_horas: 72
+max_horas_grupo: 168
+
+# Un grupo más grande que esto suele ser un tema recurrente, no un evento: no crece más.
+max_tamano: 40

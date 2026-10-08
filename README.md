@@ -175,6 +175,9 @@ tests/               Pruebas (incluirán T01–T10 del reto)
 
 ## Seguridad
 
+Riesgos, derechos por fuente, sesgos y cada control con su código y su prueba:
+[`docs/riesgos_y_etica.md`](docs/riesgos_y_etica.md).
+
 - Las claves viven solo en `.env` (ignorado por Git). Nunca en código, Notion, capturas ni logs.
 - El texto de las fuentes se trata como dato, nunca como instrucción.
 - No se almacenan datos personales innecesarios ni se etiquetan noticias como verdaderas o falsas.

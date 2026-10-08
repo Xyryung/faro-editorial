@@ -27,11 +27,66 @@ fuentes:
     origen: gdelt
     url: https://api.gdeltproject.org/api/v2/doc/doc
     licencia: >-
-      La API no transfiere derechos sobre los medios enlazados: se usan solo metadatos
-      y enlaces. Atribuir a The GDELT Project (verificar términos vigentes).
+      Datos de GDELT de uso libre con cita a The GDELT Project y enlace a
+      https://www.gdeltproject.org (términos consultados el 2026-10-07). La API no
+      transfiere derechos sobre los medios enlazados: se usan solo metadatos y enlaces.
     transformaciones: >-
       seendate guardado como fecha_deteccion (no es fecha de publicación);
-      deduplicación por URL en la extracción.
+      deduplicación por URL normalizada en la extracción.
+
+  tvn_sitemap:
+    nombre: TVN · sitemaps de noticias
+    archivo: noticias.csv
+    origen: tvn_sitemap
+    url: https://www.tvn-2.com/tvn_sitemap_index.xml
+    licencia: >-
+      Mismas condiciones que el RSS de TVN: solo metadatos (titular, URL, fecha). Sitemaps
+      permitidos por el robots.txt del sitio.
+    transformaciones: >-
+      news:publication_date convertido a UTC. En los sitemaps mensuales (últimos 3 meses de
+      la ventana) el título viene de image:title (alcance_texto = titulo_imagen_sitemap) y la
+      fecha de publicación es el lastmod, igual o posterior a la publicación real (en 12 notas
+      comparadas el 2026-10-07, 7 coincidían al minuto y la mayor diferencia fue de unas 4 h);
+      un lastmod fuera del mes del sitemap no se usa. Se excluyen las rutas /tvmax/,
+      /tu-cara-me-suena/, /videos/ y /tvnpass/.
+
+  medios_rss:
+    nombre: Otros medios panameños · feeds RSS
+    archivo: noticias.csv
+    origen: medios_rss
+    url: https://github.com/Xyryung/faro-editorial/blob/main/config/extraccion_v1.yaml
+    licencia: >-
+      Sin licencia abierta sobre el contenido: solo metadatos públicos del feed (titular,
+      URL, fecha). Se respeta robots.txt (incluido Crawl-delay). Lista de medios en
+      config/extraccion_v1.yaml.
+    transformaciones: >-
+      pubDate convertido a UTC en fecha_publicacion (Panamá América usa "Wed, 10/07/2026 -
+      00:00": mes primero, hora de Panamá); descripción guardada solo para análisis interno
+      (decisión #35, el paquete de entrega la quita); content:encoded descartado.
+
+  medios_sitemap:
+    nombre: Otros medios panameños · sitemaps de noticias
+    archivo: noticias.csv
+    origen: medios_sitemap
+    url: https://github.com/Xyryung/faro-editorial/blob/main/config/extraccion_v1.yaml
+    licencia: >-
+      Sin licencia abierta sobre el contenido: solo metadatos públicos del sitemap
+      (titular, URL, fecha). Se respeta robots.txt. Lista de medios en
+      config/extraccion_v1.yaml.
+    transformaciones: >-
+      news:publication_date convertido a UTC; news:title como titular.
+
+  oficial_rss:
+    nombre: Fuentes oficiales · feeds RSS
+    archivo: noticias.csv
+    origen: oficial_rss
+    url: https://pancanal.com/feed/
+    licencia: >-
+      Comunicados públicos de instituciones (p. ej. Autoridad del Canal de Panamá); solo
+      metadatos (titular, URL, fecha). Verificar condiciones de reutilización de cada sitio.
+    transformaciones: >-
+      pubDate convertido a UTC; descripción solo para análisis interno (decisión #35);
+      content:encoded descartado.
 
   banco_mundial:
     nombre: Banco Mundial · Indicators API v2

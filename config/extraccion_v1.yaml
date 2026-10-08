@@ -1,0 +1,141 @@
+# Fuentes y parámetros de la extracción (issue #3).
+# Cualquier cambio de fuentes o parámetros crea una versión nueva (extraccion_v2.yaml) y
+# se justifica en un issue con la etiqueta "decision".
+#
+# Formato de salida: data/CONTRATO.md. Perfiles (respuesta de la organización: para
+# entrenar se pueden usar otras fechas; la demo presencial usa información reciente):
+#   demo          ventana VENTANA_DESDE/VENTANA_HASTA de .env, la misma que aplica la carga
+#                 (noticias y sismos) -> data/raw/
+#   entrenamiento ventana libre (--desde/--hasta; por defecto los últimos 90 días), incluye
+#                 sitemaps mensuales históricos -> data/entrenamiento/raw/
+#
+# Reglas que aplica el extractor a TODAS las fuentes web:
+#   - Titular, URL, fechas, idioma y la descripción del RSS (solo análisis interno,
+#     decisión #35). Nunca se descarga el artículo ni sus imágenes.
+#   - Se respeta robots.txt (incluido Crawl-delay) y se identifica con un User-Agent propio.
+#   - Toda respuesta se guarda cruda en <salida>/_respuestas/ para trazabilidad.
+version: "extraccion-v1.0"
+
+user_agent: "faro-editorial/0.1 (+https://github.com/Xyryung/faro-editorial; hackIAthon TVN Media)"
+timeout_s: 30
+pausa_s: 1.0 # mínimo entre dos llamadas al mismo host (robots.txt puede pedir más)
+reintentos: 2 # reintentos ante 429, 5xx o fallos de red (3 intentos en total)
+espera_429_s: 20 # ante 429 se espera 20 s y luego 40 s (GDELT rechaza reintentos rápidos)
+max_bytes: 25000000 # respuesta más grande que esto = error (protección)
+dias_por_defecto: 30 # demo, solo si .env no define la ventana
+dias_entrenamiento: 90 # entrenamiento sin --desde
+
+# Dominio -> nombre del medio. Se usa para GDELT y para fuentes.json.
+# Un dominio que no esté aquí aparece con su propio nombre de dominio.
+medios:
+  tvn-2.com: TVN
+  prensa.com: La Prensa
+  telemetro.com: Telemetro
+  laestrella.com.pa: La Estrella de Panamá
+  panamaamerica.com.pa: Panamá América
+  critica.com.pa: Crítica
+  metrolibre.com: Metro Libre
+  ensegundos.com.pa: En Segundos
+  ecotvpanama.com: Eco TV
+  pancanal.com: Autoridad del Canal de Panamá
+
+# Fuentes web. tipo: rss (RSS 2.0 o Atom), sitemap (sitemap de noticias de Google) o
+# sitemap_mensual (plantilla con {anio} y {mes}; solo perfil entrenamiento).
+# Verificadas el 2026-10-07 (estructura y fechas observadas). Para agregar otra: correr
+#   uv run python -m faro_editorial.extraccion.descubrir https://dominio
+web:
+  - id: tvn_rss
+    tipo: rss
+    medio: TVN
+    origen: tvn_rss
+    url: https://www.tvn-2.com/rss/
+  - id: tvn_google_news
+    tipo: sitemap
+    medio: TVN
+    origen: tvn_sitemap
+    url: https://www.tvn-2.com/tvn_sitemap_google_news.xml
+  # Principal fuente de TVN dentro de la ventana de la demo: el RSS y el sitemap de noticias
+  # solo traen los últimos días. Sin publication_date: la fecha es el lastmod (igual o
+  # posterior a la publicación; en 12 notas comparadas el 2026-10-07, 7 coincidían al minuto
+  # y la mayor diferencia fue de unas 4 h). Se descartan secciones sin interés editorial.
+  - id: tvn_sitemap_mensual
+    tipo: sitemap_mensual
+    medio: TVN
+    origen: tvn_sitemap
+    url: https://www.tvn-2.com/tvn_sitemap_contents_{anio}_{mes:02d}.xml
+    meses_maximos: 3 # los mismos meses que cubre GDELT (últimos 3 meses de la ventana)
+    fecha_lastmod: true
+    excluir_rutas: [/tvmax/, /tu-cara-me-suena/, /videos/, /tvnpass/]
+  - id: prensa_rss
+    tipo: rss
+    medio: La Prensa
+    origen: medios_rss
+    url: https://www.prensa.com/arc/outboundfeeds/rss/?outputType=xml
+  - id: panamaamerica_rss
+    tipo: rss
+    medio: Panamá América
+    origen: medios_rss
+    url: https://www.panamaamerica.com.pa/rss/recent/index.xml
+    # pubDate no estándar ("Wed, 10/07/2026 - 00:00"): mes primero y sin zona horaria.
+    formato_fecha: "%m/%d/%Y - %H:%M"
+    zona_horaria: America/Panama
+  - id: telemetro_news
+    tipo: sitemap
+    medio: Telemetro
+    origen: medios_sitemap
+    url: https://www.telemetro.com/sitemap-news.xml
+  - id: laestrella_news
+    tipo: sitemap
+    medio: La Estrella de Panamá
+    origen: medios_sitemap
+    url: https://www.laestrella.com.pa/sitemapforgoogle.xml
+  - id: acp_rss
+    tipo: rss
+    medio: Autoridad del Canal de Panamá
+    origen: oficial_rss
+    url: https://pancanal.com/feed/
+
+gdelt:
+  url: https://api.gdeltproject.org/api/v2/doc/doc
+  pausa_s: 6 # GDELT pide "una solicitud cada 5 segundos"; se deja margen
+  # Máximo 250 artículos por consulta: la ventana se divide en tramos de 15 días y un tramo
+  # que llega a 250 se parte en dos. Tramos largos ahorran llamadas en consultas con poco
+  # volumen (como domainis:tvn-2.com).
+  dias_por_tramo: 15
+  horas_minimas_tramo: 6 # un tramo que devuelve 250 se parte en dos hasta este mínimo
+  max_dias_atras: 88 # la DOC API solo busca en los últimos 3 meses
+  # Revisar los resultados y ajustar: GDELT busca en el texto completo de cada artículo.
+  consultas:
+    - domainis:tvn-2.com
+    - sourcecountry:panama
+    - '"canal de panama"'
+    - panama turismo
+    - panama economia
+    - panama (sismo OR inundaciones OR lluvias OR deslizamiento)
+
+banco_mundial:
+  url: https://api.worldbank.org/v2
+  paises: [PAN, CRI, COL, DOM, MEX, GTM]
+  anio_desde: 2010
+  anio_hasta: 2024
+  # Unidad tomada del nombre oficial del indicador (el campo "unit" de la API suele venir vacío).
+  indicadores:
+    NY.GDP.MKTP.KD.ZG: "% anual"
+    FP.CPI.TOTL.ZG: "% anual"
+    SL.UEM.TOTL.ZS: "% de la fuerza laboral total"
+    SP.POP.TOTL: "personas"
+    IT.NET.USER.ZS: "% de la población"
+    NE.EXP.GNFS.ZS: "% del PIB"
+  licencia: "CC BY 4.0 (Banco Mundial), salvo excepciones de terceros del indicador"
+
+usgs:
+  url: https://earthquake.usgs.gov/fdsnws/event/1
+  # Sin inicio/fin: mismo período que las noticias (data/CONTRATO.md).
+  min_latitud: 5
+  max_latitud: 12
+  min_longitud: -86
+  max_longitud: -76
+  min_magnitud: 3
+  # La consulta del contrato no filtra por tipo, así que el catálogo puede traer voladuras de
+  # canteras. Para dejar solo sismos: tipo_evento: earthquake (decisión del equipo).
+  tipo_evento: null

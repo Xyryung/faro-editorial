@@ -3,9 +3,10 @@ de hacer cualquier llamada a la red."""
 
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from faro_editorial.settings import ROOT_DIR
 
@@ -27,6 +28,29 @@ class FuenteWeb(_Modelo):
     url: str
     idioma: str = "es"  # si el feed o el sitemap no lo declaran
     perfiles: list[Perfil] = Field(default_factory=lambda: list(PERFILES))
+    # Fecha en un formato no estándar (strptime), p. ej. "%m/%d/%Y - %H:%M". Se prueba
+    # también sin el día de la semana inicial ("Wed, ").
+    formato_fecha: str | None = None
+    # Zona de las fechas que no la declaran (solo con formato_fecha). Ej.: America/Panama.
+    zona_horaria: str | None = None
+    # URLs cuya ruta empieza con alguno de estos prefijos se omiten (secciones sin interés
+    # editorial, p. ej. deportes o espectáculos).
+    excluir_rutas: list[str] = Field(default_factory=list)
+    # sitemap_mensual: usar solo los últimos N meses de la ventana.
+    meses_maximos: int | None = None
+    # sitemap sin news:publication_date: usar lastmod como fecha de publicación aproximada,
+    # solo si cae dentro del mes del sitemap (si no, la fila queda sin fecha).
+    fecha_lastmod: bool = False
+
+    @field_validator("zona_horaria")
+    @classmethod
+    def _zona_valida(cls, zona: str | None) -> str | None:
+        if zona is not None:
+            try:
+                ZoneInfo(zona)  # falla al cargar la configuración si la zona no existe
+            except (ZoneInfoNotFoundError, ValueError) as e:
+                raise ValueError(f"zona horaria desconocida: {zona!r}") from e
+        return zona
 
     @model_validator(mode="after")
     def _plantilla(self) -> "FuenteWeb":
@@ -76,6 +100,7 @@ class ConfigExtraccion(_Modelo):
     timeout_s: float = 30.0
     pausa_s: float = 1.0
     reintentos: int = 2
+    espera_429_s: float = 20.0
     max_bytes: int = 25_000_000
     dias_por_defecto: int = 30  # demo, solo si .env no define VENTANA_DESDE/VENTANA_HASTA
     dias_entrenamiento: int = 90  # perfil entrenamiento sin --desde

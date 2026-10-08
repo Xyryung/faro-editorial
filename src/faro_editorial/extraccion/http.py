@@ -3,7 +3,9 @@
 - Se identifica con un User-Agent propio y respeta robots.txt (incluido Crawl-delay) en
   las fuentes web. Las APIs documentadas (GDELT, Banco Mundial, USGS) no usan robots.txt.
 - Mantiene una pausa mínima entre llamadas al mismo host.
-- Reintenta ante 429, errores 5xx y fallos de red, con espera creciente (o Retry-After).
+- Reintenta ante errores 5xx y fallos de red con espera creciente (o Retry-After). Ante
+  429 (límite de solicitudes) la espera es mucho más larga: espera_429_s, 2× y 4×, porque
+  GDELT sigue rechazando si se reintenta a los pocos segundos.
 - Guarda cada respuesta exitosa cruda en <salida>/_respuestas/<fuente>/ y registra cada
   consulta (exitosa o fallida) para el manifest.
 """
@@ -21,7 +23,7 @@ from urllib.robotparser import RobotFileParser
 import httpx
 
 ESTADOS_REINTENTABLES = {429, 500, 502, 503, 504}
-MAX_ESPERA_S = 60.0
+MAX_ESPERA_S = 180.0
 
 
 class ErrorExtraccion(Exception):
@@ -68,6 +70,7 @@ class ClienteHTTP:
         pausa_s: float = 1.0,
         reintentos: int = 2,
         max_bytes: int = 25_000_000,
+        espera_429_s: float = 20.0,
         http: httpx.Client | None = None,
         dormir: Callable[[float], None] = time.sleep,
         reloj: Callable[[], float] = time.monotonic,
@@ -79,6 +82,7 @@ class ClienteHTTP:
         self.pausa_s = pausa_s
         self.reintentos = reintentos
         self.max_bytes = max_bytes
+        self.espera_429_s = espera_429_s
         self._http = http or httpx.Client(timeout=timeout_s, follow_redirects=True)
         self._dormir = dormir
         self._reloj = reloj
@@ -170,12 +174,14 @@ class ClienteHTTP:
             return respuesta, intento + 1
         raise AssertionError("inalcanzable")  # pragma: no cover
 
-    @staticmethod
-    def _espera(respuesta: httpx.Response, intento: int) -> float:
+    def _espera(self, respuesta: httpx.Response, intento: int) -> float:
+        base = self.espera_429_s if respuesta.status_code == 429 else 2.0
+        espera = base * 2**intento
         try:
-            return min(float(respuesta.headers.get("retry-after", "")), MAX_ESPERA_S)
+            espera = max(espera, float(respuesta.headers.get("retry-after", "")))
         except ValueError:
-            return min(2.0 * 2**intento, MAX_ESPERA_S)
+            pass
+        return min(espera, MAX_ESPERA_S)
 
     def _verificar_robots(self, url: str) -> None:
         partes = httpx.URL(url)

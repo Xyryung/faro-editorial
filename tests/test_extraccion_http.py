@@ -100,16 +100,27 @@ def test_pausa_entre_llamadas_al_mismo_host_y_crawl_delay(tmp_path):
     assert "Crawl-delay 10" in cliente.robots["lento.example"]
 
 
-def test_reintenta_429_respetando_retry_after(tmp_path):
-    intentos = iter([respuesta(429, "espere", {"retry-after": "7"}), respuesta(200, "{}")])
+def test_429_espera_larga_y_creciente(tmp_path):
+    # GDELT sigue rechazando si se reintenta a los pocos segundos: 20 s, luego 40 s.
+    intentos = iter([respuesta(429, "limite"), respuesta(429, "limite"), respuesta(200, "{}")])
     servidor = Servidor({"api.example/x": lambda r: next(intentos)})
     reloj = Reloj()
-    cliente = cliente_falso(servidor, tmp_path, reloj=reloj)
+    cliente = cliente_falso(servidor, tmp_path, reloj=reloj, espera_429_s=20)
 
     cliente.get("https://api.example/x", fuente="api", respetar_robots=False)
 
-    assert 7.0 in reloj.esperas
-    assert cliente.consultas[-1]["intentos"] == 2
+    assert reloj.esperas[:2] == [20.0, 40.0]
+    assert cliente.consultas[-1]["intentos"] == 3
+
+
+def test_429_respeta_un_retry_after_mayor(tmp_path):
+    intentos = iter([respuesta(429, "espere", {"retry-after": "45"}), respuesta(200, "{}")])
+    servidor = Servidor({"api.example/x": lambda r: next(intentos)})
+    reloj = Reloj()
+    cliente_falso(servidor, tmp_path, reloj=reloj, espera_429_s=20).get(
+        "https://api.example/x", fuente="api", respetar_robots=False
+    )
+    assert reloj.esperas[0] == 45.0
 
 
 def test_se_rinde_tras_los_reintentos_y_lo_registra(tmp_path):
@@ -191,5 +202,19 @@ def test_idiomas_y_fechas():
     assert leer_fecha("20261004T160000Z") == datetime(2026, 10, 4, 16, tzinfo=UTC)
     # Una fecha ilegible se conserva como texto para que la carga la rechace con motivo (T01).
     assert leer_fecha("ayer en la tarde") == "ayer en la tarde"
+
+
+def test_fecha_con_formato_propio_y_zona():
+    # Formato de Panamá América: mes primero, sin zona (hora de Panamá, UTC-5).
+    formato, zona = "%m/%d/%Y - %H:%M", "America/Panama"
+    esperado = datetime(2026, 10, 7, 5, 0, tzinfo=UTC)
+    assert leer_fecha("Wed, 10/07/2026 - 00:00", formato, zona) == esperado
+    assert leer_fecha("10/07/2026 - 00:00", formato, zona) == esperado
+    # Sin zona configurada se asume UTC, como en el contrato.
+    assert leer_fecha("10/07/2026 - 00:00", formato) == datetime(2026, 10, 7, tzinfo=UTC)
+    # Si no calza con el formato, se intenta el análisis estándar.
+    assert leer_fecha("2026-10-07T00:00:00Z", formato, zona) == datetime(2026, 10, 7, tzinfo=UTC)
+    # Y si tampoco, queda como texto para que la carga lo rechace con su motivo.
+    assert leer_fecha("13/45/2026 - 99:00", formato, zona) == "13/45/2026 - 99:00"
     assert formatear_fecha(datetime(2026, 10, 4, 15, tzinfo=UTC)) == "2026-10-04T15:00:00Z"
     assert formatear_fecha(None) == ""

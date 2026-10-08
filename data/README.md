@@ -25,8 +25,7 @@ valida con la carga, usando la misma ventana:
 # Demo: ventana VENTANA_DESDE/VENTANA_HASTA de .env -> data/raw/
 uv run python -m faro_editorial.extraccion
 
-# Entrenamiento: fechas libres (por defecto, últimos 90 días) y sitemaps mensuales de TVN
-# -> data/entrenamiento/raw/
+# Entrenamiento: fechas libres (por defecto, últimos 90 días) -> data/entrenamiento/raw/
 uv run python -m faro_editorial.extraccion --perfil entrenamiento --desde 2026-07-01
 
 # Refrescar solo las noticias y conservar indicadores y sismos
@@ -44,6 +43,12 @@ uv run python -m faro_editorial.extraccion.descubrir https://www.ejemplo.com.pa
   `manifest.json` con su URL, hora, tamaño y SHA-256.
 - GDELT DOC 2.0 solo busca en los últimos 3 meses: la parte anterior de la ventana se cubre con
   los feeds y sitemaps, y el manifest lo informa como aviso.
+- TVN dentro de la ventana: el RSS y el sitemap de noticias solo traen los últimos días. Las notas
+  de TVN de los últimos 3 meses de la ventana salen de sus sitemaps mensuales, sin secciones de
+  deportes ni espectáculos; su fecha es el `lastmod` del sitemap (igual o posterior a la
+  publicación) y su título, el de la imagen (`alcance_texto = titulo_imagen_sitemap`).
+- La consola muestra el avance (fuente, consulta y tramo de GDELT). La ejecución completa de la
+  demo tarda del orden de media hora, casi todo por la pausa obligatoria entre llamadas a GDELT.
 - Un snapshot existente nunca se pisa sin `--sobrescribir`; con esa opción los archivos
   anteriores se mueven a `<salida>/_anteriores/`.
 

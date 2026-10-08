@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from zoneinfo import ZoneInfo
 
 from faro_editorial.contrato import parse_fecha_utc
 
@@ -147,14 +148,32 @@ def normalizar_idioma(valor: str | None) -> str | None:
     return IDIOMAS.get(valor.lower(), valor.lower())
 
 
-def leer_fecha(valor: str | None) -> Fecha:
-    """Convierte a UTC; si el texto no es una fecha válida lo devuelve tal cual."""
+DIA_SEMANA = re.compile(r"^[A-Za-zÁÉÍÓÚáéíóú]{2,10}\.?,\s*")
+
+
+def leer_fecha(valor: str | None, formato: str | None = None, zona: str | None = None) -> Fecha:
+    """Convierte a UTC; si el texto no es una fecha válida lo devuelve tal cual (la carga lo
+    rechazará con su motivo, T01).
+
+    Con `formato` (strptime) se interpreta primero con ese formato, con y sin el día de la
+    semana inicial; si no trae zona se usa `zona` (o UTC). Así se leen feeds con fechas no
+    estándar, como "Wed, 10/07/2026 - 00:00", sin adivinar si el mes va primero."""
     if valor is None or not valor.strip():
         return None
+    texto = valor.strip()
+    if formato:
+        for candidato in (texto, DIA_SEMANA.sub("", texto)):
+            try:
+                fecha = datetime.strptime(candidato, formato)
+            except ValueError:
+                continue
+            if fecha.tzinfo is None:
+                fecha = fecha.replace(tzinfo=ZoneInfo(zona) if zona else UTC)
+            return fecha.astimezone(UTC)
     try:
-        return parse_fecha_utc(valor.strip())
+        return parse_fecha_utc(texto)
     except ValueError:
-        return valor.strip()
+        return texto
 
 
 def formatear_fecha(fecha: Fecha) -> str:

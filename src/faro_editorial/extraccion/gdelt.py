@@ -1,7 +1,10 @@
 """GDELT DOC 2.0 API (modo ArtList).
 
-- Máximo 250 artículos por consulta: la ventana se divide en tramos, y un tramo que
-  devuelve 250 (posiblemente truncado) se parte en dos hasta un mínimo de horas.
+- Máximo 250 artículos por consulta: la ventana se recorre en tramos, y un tramo que
+  devuelve 250 (posiblemente truncado) se parte en dos hasta un mínimo de horas. El tamaño
+  del tramo se adapta por consulta: tras partir un tramo, los siguientes empiezan con el
+  tamaño que funcionó; si un tramo trae menos de la mitad del máximo, el siguiente se duplica
+  (hasta dias_por_tramo). Así una consulta con mucho volumen no repite llamadas truncadas.
 - La API solo busca en los últimos 3 meses: la ventana se recorta y el recorte se informa.
 - GDELT no entrega fecha de publicación. seendate (cuándo GDELT detectó el artículo) va
   a fecha_deteccion y fecha_publicacion queda vacía, como pide la sección 7 del reto.
@@ -9,6 +12,7 @@
   tramo y se continúa con los demás.
 """
 
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -86,6 +90,7 @@ def extraer_gdelt(
     hasta: datetime,
     medios: dict[str, str],
     ahora: datetime,
+    progreso: Callable[[str], None] | None = None,
 ) -> tuple[list[FilaNoticia], dict[str, Any]]:
     cliente.fijar_pausa(httpx.URL(config.url).host, config.pausa_s)
     desde, hasta, aviso = recortar_ventana(desde, hasta, ahora, config.max_dias_atras)
@@ -102,7 +107,11 @@ def extraer_gdelt(
     minimo = timedelta(hours=config.horas_minimas_tramo)
     filas: list[FilaNoticia] = []
 
-    def consultar(consulta: str, inicio: datetime, fin: datetime) -> list[FilaNoticia]:
+    def consultar(
+        consulta: str, inicio: datetime, fin: datetime
+    ) -> tuple[list[FilaNoticia], timedelta | None, int]:
+        """Devuelve (filas, tamaño de tramo que no llegó al máximo si hubo que partir, cantidad
+        de artículos de la respuesta sin partir)."""
         params = {
             "query": consulta,
             "mode": "ArtList",
@@ -118,27 +127,43 @@ def extraer_gdelt(
             datos = respuesta.json()
         except ErrorExtraccion as e:
             resumen["errores"].append(f"{consulta} [{params['startdatetime']}]: {e}")
-            return []
+            return [], None, MAX_REGISTROS
         except ValueError:
             texto = respuesta.texto.strip().replace("\n", " ")[:200]
             resumen["errores"].append(f"{consulta} [{params['startdatetime']}]: no JSON: {texto}")
-            return []
+            return [], None, MAX_REGISTROS
         nuevas = _filas(datos, respuesta.fecha_utc, medios)
         cantidad = len((datos or {}).get("articles") or []) if isinstance(datos, dict) else 0
         if cantidad >= MAX_REGISTROS:
             if fin - inicio > minimo * 2:
                 resumen["tramos_partidos"] += 1
                 medio_tramo = inicio + (fin - inicio) / 2
-                return consultar(consulta, inicio, medio_tramo) + consultar(
-                    consulta, medio_tramo, fin
-                )
+                filas_a, tam_a, _ = consultar(consulta, inicio, medio_tramo)
+                filas_b, tam_b, _ = consultar(consulta, medio_tramo, fin)
+                hojas = [t for t in (tam_a, tam_b) if t is not None] or [medio_tramo - inicio]
+                return filas_a + filas_b, min(hojas), cantidad
             resumen["tramos_que_siguen_en_250"] += 1
-        return nuevas
+        return nuevas, None, cantidad
 
-    for consulta in config.consultas:
+    maximo = timedelta(days=config.dias_por_tramo)
+    for n, consulta in enumerate(config.consultas, start=1):
         encontradas: list[FilaNoticia] = []
-        for inicio, fin in tramos(desde, hasta, config.dias_por_tramo):
-            encontradas.extend(consultar(consulta, inicio, fin))
+        tamano, inicio = maximo, desde
+        while inicio < hasta:
+            fin = min(inicio + tamano, hasta)
+            if progreso:
+                progreso(
+                    f"gdelt {n}/{len(config.consultas)} {consulta} · {inicio:%Y-%m-%d} de "
+                    f"{desde:%Y-%m-%d}→{hasta:%Y-%m-%d} · {len(encontradas)} artículos · "
+                    f"{len(resumen['errores'])} errores"
+                )
+            nuevas, tam_hoja, cantidad = consultar(consulta, inicio, fin)
+            encontradas.extend(nuevas)
+            if tam_hoja is not None:
+                tamano = tam_hoja  # hubo que partir: seguir con el tamaño que funcionó
+            elif cantidad < MAX_REGISTROS // 2:
+                tamano = min(tamano * 2, maximo)  # poco volumen: tramos más largos
+            inicio = fin
         resumen["articulos_por_consulta"][consulta] = len(encontradas)
         filas.extend(encontradas)
     if resumen["llamadas"] and len(resumen["errores"]) == resumen["llamadas"]:

@@ -12,7 +12,9 @@ from falsos_http import (
     GDELT,
     ROBOTS_ABIERTO,
     RSS,
+    RSS_FECHA_DRUPAL,
     SITEMAP_INDICE,
+    SITEMAP_MENSUAL_SEP,
     SITEMAP_NOTICIAS,
     Servidor,
     articulo_gdelt,
@@ -63,6 +65,17 @@ def test_la_configuracion_del_repo_es_valida():
     assert all("latest" not in f.url for f in config.web)
 
 
+def test_configuracion_del_repo_para_la_demo():
+    config = cargar_config(RUTA_CONFIG)
+    por_id = {f.id: f for f in config.web}
+    pa = por_id["panamaamerica_rss"]
+    assert (pa.formato_fecha, pa.zona_horaria) == ("%m/%d/%Y - %H:%M", "America/Panama")
+    tvn = por_id["tvn_sitemap_mensual"]
+    assert "demo" in tvn.perfiles and tvn.fecha_lastmod and tvn.meses_maximos
+    assert "/tvmax/" in tvn.excluir_rutas
+    assert config.espera_429_s >= 20 and config.gdelt.pausa_s >= 5
+
+
 def test_cada_origen_configurado_esta_documentado_en_el_catalogo():
     import yaml
 
@@ -85,7 +98,7 @@ def test_sitemap_mensual_exige_plantilla():
 def test_feed_rss_con_descripcion_y_sin_contenido():
     filas, resumen = parsear_feed(RSS.encode(), TVN, AHORA)
 
-    assert resumen == {"items": 4, "omitidos_sin_titulo_o_enlace": 1}
+    assert resumen == {"items": 4, "omitidos_sin_titulo_o_enlace": 1, "excluidos_por_ruta": 0}
     agua, canal, vieja = filas
     assert agua.titulo == "Plan de agua para Colón & Panamá Oeste"
     assert agua.fecha_publicacion == utc(2026, 10, 5, 14, 30)
@@ -146,6 +159,84 @@ def test_sitemap_invalido(contenido, mensaje):
 def test_meses_de_la_ventana():
     assert meses(utc(2025, 11, 20), utc(2026, 2, 1)) == [(2025, 11), (2025, 12), (2026, 1)]
     assert meses(utc(2026, 9, 7), utc(2026, 10, 7)) == [(2026, 9), (2026, 10)]
+    # Ventana de la demo: termina a medianoche de Panamá (05:00 UTC del 1 de octubre).
+    demo = meses(utc(2025, 10, 1, 5), utc(2026, 10, 1, 5))
+    assert len(demo) == 12 and demo[0] == (2025, 10) and demo[-1] == (2026, 9)
+    assert meses(utc(2026, 9, 23), utc(2026, 10, 1)) == [(2026, 9)]
+
+
+def test_feed_con_formato_de_fecha_propio():
+    fuente = FuenteWeb(
+        id="pa",
+        tipo="rss",
+        medio="Panamá América",
+        origen="medios_rss",
+        url="https://www.panamaamerica.com.pa/rss/recent/index.xml",
+        formato_fecha="%m/%d/%Y - %H:%M",
+        zona_horaria="America/Panama",
+    )
+    (fila,), _ = parsear_feed(RSS_FECHA_DRUPAL.encode(), fuente, AHORA)
+    assert fila.fecha_publicacion == utc(2026, 9, 30, 23, 30)  # 18:30 en Panamá
+
+
+def test_zona_horaria_invalida_falla_al_cargar():
+    with pytest.raises(ValueError):
+        FuenteWeb(
+            id="x",
+            tipo="rss",
+            medio="M",
+            origen="o",
+            url="https://x/f",
+            zona_horaria="America/Ciudad_Inventada",
+        )
+
+
+TVN_MENSUAL = FuenteWeb(
+    id="tvn_mensual",
+    tipo="sitemap_mensual",
+    medio="TVN",
+    origen="tvn_sitemap",
+    url="https://www.tvn-2.com/sitemap_{anio}_{mes:02d}.xml",
+    excluir_rutas=["/tvmax/", "/videos/"],
+    fecha_lastmod=True,
+    meses_maximos=2,
+)
+
+
+def test_sitemap_mensual_con_lastmod_y_rutas_excluidas():
+    filas, resumen = parsear_sitemap(SITEMAP_MENSUAL_SEP.encode(), TVN_MENSUAL, AHORA, (2026, 9))
+
+    consulta, editada = filas
+    assert consulta.fecha_publicacion == utc(2026, 9, 28, 15, 10, 0, 123456)
+    assert consulta.alcance_texto == ALCANCE_TITULO_IMAGEN
+    # lastmod fuera del mes del sitemap: no se usa como fecha (quedaría muy lejos).
+    assert editada.fecha_publicacion is None
+    assert resumen["excluidos_por_ruta"] == 2  # /tvmax/ y /videos/
+    assert (resumen["fecha_de_lastmod"], resumen["lastmod_fuera_del_mes"]) == (1, 1)
+
+
+def test_sitemap_sin_fecha_lastmod_no_usa_lastmod():
+    fuente = TVN_MENSUAL.model_copy(update={"fecha_lastmod": False})
+    filas, _ = parsear_sitemap(SITEMAP_MENSUAL_SEP.encode(), fuente, AHORA, (2026, 9))
+    assert all(f.fecha_publicacion is None for f in filas)
+
+
+def test_sitemap_mensual_solo_los_ultimos_meses(tmp_path):
+    servidor = Servidor(
+        {
+            "www.tvn-2.com/robots.txt": ROBOTS_ABIERTO,
+            "www.tvn-2.com/sitemap_2026_08.xml": SITEMAP_MENSUAL_SEP,
+            "www.tvn-2.com/sitemap_2026_09.xml": SITEMAP_MENSUAL_SEP,
+        }
+    )
+    filas, resumen = extraer_web(
+        cliente_falso(servidor, tmp_path), TVN_MENSUAL, utc(2025, 10, 1, 5), utc(2026, 10, 1, 5)
+    )
+    pedidos = sorted(r.url.path for r in servidor.pedidas("sitemap_"))
+    assert pedidos == ["/sitemap_2026_08.xml", "/sitemap_2026_09.xml"]  # no los 12 meses
+    assert resumen["urls"] == 2 and not resumen["errores"]
+    # En el archivo de agosto, el lastmod de septiembre queda fuera del mes (más de un día).
+    assert resumen["fecha_de_lastmod"] == 1
 
 
 def test_sitemap_mensual_sigue_aunque_falle_un_mes(tmp_path):
@@ -241,6 +332,38 @@ def test_gdelt_parte_los_tramos_que_llegan_a_250(tmp_path):
     # 4 días -> 2 días + 2 días (siguen en 250) -> 4 tramos de 1 día con 10 cada uno.
     assert resumen["tramos_partidos"] == 3
     assert len(filas) == 40 and resumen["llamadas"] == 7
+
+
+def test_gdelt_adapta_el_tamano_del_tramo(tmp_path):
+    """Una consulta con unos 200 artículos por día: tras partir el primer tramo, los demás
+    empiezan con el tamaño que funcionó y no repiten llamadas truncadas."""
+    por_dia = 200
+
+    def respuesta_por_volumen(request: httpx.Request) -> httpx.Response:
+        inicio = datetime.strptime(request.url.params["startdatetime"], "%Y%m%d%H%M%S")
+        fin = datetime.strptime(request.url.params["enddatetime"], "%Y%m%d%H%M%S")
+        n = min(int(por_dia * (fin - inicio).total_seconds() / 86400), 250)
+        articulos = [
+            articulo_gdelt(
+                f"https://x.example/{inicio:%Y%m%d%H%M}/{i}",
+                f"T {i}",
+                f"{inicio:%Y%m%dT%H%M%S}Z",
+                "x.example",
+            )
+            for i in range(n)
+        ]
+        return httpx.Response(200, json={"articles": articulos})
+
+    servidor = Servidor({"api.gdeltproject.org/api/v2/doc/doc": respuesta_por_volumen})
+    config = CONFIG.gdelt.model_copy(update={"dias_por_tramo": 8, "horas_minimas_tramo": 6})
+    filas, resumen = extraer_gdelt(
+        cliente_falso(servidor, tmp_path), config, utc(2026, 9, 1), utc(2026, 9, 17), {}, AHORA
+    )
+    # 16 días a 200 por día: 3200 artículos sin pérdidas (cada tramo final < 250).
+    assert len(filas) == 3200 and resumen["tramos_que_siguen_en_250"] == 0
+    # Sin adaptación serían 2 tramos de 8 días × 15 llamadas = 30. Con adaptación: el primer
+    # tramo de 8 días cuesta 15 y los 8 días restantes van directo en tramos de 1 día.
+    assert resumen["llamadas"] == 15 + 8
 
 
 def test_gdelt_respuesta_de_texto_es_error_del_tramo(tmp_path):

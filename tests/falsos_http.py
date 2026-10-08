@@ -158,6 +158,44 @@ SITEMAP_NOTICIAS = """<?xml version="1.0" encoding="UTF-8"?>
 </urlset>
 """
 
+# Sitemap mensual al estilo de TVN: sin news:*, con lastmod e image:title (sintético).
+SITEMAP_MENSUAL_SEP = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://www.tvn-2.com/nacionales/consulta-agua_1_2260001.html</loc>
+    <lastmod>2026-09-28T15:10:00.123456Z</lastmod>
+    <image:image><image:title>Consulta sobre el agua en Panamá Oeste</image:title></image:image>
+  </url>
+  <url>
+    <loc>https://www.tvn-2.com/nacionales/editada-despues_1_2260002.html</loc>
+    <lastmod>2026-10-03T09:00:00Z</lastmod>
+    <image:image><image:title>Nota de septiembre editada en octubre</image:title></image:image>
+  </url>
+  <url>
+    <loc>https://www.tvn-2.com/tvmax/futbol/partido_1_2260003.html</loc>
+    <lastmod>2026-09-27T22:00:00Z</lastmod>
+    <image:image><image:title>Resultado de un partido</image:title></image:image>
+  </url>
+  <url>
+    <loc>https://www.tvn-2.com/videos/video-consulta-agua_8_2260004.html</loc>
+    <lastmod>2026-09-28T15:20:00Z</lastmod>
+    <image:image><image:title>Video de la consulta</image:title></image:image>
+  </url>
+</urlset>
+"""
+
+# Feed al estilo de Panamá América: fecha "Wed, 10/07/2026 - 00:00" (mes primero, sin zona).
+RSS_FECHA_DRUPAL = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>Medio Ficticio</title><language>es</language>
+  <item>
+    <title>Titular sintético con fecha no estándar</title>
+    <link>https://www.panamaamerica.com.pa/nacion/titular-sintetico-1</link>
+    <pubDate>Wed, 09/30/2026 - 18:30</pubDate>
+  </item>
+</channel></rss>
+"""
+
 SITEMAP_INDICE = """<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap><loc>https://www.telemetro.com/sitemap-news.xml</loc></sitemap>

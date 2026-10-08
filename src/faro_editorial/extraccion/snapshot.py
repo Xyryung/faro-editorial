@@ -20,7 +20,7 @@ import json
 import shutil
 import sys
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -89,7 +89,12 @@ TRANSFORMACIONES = [
     "descripcion: <description> del RSS sin etiquetas HTML, recortada a 1000 caracteres; "
     "solo análisis interno (decisión #35). content:encoded se descarta. alcance_texto = "
     "titular_descripcion si hay descripción, titular_metadatos si no, "
-    "titulo_imagen_sitemap si el título viene de image:title (solo sitemaps mensuales).",
+    "titulo_imagen_sitemap si el título viene de image:title (sitemaps mensuales de TVN).",
+    "Sitemaps mensuales de TVN: últimos meses de la ventana, sin las rutas excluidas en la "
+    "configuración; fecha_publicacion = lastmod (igual o posterior a la publicación) solo si "
+    "cae en el mes del sitemap, con un día de tolerancia.",
+    "Fechas no estándar se leen con el formato y la zona horaria declarados por fuente en "
+    "config/extraccion_v1.yaml (p. ej. Panamá América: mes/día/año, hora de Panamá).",
     "Banco Mundial: cuadrícula completa país × indicador × año; sin observación = valor "
     "vacío (sin gapfill ni mrv). Unidad tomada de la configuración.",
     "USGS: mismo período que las noticias; GeoJSON guardado tal como llega.",
@@ -269,6 +274,7 @@ def extraer(
     sobrescribir: bool = False,
     cliente: ClienteHTTP | None = None,
     ahora: datetime | None = None,
+    progreso: Callable[[str], None] | None = None,
 ) -> ResultadoExtraccion:
     ahora = ahora or datetime.now(UTC)
     salida = Path(salida)
@@ -280,6 +286,7 @@ def extraer(
         pausa_s=config.pausa_s,
         reintentos=config.reintentos,
         max_bytes=config.max_bytes,
+        espera_429_s=config.espera_429_s,
     )
     resultado = ResultadoExtraccion(salida=salida, manifest={})
     resumen_fuentes: dict[str, Any] = {}
@@ -291,6 +298,8 @@ def extraer(
         for fuente in config.web:
             if perfil not in fuente.perfiles:
                 continue
+            if progreso:
+                progreso(f"{fuente.id} ({fuente.tipo})")
             try:
                 nuevas, resumen = extraer_web(cliente, fuente, desde, hasta)
             except ErrorExtraccion as e:
@@ -304,7 +313,7 @@ def extraer(
         if config.gdelt and perfil in config.gdelt.perfiles:
             try:
                 nuevas, resumen = extraer_gdelt(
-                    cliente, config.gdelt, desde, hasta, config.medios, ahora
+                    cliente, config.gdelt, desde, hasta, config.medios, ahora, progreso
                 )
                 resumen["filas"] = len(nuevas)
                 resumen_fuentes["gdelt"] = resumen
@@ -334,6 +343,8 @@ def extraer(
         }
 
     if "indicadores" in familias and config.banco_mundial:
+        if progreso:
+            progreso("banco_mundial")
         try:
             filas_bm, resumen = extraer_banco_mundial(cliente, config.banco_mundial)
             escribir_indicadores(filas_bm, salida / ARCHIVO_INDICADORES)
@@ -347,6 +358,8 @@ def extraer(
             resumen_fuentes["banco_mundial"] = {"error": str(e)}
 
     if "eventos" in familias and config.usgs:
+        if progreso:
+            progreso("usgs")
         try:
             respuesta, resumen = extraer_usgs(cliente, config.usgs, desde, hasta)
             (salida / ARCHIVO_EVENTOS).write_bytes(respuesta.contenido)
@@ -449,8 +462,21 @@ def _imprimir(resultado: ResultadoExtraccion) -> None:
             continue
         if "error" in info:
             print(f"  {nombre}: ERROR {info['error']}")
+        elif nombre == "gdelt":
+            print(
+                f"  gdelt: {info['filas']} filas en {info['llamadas']} llamadas "
+                f"({len(info['errores'])} con error; {info['tramos_partidos']} tramos partidos)"
+            )
+            for consulta, cantidad in info["articulos_por_consulta"].items():
+                print(f"      {cantidad:>6}  {consulta}")
         elif "filas" in info:
-            print(f"  {nombre}: {info['filas']} filas de {info.get('items', '?')} ítems")
+            extra = []
+            if info.get("excluidos_por_ruta"):
+                extra.append(f"{info['excluidos_por_ruta']} excluidos por ruta")
+            if info.get("fecha_de_lastmod"):
+                extra.append(f"{info['fecha_de_lastmod']} con fecha de lastmod")
+            detalle = f" ({'; '.join(extra)})" if extra else ""
+            print(f"  {nombre}: {info['filas']} filas de {info.get('items', '?')} ítems{detalle}")
     n = m["resumen_fuentes"].get("noticias")
     if n:
         print(
@@ -488,6 +514,11 @@ def _validar(salida: Path, desde: datetime, hasta: datetime) -> None:
                 f"{info['filas_rechazadas']} rechazadas"
             )
     print(f"Reporte de calidad: {carga.rutas['reporte']}")
+
+
+def _progreso(mensaje: str) -> None:
+    """Una línea que se reescribe en la consola, para saber que la extracción avanza."""
+    print(f"\r  … {mensaje[:110]:<110}", end="", file=sys.stderr, flush=True)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -533,11 +564,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             familias=args.solo or FAMILIAS,
             sobrescribir=args.sobrescribir,
             ahora=ahora,
+            progreso=_progreso,
         )
     except (FileExistsError, ValueError) as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
+    print("\r" + " " * 116 + "\r", end="", file=sys.stderr, flush=True)
     _imprimir(resultado)
+    if resultado.noticias:
+        print(f"Por medio: {dict(Counter(f.medio for f in resultado.noticias).most_common(8))}")
     if not args.sin_validar:
         _validar(Path(salida), desde, hasta)
     sin_noticias = "noticias" in (args.solo or FAMILIAS) and not resultado.noticias

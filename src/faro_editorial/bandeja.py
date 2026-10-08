@@ -147,6 +147,7 @@ def _tema_salida(posicion: int, grupo: GrupoNoticias, p: Puntuacion) -> dict[str
         "motivo_estado": p.motivo_estado,
         "componentes": {k: c.model_dump() for k, c in p.componentes.items()},
         "procedencias": p.procedencias,
+        "procedencias_independientes": p.procedencias_independientes,
         # T03: la fecha original se muestra siempre, para no presentar algo viejo como nuevo.
         "fecha_original_utc": _iso(min(fechas)) if fechas else None,
         "fecha_original_panama": _hora_panama(min(fechas)) if fechas else None,
@@ -240,6 +241,7 @@ def main(argv: list[str] | None = None) -> None:
         print(
             f"{t['posicion']:>2}. [{t['puntaje']:5.1f} {t['banda']:<5}] {t['titulo']}\n"
             f"    evidencia: {t['estado_evidencia']} · fuentes: {', '.join(t['procedencias'])}"
+            f" ({len(t['procedencias_independientes'])} independiente/s)"
         )
     print(f"\nBandeja completa: {ruta}")
     print("La prioridad ordena qué revisar; no habilita publicación.")

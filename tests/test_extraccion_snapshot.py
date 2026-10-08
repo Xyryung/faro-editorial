@@ -69,6 +69,7 @@ def test_manifest_con_hashes_consultas_y_transformaciones(tmp_path):
         assert manifest["archivos"][nombre]["sha256"] == sha
         assert manifest["archivos"][nombre]["licencia"]
     assert manifest["fecha_corte_utc"] == "2026-10-07T05:00:00Z"
+    assert manifest["fecha_extraccion_utc"] == "2026-10-07T05:00:00Z"
     assert manifest["version"] == "panama-senales-evidencias-v1"
     assert manifest["ventana"] == {
         "desde": "2026-09-07T05:00:00Z",
@@ -290,3 +291,28 @@ def test_calcular_ventana():
     assert calcular_ventana(None, 30, DESDE, HASTA, AHORA, env) == (DESDE, HASTA)
     with pytest.raises(ValueError, match="vacía"):
         calcular_ventana(None, 30, AHORA, DESDE, AHORA)
+
+
+def test_el_corte_es_el_fin_de_la_ventana_y_no_la_extraccion(tmp_path):
+    """data/CONTRATO.md: fecha_corte_utc es el fin de la ventana. La bandeja mide la urgencia
+    desde ahí; con la hora de extracción, todo lo de la ventana tendría urgencia 0."""
+    from faro_editorial.bandeja import fecha_referencia
+
+    fin_ventana = datetime(2026, 10, 1, 5, tzinfo=UTC)  # medianoche de Panamá
+    servidor = Servidor(rutas_completas())
+    salida = tmp_path / "raw"
+    resultado = extraer(
+        ConfigExtraccion.model_validate(config_minima()),
+        "demo",
+        DESDE,
+        fin_ventana,
+        salida,
+        cliente=cliente_falso(servidor, salida, reintentos=0),
+        ahora=AHORA,  # extraído una semana después del fin de la ventana
+    )
+    assert resultado.manifest["fecha_corte_utc"] == "2026-10-01T05:00:00Z"
+    assert resultado.manifest["fecha_extraccion_utc"] == "2026-10-07T05:00:00Z"
+
+    carga = cargar_snapshot(salida, tmp_path / "processed", DESDE, fin_ventana)
+    referencia, origen = fecha_referencia(tmp_path / "processed", carga.noticias.validos)
+    assert referencia == fin_ventana and origen.startswith("corte del snapshot")

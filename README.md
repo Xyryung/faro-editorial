@@ -150,6 +150,16 @@ uv run python -m faro_editorial.paquete
 Genera en `dist/` un `.zip` con el snapshot, el manifest, el diccionario, el catálogo con las
 licencias y condiciones de cada fuente y el reporte de calidad.
 
+## Demo y preguntas del jurado
+
+Respuestas preparadas para las cuatro pruebas dinámicas del jurado, con qué mostrar en pantalla:
+[`docs/preguntas_jurado.md`](docs/preguntas_jurado.md). Para mostrar el registro original detrás
+de cualquier cita (país, año, unidad, URL y licencia):
+
+```powershell
+uv run python -m faro_editorial.evidencia BM:PAN:NY.GDP.MKTP.KD.ZG:2023
+```
+
 ## Decisiones
 
 Las decisiones técnicas y de producto se registran como issues con la etiqueta

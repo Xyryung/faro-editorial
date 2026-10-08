@@ -69,6 +69,8 @@ casos:
       - tests/test_contexto.py::test_cero_real_se_cita_como_cero
       - tests/test_contexto.py::test_indicador_sin_datos_queda_pendiente_sin_inventar
       - tests/test_bandeja.py::test_cita_oficial_llega_a_la_bandeja
+      - tests/test_evidencia.py::test_indicador_muestra_fuente_anio_unidad_y_url
+      - tests/test_evidencia.py::test_anio_sin_dato_no_se_muestra_como_cero
 
   T05:
     prueba: Dos afirmaciones incompatibles
@@ -91,6 +93,7 @@ casos:
       - tests/test_contexto.py::test_usgs_sin_evento_en_la_ventana_queda_pendiente
       - tests/test_contexto.py::test_sin_relacion_sustentada_no_se_vincula
       - tests/test_decisiones.py::test_t10_offline_sin_cache_se_abstiene_sin_llamar
+      - tests/test_evidencia.py::test_id_inexistente_no_inventa
 
   T07:
     prueba: Fuente que exige ignorar instrucciones

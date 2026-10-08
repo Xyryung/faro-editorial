@@ -318,3 +318,19 @@ def test_fecha_y_version_legibles():
     assert fecha_legible("no es fecha") == "no es fecha"
     assert version_legible("reglas-v1.0") == "Reglas v1.0"
     assert version_legible("criterios-v2.0") == "Criterios v2.0"
+
+
+def test_las_fuentes_del_tema_estan_en_el_repo():
+    """T10: la letra no se descarga de internet; cada fuente declarada está en app/static."""
+    import tomllib
+
+    config = tomllib.loads((ROOT_DIR / ".streamlit" / "config.toml").read_text(encoding="utf-8"))
+    assert config["server"]["enableStaticServing"] is True
+    caras = config["theme"]["fontFaces"]
+    assert caras and {c["family"] for c in caras} == {"IBM Plex Sans"}
+    for cara in caras:
+        assert not cara["url"].startswith("http")  # nada externo
+        # "app/static/..." es la URL que sirve Streamlit; el archivo está en <repo>/app/static/...
+        ruta = ROOT_DIR / "app" / cara["url"].removeprefix("app/")
+        assert ruta.read_bytes()[:4] == b"wOF2", ruta
+    assert (ROOT_DIR / "app" / "static" / "fonts" / "OFL-IBM-Plex.txt").exists()

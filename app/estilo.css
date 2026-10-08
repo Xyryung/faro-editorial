@@ -1,15 +1,15 @@
 /* Estilo de Faro Editorial (issue #16). Los colores base y la fuente están en
-   .streamlit/config.toml (Source Sans, incluida en Streamlit). Criterio: sobrio y editorial.
+   .streamlit/config.toml (IBM Plex Sans, incluida en app/static/fonts). Criterio: sobrio y editorial.
    Tarjetas con borde fino y sin sombras difusas, títulos en minúscula normal, datos como texto
    (sin pastillas ni franjas de color) y líneas finas para separar en vez de cajas de color. */
 
 :root {
-  --azul: #12355B;
-  --texto: #26303B;
-  --suave: #5B6B80;
-  --tarjeta: #F8FBFF;
-  --borde: #C9D8EC;
-  --linea: #DCE6F3;
+  --azul: #1F3A5F;
+  --texto: #2B2926;
+  --suave: #6E6A62;
+  --tarjeta: #FBFAF6;
+  --borde: #DDD7CB;
+  --linea: #E8E3D8;
   --radio: 8px;
 }
 
@@ -31,7 +31,7 @@ footer { visibility: hidden; }
 [data-testid="stMain"] [data-testid="stMarkdownContainer"] p:last-child { margin-bottom: 0; }
 
 /* Tipografía: una sola familia (la del texto); los rótulos de sección en minúscula normal. */
-h1 { color: var(--azul); font-size: 1.5rem !important; font-weight: 700 !important;
+h1 { color: var(--azul); font-size: 1.5rem !important; font-weight: 600 !important;
      letter-spacing: -0.01em; padding: 0 !important; margin: 0 !important; }
 h3 { color: var(--azul); font-weight: 600 !important; line-height: 1.25; padding-top: 0 !important; }
 h4 { font-family: inherit !important; color: var(--texto); font-size: 0.95rem !important;
@@ -87,11 +87,11 @@ h4 { font-family: inherit !important; color: var(--texto); font-size: 0.95rem !i
   align-items: center; gap: 0.35rem; }
 .dato em b { color: var(--azul); font-variant-numeric: tabular-nums; }
 .banda-alto { color: var(--azul) !important; }
-.banda-medio { color: #2F5F96 !important; }
+.banda-medio { color: #4F6F96 !important; }
 .banda-bajo { color: var(--suave) !important; }
-.ev-insuficiente { color: #9A4A07 !important; }
-.ev-parcial { color: #5B4B8A !important; }
-.ev-suficiente_para_borrador { color: #1D6B3E !important; }
+.ev-insuficiente { color: #A1580E !important; }
+.ev-parcial { color: #5E5486 !important; }
+.ev-suficiente_para_borrador { color: #2E6B47 !important; }
 .barra { display: inline-block; width: 64px; height: 4px; background: var(--linea); margin-left: 0.4rem; }
 .barra i { display: block; height: 100%; background: var(--azul); }
 
@@ -108,7 +108,7 @@ h4 { font-family: inherit !important; color: var(--texto); font-size: 0.95rem !i
 .fila p { margin: 0 !important; line-height: 1.45; }
 .fila-titulo { font-weight: 600; color: var(--texto); }
 .fila-meta { font-size: 0.82rem !important; color: var(--suave); margin-top: 0.15rem !important; }
-.fila-meta a { color: #1F5A96; }
+.fila-meta a { color: #24507F; }
 .fila code { background: none; color: var(--suave); padding: 0; font-size: 0.8rem; margin-right: 0.4rem; }
 
 /* Acción recomendada: pasos numerados con el número como texto. */

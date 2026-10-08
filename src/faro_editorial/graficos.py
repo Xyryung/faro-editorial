@@ -18,21 +18,21 @@ from faro_editorial.interfaz import (
 )
 
 COLORES_ESTADO = {
-    "Insuficiente": "#F5A866",
-    "Parcial": "#A995E0",
-    "Suficiente para borrador": "#6CC48C",
+    "Insuficiente": "#C98A4B",
+    "Parcial": "#8E86B0",
+    "Suficiente para borrador": "#5E9C76",
 }
-COLORES_BANDA = {"Alta": "#2F6DB5", "Media": "#8FB4E8", "Baja": "#C9D0DC"}
+COLORES_BANDA = {"Alta": "#1F3A5F", "Media": "#7D8FA6", "Baja": "#C9C2B4"}
 COLORES_COMPONENTE = {
-    "Relevancia": "#12355B",
-    "Impacto potencial": "#2F6DB5",
-    "Urgencia": "#5B8FD1",
-    "Novedad": "#8FB4E8",
-    "Evidencia disponible": "#6CC48C",
+    "Relevancia": "#1F3A5F",
+    "Impacto potencial": "#3D5A80",
+    "Urgencia": "#6B83A3",
+    "Novedad": "#A3B3C7",
+    "Evidencia disponible": "#5E9C76",
 }
-_TEXTO = "#26303B"
-_SUAVE = "#5B6B80"
-_REJILLA = "#D6E0EC"
+_TEXTO = "#2B2926"
+_SUAVE = "#6E6A62"
+_REJILLA = "#E2DCCF"
 ALTO = 200  # alto común de los gráficos de la bandeja, para que las tarjetas se alineen
 
 
@@ -43,7 +43,7 @@ def _escala(colores: dict[str, str]) -> alt.Scale:
 def _estilo(grafico: alt.Chart, alto: int) -> alt.Chart:
     return (
         grafico.properties(height=alto, background="transparent")
-        .configure(font="Source Sans, sans-serif")
+        .configure(font="IBM Plex Sans, sans-serif")
         .configure_view(stroke=None)
         .configure_axis(
             labelColor=_SUAVE,
@@ -238,6 +238,7 @@ def grafico_noticias_por_dia(temas: list[dict]) -> alt.Chart:
     # Aire sobre la barra más alta, para que no toque el borde del gráfico.
     tope = max(totales.values(), default=0)
     tope = tope + max(1, round(tope * 0.15))
+    etiquetas = list(dict.fromkeys(f["Etiqueta"] for f in filas))
     barras = (
         alt.Chart(alt.Data(values=filas))
         .mark_bar(cornerRadiusTopLeft=1, cornerRadiusTopRight=1)
@@ -246,9 +247,15 @@ def grafico_noticias_por_dia(temas: list[dict]) -> alt.Chart:
             x=alt.X(
                 "Etiqueta:O",
                 title=None,
-                sort=list(dict.fromkeys(f["Etiqueta"] for f in filas)),  # cronológico
+                sort=etiquetas,  # cronológico
                 scale=alt.Scale(paddingInner=0.25, paddingOuter=0.15),
-                axis=alt.Axis(labelAngle=0, labelOverlap="greedy", ticks=False),
+                axis=alt.Axis(
+                    # Con muchos periodos las etiquetas se inclinan para no tocarse.
+                    labelAngle=-40 if len(etiquetas) > 4 else 0,
+                    labelAlign="right" if len(etiquetas) > 4 else "center",
+                    labelOverlap="greedy",
+                    ticks=False,
+                ),
             ),
             y=alt.Y(
                 "sum(Noticias):Q",
@@ -300,7 +307,7 @@ def grafico_desglose(tema: dict) -> alt.Chart:
     y = alt.Y("Componente:N", title=None, sort=orden, axis=alt.Axis(labelLimit=200))
     fondo = (
         alt.Chart(datos)
-        .mark_bar(size=12, cornerRadius=1, color="#E0E9F4")
+        .mark_bar(size=12, cornerRadius=1, color="#E8E3D8")
         .encode(
             y=y,
             x=alt.X(

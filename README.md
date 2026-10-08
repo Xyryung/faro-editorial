@@ -12,7 +12,7 @@ se vincula con su fuente, fecha y alcance; cuando no hay evidencia suficiente, e
 | Etapa | Módulo | Estado |
 |---|---|---|
 | 1 · Cargar | `carga.py`, `contrato.py`, `catalogo.py` | Implementada (#5, #4) |
-| 2 · Organizar | `agrupacion.py` | Agrupación implementada (#9); clasificación en desarrollo (#10) |
+| 2 · Organizar | `agrupacion.py`, `clasificacion.py` | Agrupación (#9) y tema por grupo con Jev y línea base por palabras clave (#10) |
 | 3 · Contextualizar | `contexto.py` | Implementada (#12) |
 | 4 · Priorizar | `puntaje.py`, `rules.py`, `bandeja.py` | Implementada con reglas; R, I y U admiten Jev (#11, #8) |
 | 5 · Explicar | `app/main.py`, `interfaz.py` | Bandeja y ficha de evidencia en Streamlit (#16); consulta y contradicciones en desarrollo (#13, #14) |
@@ -96,6 +96,14 @@ Completa `.env` solo si vas a hacer llamadas en vivo. Sin `.env`, la app arranca
 
    ```powershell
    uv run python -m faro_editorial.agrupacion
+   ```
+
+   Asigna un tema a cada grupo con Jev (con caché) y, si Jev se abstiene, con la línea base
+   por palabras clave. La primera vez necesita internet y la clave de OpenRouter (`OFFLINE=0`);
+   después funciona sin internet desde la caché. Vuelve a ejecutarlo si rehaces la agrupación:
+
+   ```powershell
+   uv run python -m faro_editorial.clasificacion
    ```
 
    Genera la bandeja priorizada (`data/processed/bandeja.json`) y muestra los cinco temas que

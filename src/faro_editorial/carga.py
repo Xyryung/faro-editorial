@@ -451,6 +451,18 @@ def main() -> None:
             + (f" ({info['error']})" if info["error"] else "")
         )
     print(f"Reporte: {resultado.rutas['reporte']}")
+    if not any(r.presente for r in (resultado.noticias, resultado.indicadores, resultado.eventos)):
+        print(
+            f"\nNo hay snapshot en {s.raw_dir}. Copia ahí los archivos (formato en "
+            "data/CONTRATO.md) o el contenido de la carpeta raw/ del paquete de datos."
+        )
+    elif not resultado.noticias.validos and resultado.noticias.rechazos:
+        motivos = resultado.reporte["archivos"][ARCHIVO_NOTICIAS]["motivos_rechazo"]
+        if "fuera de la ventana de fechas" in motivos:
+            print(
+                "\nTodas las noticias quedaron fuera de la ventana de fechas. Para datos de "
+                "otras fechas, deja VENTANA_DESDE y VENTANA_HASTA vacías en .env."
+            )
 
     from faro_editorial.catalogo import escribir_catalogo, generar_catalogo
 

@@ -5,8 +5,9 @@ licencias y condiciones de cada fuente, el reporte de calidad y el benchmark si 
 
 Lo que no se puede redistribuir se excluye: la descripción del RSS de TVN es solo para
 análisis interno (decisión #35), así que se quita de noticias y rechazos. Como eso cambia
-noticias.csv, manifest_paquete.json trae el SHA-256 de cada archivo tal como va en el zip;
-el manifest.json original se conserva para trazabilidad.
+noticias.csv, raw/manifest.json se reescribe con el SHA-256 de cada archivo tal como va en el
+zip (así la carga verifica la integridad del paquete sin falsas alarmas) y el original se
+conserva como raw/manifest_original.json. manifest_paquete.json trae el hash de todo el zip.
 
 Uso:  uv run python -m faro_editorial.paquete
 """
@@ -35,7 +36,7 @@ Generado el {fecha} con `uv run python -m faro_editorial.carga` y
 
 | Archivo | Contenido |
 |---|---|
-| `raw/` | Snapshot: noticias, fuentes, indicadores, sismos y manifest original |
+| `raw/` | Snapshot listo para copiar en `data/raw/` (noticias, indicadores, sismos, manifest) |
 | `CONTRATO.md` | Diccionario de datos: columnas, formatos y consultas usadas |
 | `licencias_y_condiciones.yaml` | Licencia y condiciones de reutilización de cada fuente |
 | `processed/catalogo_datos.csv` | Catálogo por fuente: URL, cobertura, hash y excluidos |
@@ -44,12 +45,17 @@ Generado el {fecha} con `uv run python -m faro_editorial.carga` y
 | `benchmark/` | Consultas de desarrollo con sus etiquetas, si existen |
 | `manifest_paquete.json` | SHA-256 de cada archivo tal como va en este paquete |
 
+## Cómo usarlo
+
+Copia el contenido de `raw/` en `data/raw/` del repositorio y ejecuta
+`uv run python -m faro_editorial.carga`: debe decir `Integridad del snapshot: OK`.
+
 ## Contenido excluido
 
 - Columna(s) {excluidas} de `noticias.csv` y de los rechazos: la descripción del RSS de TVN se
   usa solo para análisis interno y no se redistribuye (sección 6 del reto; decisión #35).
-  Por eso el SHA-256 de `raw/noticias.csv` difiere del `manifest.json` original; el de este
-  paquete está en `manifest_paquete.json`.
+  Por eso `raw/manifest.json` trae el SHA-256 de `noticias.csv` tal como va en este paquete y
+  lo declara en `columnas_excluidas`; el manifest original está en `raw/manifest_original.json`.
 - No se incluyen artículos completos, imágenes ni videos: solo titulares, metadatos y enlaces.
   Para reconstruir el contenido excluido, seguir las consultas de `CONTRATO.md`.
 """
@@ -82,6 +88,38 @@ def _rechazos_sin_columnas(ruta: Path, excluidas: set[str]) -> bytes:
     return ("\n".join(lineas) + "\n" if lineas else "").encode("utf-8")
 
 
+NOTA_EXCLUSION = (
+    "Paquete de entrega: columna(s) {columnas} quitada(s) de noticias.csv porque no se "
+    "redistribuyen (decisión #35); sha256 recalculado"
+)
+
+
+def _manifest_del_paquete(original: bytes, entradas: dict[str, bytes]) -> tuple[bytes, bool]:
+    """Reescribe los hashes del manifest para los archivos tal como van en el paquete. Devuelve
+    el manifest nuevo y si se pudo actualizar (si el original no se entiende, va sin cambios)."""
+    try:
+        manifest = json.loads(original.decode("utf-8-sig"))
+        archivos = manifest["archivos"]
+    except (ValueError, KeyError, TypeError):
+        return original, False
+    if not isinstance(archivos, dict):
+        return original, False
+    for nombre, info in archivos.items():
+        datos = entradas.get(f"raw/{nombre}")
+        if datos is not None and isinstance(info, dict):
+            info["sha256"] = _sha256(datos)
+    nota = NOTA_EXCLUSION.format(columnas=", ".join(sorted(COLUMNAS_EXCLUIDAS)))
+    transformaciones = manifest.get("transformaciones")
+    if isinstance(transformaciones, list):
+        manifest["transformaciones"] = [*transformaciones, nota]
+    elif transformaciones:
+        manifest["transformaciones"] = [transformaciones, nota]
+    else:
+        manifest["transformaciones"] = [nota]
+    manifest["columnas_excluidas"] = {ARCHIVO_NOTICIAS: sorted(COLUMNAS_EXCLUIDAS)}
+    return json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8"), True
+
+
 def construir_paquete(
     raw_dir: Path,
     processed_dir: Path,
@@ -101,6 +139,12 @@ def construir_paquete(
             entradas[f"raw/{ruta.name}"] = _csv_sin_columnas(ruta, COLUMNAS_EXCLUIDAS)
         else:
             entradas[f"raw/{ruta.name}"] = ruta.read_bytes()
+    if "raw/manifest.json" in entradas:
+        original = entradas["raw/manifest.json"]
+        nuevo, actualizado = _manifest_del_paquete(original, entradas)
+        if actualizado:
+            entradas["raw/manifest_original.json"] = original
+            entradas["raw/manifest.json"] = nuevo
     entradas["processed/reporte_calidad.json"] = resultado.rutas["reporte"].read_bytes()
     entradas["processed/rechazos.jsonl"] = _rechazos_sin_columnas(
         resultado.rutas["rechazos"], COLUMNAS_EXCLUIDAS

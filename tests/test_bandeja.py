@@ -141,8 +141,25 @@ def test_comando_con_base_vacia_explica_que_revisar(raw: Path, tmp_path: Path, m
     finally:
         get_settings.cache_clear()
     salida = capsys.readouterr().out
-    assert "No hay noticias en la base" in salida
+    assert "No hay noticias válidas en la base" in salida
     assert "temas que merecen revisión" not in salida
+
+
+def test_comando_sin_snapshot_dice_donde_copiarlo(tmp_path: Path, monkeypatch, capsys):
+    """Clon limpio (#21): sin snapshot, el mensaje dice qué hacer, no habla de rechazos."""
+    (tmp_path / "raw").mkdir()
+    cargar_snapshot(tmp_path / "raw", tmp_path / "processed")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    from faro_editorial.settings import get_settings
+
+    get_settings.cache_clear()
+    try:
+        main([])
+    finally:
+        get_settings.cache_clear()
+    salida = capsys.readouterr().out
+    assert "No hay snapshot cargado" in salida
+    assert "raw/ del paquete de datos" in salida
 
 
 def test_ids_de_grupo_repetidos_no_cruzan_datos(processed: Path):

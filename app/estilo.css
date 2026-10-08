@@ -1,42 +1,109 @@
-/* Estilo institucional de Faro Editorial (issue #16). Los colores base están en
-   .streamlit/config.toml; aquí solo los detalles que el tema no cubre. */
+/* Estilo de Faro Editorial (issue #16): panel de trabajo con tarjetas, no un documento.
+   Los colores base están en .streamlit/config.toml; aquí van los componentes. */
 
-.block-container { padding-top: 2.2rem; max-width: 1180px; }
+:root {
+  --azul: #12355B;
+  --texto: #26303B;
+  --suave: #5B6B80;
+  --tarjeta: #F8FBFF;
+  --borde: #D3E1F4;
+  --relleno: #D4E3F7;
+  --sombra: 0 1px 2px rgba(18, 53, 91, 0.06), 0 6px 18px rgba(18, 53, 91, 0.06);
+  --radio: 12px;
+}
+
+.block-container { padding-top: 1.6rem; padding-bottom: 3rem; max-width: 1240px; }
 [data-testid="stDecoration"] { display: none; }  /* barra de color superior */
 footer { visibility: hidden; }
 
-h1 { color: #12355B; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.1rem; }
-h2, h3 { color: #12355B; font-weight: 600; }
-h4 {
-  color: #12355B; font-weight: 600; font-size: 0.95rem; text-transform: uppercase;
-  letter-spacing: 0.05em; border-bottom: 1px solid #BFD2EC; padding-bottom: 0.3rem;
-  margin-top: 1.4rem;
+/* Tipografía: una sola escala, títulos en azul marino. */
+h1 { color: var(--azul); font-size: 1.5rem !important; font-weight: 700; letter-spacing: -0.01em;
+     padding: 0 !important; margin: 0 !important; }
+h3 { color: var(--azul); font-weight: 650; line-height: 1.3; padding-top: 0 !important; }
+h4 { color: var(--suave); font-size: 0.75rem !important; font-weight: 700; text-transform: uppercase;
+     letter-spacing: 0.07em; padding: 0 !important; margin: 0 0 0.15rem 0 !important; }
+
+/* Tarjetas: cualquier st.container(key="tarjeta_...") */
+[class*="st-key-tarjeta_"] {
+  background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio);
+  box-shadow: var(--sombra); padding: 1.05rem 1.2rem 1.15rem;
+}
+[class*="st-key-tarjeta_"] p { margin-bottom: 0.2rem; }
+[class*="st-key-tarjeta_"] ul { margin: 0; padding-left: 1.1rem; }
+[class*="st-key-tarjeta_"] li { margin: 0 0 0.35rem 0; line-height: 1.45; }
+[class*="st-key-tarjeta_"] li::marker { color: #8FB4E8; }
+
+/* Cabecera: marca y pastillas con el corte y las versiones. */
+.cabecera { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.15rem 0 0.6rem; }
+.marca { color: var(--suave); font-size: 0.85rem; margin-right: 0.35rem; }
+.pastilla {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 0.6rem; border-radius: 999px;
+  background: var(--relleno); color: var(--azul); font-size: 0.74rem; font-weight: 600;
 }
 
-.cabecera {
-  color: #4A5563; font-size: 0.85rem; border-bottom: 2px solid #12355B;
-  padding-bottom: 0.5rem; margin-bottom: 1.2rem;
+/* Pestañas como control segmentado. */
+[role="tablist"] {
+  gap: 0.25rem; background: var(--relleno); border-radius: 10px; padding: 4px; width: fit-content;
+  margin-bottom: 0.4rem;
 }
-.cabecera b { color: #26303B; font-weight: 600; }
+[role="tablist"]::after { display: none; }  /* línea inferior de las pestañas */
+[data-testid="stTab"] {
+  height: 32px; padding: 0 0.9rem !important; border-radius: 8px; color: var(--suave);
+  border: none !important; box-shadow: none !important;
+}
+[data-testid="stTab"]::after { display: none; }
+[data-testid="stTab"] p { font-size: 0.85rem; font-weight: 600; }
+[data-testid="stTab"][aria-selected="true"] {
+  background: var(--tarjeta); color: var(--azul); box-shadow: 0 1px 2px rgba(18, 53, 91, 0.14) !important;
+}
 
-.resumen { font-size: 0.95rem; color: #26303B; margin: 0.2rem 0 0.4rem 0; }
-.resumen b { color: #12355B; }
+/* Indicadores de la bandeja. */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; margin: 0.3rem 0 0.2rem; }
+.kpi {
+  background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio);
+  box-shadow: var(--sombra); padding: 0.8rem 1rem; color: var(--suave); font-size: 0.8rem;
+}
+.kpi b { display: block; color: var(--azul); font-size: 1.5rem; font-weight: 700; line-height: 1.15; }
+.kpi-alto { box-shadow: inset 4px 0 0 #8FB4E8, var(--sombra); }
+.kpi-insuficiente { box-shadow: inset 4px 0 0 #F5C08E, var(--sombra); }
+@media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-.etiqueta {
-  display: inline-block; padding: 0.12rem 0.5rem; margin-right: 0.35rem; border-radius: 2px;
-  font-size: 0.74rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
-  border: 1px solid transparent; vertical-align: middle;
+/* Etiquetas y puntaje: misma altura, mismo tamaño de letra, alineados al centro. */
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; margin: 0.1rem 0 0.2rem; }
+.etiqueta, .puntaje {
+  display: inline-flex; align-items: center; gap: 0.4rem; height: 26px; padding: 0 0.7rem;
+  border-radius: 999px; font-size: 0.78rem; font-weight: 600; line-height: 1;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.etiqueta::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.65;
 }
 .banda-alto { background: #B5D0F5; color: #12355B; border-color: #8FB4E8; }
 .banda-medio { background: #CFE0F7; color: #24486F; border-color: #AFC9EC; }
 .banda-bajo { background: #E2E6EE; color: #4A5563; border-color: #C9D0DC; }
 .ev-insuficiente { background: #FFDFC2; color: #7A3E00; border-color: #F5C08E; }
-.ev-parcial { background: #E2D9F7; color: #4A3F6B; border-color: #C9BAEE; } /* lavanda */
+.ev-parcial { background: #E2D9F7; color: #4A3F6B; border-color: #C9BAEE; }  /* lavanda */
 .ev-suficiente_para_borrador { background: #CDEFD8; color: #1D5E36; border-color: #A3DDB6; }
-.puntaje { font-size: 0.95rem; color: #26303B; margin-left: 0.4rem; vertical-align: middle; }
-.puntaje b { font-size: 1.15rem; color: #12355B; }
+.puntaje { background: var(--tarjeta); border-color: var(--borde); color: var(--suave); }
+.puntaje b { color: var(--azul); font-weight: 700; }
+.puntaje small { font-size: inherit; color: var(--suave); font-weight: 500; margin-left: -0.35rem; }
+.barra { width: 56px; height: 6px; border-radius: 999px; background: var(--relleno); overflow: hidden; }
+.barra span { display: block; height: 100%; border-radius: 999px; background: var(--azul); }
+
+.meta { color: var(--suave); font-size: 0.85rem; margin: 0.25rem 0 0.1rem; }
+.meta b { color: var(--texto); font-weight: 600; }
 
 .nota {
-  border-left: 3px solid #12355B; background: #D4E3F7; color: #26303B;
-  padding: 0.55rem 0.8rem; font-size: 0.9rem; margin: 0.6rem 0 0.2rem 0;
+  background: #DCE8F8; border: 1px solid #B9CDE8; border-radius: 10px; color: var(--texto);
+  padding: 0.55rem 0.85rem; font-size: 0.85rem; margin: 0.45rem 0 0;
 }
+
+/* Tablas, desplegables y botones con el mismo radio que las tarjetas. */
+[data-testid="stDataFrame"] { border-radius: 10px; overflow: hidden; }
+[data-testid="stExpander"] details { border-radius: 10px; border-color: var(--borde); background: #EEF4FC; }
+.stButton button { border-radius: 8px; font-weight: 600; }
+
+/* Barra lateral. */
+[data-testid="stSidebar"] h2 { color: var(--azul); font-size: 1.05rem; }
+[data-testid="stSidebar"] h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--suave); }

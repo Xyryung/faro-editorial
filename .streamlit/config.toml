@@ -13,7 +13,7 @@ font = "sans-serif"
 baseFontSize = 15
 # h1 (título), h2, h3 (titular de la ficha), h4 (secciones de la ficha), h5, h6
 headingFontSizes = ["1.6rem", "1.35rem", "1.3rem", "0.95rem", "0.9rem", "0.85rem"]
-baseRadius = "0.2rem"
+baseRadius = "0.5rem"
 borderColor = "#B9CDE8"
 dataframeBorderColor = "#C9D9EF"
 showWidgetBorder = true

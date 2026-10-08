@@ -22,8 +22,12 @@ def filas(resultado):
 def test_una_fila_por_fuente_documentada(filas):
     assert sorted(filas) == [
         "Banco Mundial · Indicators API v2",
+        "Fuentes oficiales · feeds RSS",
         "GDELT · DOC 2.0 API",
+        "Otros medios panameños · feeds RSS",
+        "Otros medios panameños · sitemaps de noticias",
         "TVN · feed RSS público",
+        "TVN · sitemaps de noticias",
         "USGS · catálogo sísmico (FDSN Event)",
     ]
     for fila in filas.values():
@@ -75,6 +79,6 @@ def test_csv_importable_en_notion(resultado, tmp_path: Path):
     rutas = escribir_catalogo(generar_catalogo(resultado), tmp_path / "salida")
     with rutas["csv"].open(encoding="utf-8-sig", newline="") as f:
         filas = list(csv.DictReader(f))
-    assert len(filas) == 4
+    assert len(filas) == 8
     assert list(filas[0]) == list(COLUMNAS.values())
     assert rutas["md"].read_text(encoding="utf-8").startswith("# Catálogo de datos")

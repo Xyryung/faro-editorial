@@ -39,7 +39,12 @@ h4 { color: var(--suave); font-size: 0.75rem !important; font-weight: 700; text-
 [class*="st-key-tarjeta_g_"] { height: 100%; }
 .st-key-tarjeta_cabecera { padding: 0.9rem 1.25rem !important; }
 .st-key-tarjeta_cabecera h1 { font-size: 1.35rem !important; }
-[class*="st-key-tarjeta_"] p { margin-bottom: 0.2rem; }
+/* Streamlit compensa el margen de los párrafos con un margen negativo; como aquí los párrafos
+   no llevan margen, se quita también la compensación (si no, el texto se superpone). */
+[class*="st-key-tarjeta_"] [data-testid="stMarkdownContainer"],
+[class*="st-key-tarjeta_"] [data-testid="stCaptionContainer"] { margin-bottom: 0 !important; }
+[class*="st-key-tarjeta_"] p { margin-bottom: 0.2rem; font-size: 0.92rem; }
+[class*="st-key-tarjeta_"] p:last-child { margin-bottom: 0 !important; }
 [class*="st-key-tarjeta_"] ul { margin: 0; padding-left: 1.1rem; }
 [class*="st-key-tarjeta_"] li { margin: 0 0 0.35rem 0; line-height: 1.45; }
 [class*="st-key-tarjeta_"] li::marker { color: #8FB4E8; }

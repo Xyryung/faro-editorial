@@ -272,8 +272,9 @@ def etiquetas_html(tema: dict) -> str:
     )
 
 
-def resumen_html(resumen: dict) -> str:
-    """Tarjetas con los totales de la bandeja (solo números propios del sistema)."""
+def tarjetas_kpi(resumen: dict) -> list[str]:
+    """Los cuatro indicadores de la bandeja, cada uno como su propia tarjeta (solo números
+    propios del sistema)."""
     grupos = int(resumen["grupos"])
     altos = int(resumen["por_banda"].get("alto", 0))
     insuficientes = int(resumen["por_estado_evidencia"].get("insuficiente", 0))
@@ -285,15 +286,16 @@ def resumen_html(resumen: dict) -> str:
             f'<b>{valor}</b><span class="kpi-detalle">{detalle}</span></div>'
         )
 
-    return (
-        '<div class="kpis">'
-        + tarjeta("kpi-temas", "Temas", grupos, f"{int(resumen['noticias'])} noticias agrupadas")
-        + tarjeta("kpi-alto", "Prioridad alta", altos, f"de {grupos} temas")
-        + tarjeta(
+    return [
+        tarjeta("kpi-temas", "Temas", grupos, f"{int(resumen['noticias'])} noticias agrupadas"),
+        tarjeta("kpi-alto", "Prioridad alta", altos, f"de {grupos} temas"),
+        tarjeta(
             "kpi-insuficiente", "Evidencia insuficiente", insuficientes, "requieren investigar"
-        )
-        + tarjeta(
-            "kpi-suficiente", "Listos para borrador", suficientes, "sujetos a revisión humana"
-        )
-        + "</div>"
-    )
+        ),
+        tarjeta("kpi-suficiente", "Listos para borrador", suficientes, "sujetos a revisión humana"),
+    ]
+
+
+def resumen_html(resumen: dict) -> str:
+    """Los cuatro indicadores juntos, en una sola fila."""
+    return f'<div class="kpis">{"".join(tarjetas_kpi(resumen))}</div>'

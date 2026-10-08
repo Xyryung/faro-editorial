@@ -34,15 +34,17 @@ h4 { color: var(--suave); font-size: 0.75rem !important; font-weight: 700; text-
   background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio);
   box-shadow: var(--sombra); padding: 1.1rem 1.25rem 1.25rem; gap: 0.6rem !important;
 }
-/* Tarjetas de gráficos a la misma altura dentro de su fila. */
-[data-testid="stLayoutWrapper"]:has(> [class*="st-key-tarjeta_g_"]),
-[class*="st-key-tarjeta_g_"] { height: 100%; }
+/* Una tarjeta dentro de una columna ocupa todo el alto de su fila: las tarjetas de una misma
+   fila quedan iguales y sus bordes inferiores coinciden. */
+[data-testid="stColumn"] [data-testid="stLayoutWrapper"]:has(> [class*="st-key-tarjeta_"]),
+[data-testid="stColumn"] [class*="st-key-tarjeta_"] { height: 100%; }
 .st-key-tarjeta_cabecera { padding: 0.9rem 1.25rem !important; }
 .st-key-tarjeta_cabecera h1 { font-size: 1.35rem !important; }
 /* Streamlit compensa el margen de los párrafos con un margen negativo; como aquí los párrafos
    no llevan margen, se quita también la compensación (si no, el texto se superpone). */
-[class*="st-key-tarjeta_"] [data-testid="stMarkdownContainer"],
-[class*="st-key-tarjeta_"] [data-testid="stCaptionContainer"] { margin-bottom: 0 !important; }
+[data-testid="stMain"] [data-testid="stMarkdownContainer"],
+[data-testid="stMain"] [data-testid="stCaptionContainer"] { margin-bottom: 0 !important; }
+[data-testid="stMain"] [data-testid="stMarkdownContainer"] p:last-child { margin-bottom: 0; }
 [class*="st-key-tarjeta_"] p { margin-bottom: 0.2rem; font-size: 0.92rem; }
 [class*="st-key-tarjeta_"] p:last-child { margin-bottom: 0 !important; }
 [class*="st-key-tarjeta_"] ul { margin: 0; padding-left: 1.1rem; }

@@ -1,8 +1,7 @@
-/* Estilo de Faro Editorial (issue #16). Los colores base y las fuentes están en
-   .streamlit/config.toml (Source Sans para el texto, Source Serif para los títulos, ambas
-   incluidas en Streamlit). Criterio: sobrio y editorial. Tarjetas con borde fino y sin
-   sombras difusas, títulos en minúscula normal, datos como texto (sin pastillas ni franjas
-   de color) y líneas finas para separar en vez de cajas de color. */
+/* Estilo de Faro Editorial (issue #16). Los colores base y la fuente están en
+   .streamlit/config.toml (Source Sans, incluida en Streamlit). Criterio: sobrio y editorial.
+   Tarjetas con borde fino y sin sombras difusas, títulos en minúscula normal, datos como texto
+   (sin pastillas ni franjas de color) y líneas finas para separar en vez de cajas de color. */
 
 :root {
   --azul: #12355B;
@@ -31,9 +30,8 @@ footer { visibility: hidden; }
 [data-testid="stMain"] [data-testid="stCaptionContainer"] { margin-bottom: 0 !important; }
 [data-testid="stMain"] [data-testid="stMarkdownContainer"] p:last-child { margin-bottom: 0; }
 
-/* Tipografía. h1 y h3 (título y titular de la ficha) en serifa; los rótulos de sección en la
-   letra del texto, en minúscula normal. */
-h1 { color: var(--azul); font-size: 1.6rem !important; font-weight: 600 !important;
+/* Tipografía: una sola familia (la del texto); los rótulos de sección en minúscula normal. */
+h1 { color: var(--azul); font-size: 1.5rem !important; font-weight: 700 !important;
      letter-spacing: -0.01em; padding: 0 !important; margin: 0 !important; }
 h3 { color: var(--azul); font-weight: 600 !important; line-height: 1.25; padding-top: 0 !important; }
 h4 { font-family: inherit !important; color: var(--texto); font-size: 0.95rem !important;

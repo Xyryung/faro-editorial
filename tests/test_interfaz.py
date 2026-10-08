@@ -107,7 +107,9 @@ def test_cargar_bandeja_la_genera_desde_la_base(data_dir: Path):
     assert (data_dir / "processed" / "bandeja.json").exists()
     filas = filas_bandeja(bandeja["temas"])
     assert [f["#"] for f in filas] == [1, 2, 3]
-    assert set(filas[0]) >= {"Puntaje", "Banda", "Evidencia", "Fecha original (Panamá)"}
+    assert set(filas[0]) >= {"Puntaje", "Prioridad", "Evidencia", "Fecha original"}
+    assert {f["Prioridad"] for f in filas} <= {"Alta", "Media", "Baja"}
+    assert all("_" not in f["Tema"] for f in filas)  # nombres legibles, no claves internas
     # La segunda vez la lee del archivo, salvo que se pida regenerar.
     assert cargar_bandeja(data_dir / "processed")[1] == "Bandeja leída de bandeja.json."
     assert cargar_bandeja(data_dir / "processed", regenerar=True)[1].startswith("Bandeja generada")
@@ -137,7 +139,7 @@ def test_app_muestra_bandeja_y_ficha(monkeypatch, data_dir: Path):
     # La ficha muestra el aviso, la acción recomendada y las secciones de evidencia.
     textos = " ".join(m.value for m in app.markdown)
     assert "no habilita publicación" in textos
-    assert 'class="etiqueta banda-' in textos
+    assert 'class="banda-' in textos and 'class="ev-' in textos
     for seccion in (
         "Acción recomendada",
         "Qué se reporta",
@@ -204,7 +206,7 @@ def test_etiquetas_html_solo_usan_valores_del_sistema():
     assert "<script>" not in html
     assert "banda-bajo" in html and "ev-parcial" in html
     assert "<b>91.7</b>" in html
-    assert "Prioridad baja" in html  # concordancia: "Prioridad" es femenino
+    assert ">Baja</b>" in html  # concordancia: "Prioridad" es femenino
 
 
 # --- Gráficos -------------------------------------------------------------------------
@@ -274,3 +276,61 @@ def test_fila_de_noticia_escapa_el_titular_y_solo_enlaza_http():
     )
     assert "<code>BM&#58;" not in fila_html("cita", "ok", codigo="BM:PAN:x:2024")
     assert "<code>BM:PAN:x:2024</code>" in fila_html("cita", "ok", codigo="BM:PAN:x:2024")
+
+
+def test_textos_para_el_editor_sin_jerga_interna():
+    from faro_editorial.interfaz import etiqueta_tema, leyenda_html, texto_datos
+
+    assert etiqueta_tema("logistica_canal") == "Logística y Canal"
+    assert etiqueta_tema(None) == "Sin clasificar"
+    assert etiqueta_tema("tema_nuevo") == "Tema nuevo"
+    bandeja = {
+        "referencia_panama": "2025-09-20 08:00",
+        "origen_referencia": "noticia más reciente; el manifest no trae fecha de corte",
+        "agrupacion": "una noticia por grupo",
+    }
+    texto = texto_datos(bandeja)
+    assert "manifest" not in texto and "2025-09-20 08:00" in texto
+    leyenda = leyenda_html({"<b>x</b>": "#123456", "malo": "red;background:url(x)"})
+    assert "<b>" not in leyenda and "url(" not in leyenda and "#123456" in leyenda
+
+
+def test_periodo_de_las_noticias_segun_el_rango():
+    from faro_editorial.graficos import periodo_noticias
+
+    def tema(*fechas):
+        return {
+            "banda": "alto",
+            "noticias": [{"fecha_publicacion_panama": f"{f} 08:00"} for f in fechas],
+        }
+
+    assert periodo_noticias([tema("2025-09-15", "2025-09-20")]) == "día"
+    assert periodo_noticias([tema("2025-06-01", "2025-09-20")]) == "semana"
+    assert periodo_noticias([tema("2025-01-01", "2025-12-20")]) == "mes"
+    assert periodo_noticias([tema("2025-09-15")]) == "día"
+
+
+def test_fecha_y_version_legibles():
+    from faro_editorial.interfaz import fecha_legible, version_legible
+
+    assert fecha_legible("2025-09-20 08:00") == "20 sep 2025, 08:00"
+    assert fecha_legible(None) == "sin fecha"
+    assert fecha_legible("no es fecha") == "no es fecha"
+    assert version_legible("reglas-v1.0") == "Reglas v1.0"
+    assert version_legible("criterios-v2.0") == "Criterios v2.0"
+
+
+def test_las_fuentes_del_tema_estan_en_el_repo():
+    """T10: la letra no se descarga de internet; cada fuente declarada está en app/static."""
+    import tomllib
+
+    config = tomllib.loads((ROOT_DIR / ".streamlit" / "config.toml").read_text(encoding="utf-8"))
+    assert config["server"]["enableStaticServing"] is True
+    caras = config["theme"]["fontFaces"]
+    assert caras and {c["family"] for c in caras} == {"IBM Plex Sans"}
+    for cara in caras:
+        assert not cara["url"].startswith("http")  # nada externo
+        # "app/static/..." es la URL que sirve Streamlit; el archivo está en <repo>/app/static/...
+        ruta = ROOT_DIR / "app" / cara["url"].removeprefix("app/")
+        assert ruta.read_bytes()[:4] == b"wOF2", ruta
+    assert (ROOT_DIR / "app" / "static" / "fonts" / "OFL-IBM-Plex.txt").exists()

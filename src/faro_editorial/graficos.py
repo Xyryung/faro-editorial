@@ -6,27 +6,33 @@ noticias se dibujan como texto del gráfico, nunca como HTML.
 """
 
 from collections import Counter
+from datetime import date, timedelta
 
 import altair as alt
 
-from faro_editorial.interfaz import ETIQUETAS_BANDA, ETIQUETAS_ESTADO, NOMBRES_COMPONENTES
+from faro_editorial.interfaz import (
+    ETIQUETAS_BANDA,
+    ETIQUETAS_ESTADO,
+    MESES_CORTOS,
+    NOMBRES_COMPONENTES,
+)
 
 COLORES_ESTADO = {
-    "Insuficiente": "#F5A866",
-    "Parcial": "#A995E0",
-    "Suficiente para borrador": "#6CC48C",
+    "Insuficiente": "#C98A4B",
+    "Parcial": "#8E86B0",
+    "Suficiente para borrador": "#5E9C76",
 }
-COLORES_BANDA = {"Alto": "#2F6DB5", "Medio": "#8FB4E8", "Bajo": "#C9D0DC"}
+COLORES_BANDA = {"Alta": "#1F3A5F", "Media": "#7D8FA6", "Baja": "#C9C2B4"}
 COLORES_COMPONENTE = {
-    "Relevancia": "#12355B",
-    "Impacto potencial": "#2F6DB5",
-    "Urgencia": "#5B8FD1",
-    "Novedad": "#8FB4E8",
-    "Evidencia disponible": "#6CC48C",
+    "Relevancia": "#1F3A5F",
+    "Impacto potencial": "#3D5A80",
+    "Urgencia": "#6B83A3",
+    "Novedad": "#A3B3C7",
+    "Evidencia disponible": "#5E9C76",
 }
-_TEXTO = "#26303B"
-_SUAVE = "#5B6B80"
-_REJILLA = "#D6E0EC"
+_TEXTO = "#2B2926"
+_SUAVE = "#6E6A62"
+_REJILLA = "#E2DCCF"
 ALTO = 200  # alto común de los gráficos de la bandeja, para que las tarjetas se alineen
 
 
@@ -37,6 +43,7 @@ def _escala(colores: dict[str, str]) -> alt.Scale:
 def _estilo(grafico: alt.Chart, alto: int) -> alt.Chart:
     return (
         grafico.properties(height=alto, background="transparent")
+        .configure(font="IBM Plex Sans, sans-serif")
         .configure_view(stroke=None)
         .configure_axis(
             labelColor=_SUAVE,
@@ -80,28 +87,103 @@ def datos_evidencia(temas: list[dict]) -> list[dict]:
 
 
 def datos_noticias_por_dia(temas: list[dict]) -> list[dict]:
-    """Noticias por día de publicación (hora de Panamá) y banda del tema al que pertenecen."""
+    """Noticias por día de publicación (hora de Panamá) y prioridad del tema al que pertenecen."""
+    orden = {etiqueta: i for i, etiqueta in enumerate(COLORES_BANDA)}
     conteo: Counter[tuple[str, str]] = Counter()
     for t in temas:
-        banda = ETIQUETAS_BANDA.get(t["banda"], t["banda"])
+        prioridad = ETIQUETAS_BANDA.get(t["banda"], t["banda"])
         for n in t["noticias"]:
             fecha = n.get("fecha_publicacion_panama") or n.get("fecha_deteccion_panama")
             if fecha:
-                conteo[(fecha[:10], banda)] += 1
-    return [{"Día": d, "Banda": b, "Noticias": c} for (d, b), c in sorted(conteo.items())]
+                conteo[(fecha[:10], prioridad)] += 1
+    return [
+        {"Día": d, "Prioridad": p, "Noticias": c, "Orden": orden.get(p, 9)}
+        for (d, p), c in sorted(conteo.items())
+    ]
+
+
+def periodo_noticias(temas: list[dict]) -> str:
+    """Agrupa por día, semana o mes según el rango de fechas, para que las barras se lean
+    igual con 3 noticias que con un año de snapshot."""
+    dias = sorted({f["Día"] for f in datos_noticias_por_dia(temas)})
+    if len(dias) < 2:
+        return "día"
+    rango = (date.fromisoformat(dias[-1]) - date.fromisoformat(dias[0])).days
+    return "día" if rango <= 45 else "semana" if rango <= 210 else "mes"
+
+
+_MESES = MESES_CORTOS
+
+
+def _inicio_periodo(dia: date, periodo: str) -> date:
+    if periodo == "semana":
+        return dia - timedelta(days=dia.weekday())  # lunes
+    if periodo == "mes":
+        return dia.replace(day=1)
+    return dia
+
+
+def _siguiente(inicio: date, periodo: str) -> date:
+    if periodo == "semana":
+        return inicio + timedelta(days=7)
+    if periodo == "mes":
+        return (inicio + timedelta(days=32)).replace(day=1)
+    return inicio + timedelta(days=1)
+
+
+def _etiqueta_periodo(inicio: date, periodo: str) -> str:
+    mes = _MESES[inicio.month - 1]
+    if periodo == "mes":
+        return f"{mes} {inicio:%y}"
+    return f"{inicio.day} {mes}"
+
+
+def datos_noticias_por_periodo(temas: list[dict]) -> list[dict]:
+    """Noticias por periodo y prioridad, con los periodos vacíos en cero para que los huecos
+    se vean (un día sin noticias no desaparece del eje)."""
+    periodo = periodo_noticias(temas)
+    orden = {etiqueta: i for i, etiqueta in enumerate(COLORES_BANDA)}
+    conteo: Counter[tuple[date, str]] = Counter()
+    for f in datos_noticias_por_dia(temas):
+        inicio = _inicio_periodo(date.fromisoformat(f["Día"]), periodo)
+        conteo[(inicio, f["Prioridad"])] += f["Noticias"]
+    if not conteo:
+        return []
+    inicios = [i for i, _ in conteo]
+    filas = []
+    actual, ultimo = min(inicios), max(inicios)
+    while actual <= ultimo:
+        etiqueta = _etiqueta_periodo(actual, periodo)
+        presentes = [(p, c) for (i, p), c in conteo.items() if i == actual] or [("Alta", 0)]
+        for prioridad, cantidad in presentes:
+            filas.append(
+                {
+                    "Periodo": actual.isoformat(),
+                    "Etiqueta": etiqueta,
+                    "Prioridad": prioridad,
+                    "Noticias": cantidad,
+                    "Orden": orden.get(prioridad, 9),
+                }
+            )
+        actual = _siguiente(actual, periodo)
+    return filas
 
 
 def datos_aportes(temas: list[dict], limite: int = 8) -> list[dict]:
     """Aporte de cada componente al puntaje de los primeros temas del ranking."""
+    orden = {nombre: i for i, nombre in enumerate(COLORES_COMPONENTE)}
     filas = []
     for t in temas[:limite]:
-        etiqueta = f"#{t['posicion']} · {_corto(t['titulo'])}"
+        etiqueta = f"#{t['posicion']} {_corto(t['titulo'], 28)}"
         for clave, c in t["componentes"].items():
+            nombre = NOMBRES_COMPONENTES.get(clave, clave)
             filas.append(
                 {
                     "Tema": etiqueta,
+                    "Titular": t["titulo"],
                     "Posición": t["posicion"],
-                    "Componente": NOMBRES_COMPONENTES.get(clave, clave),
+                    "Componente": nombre,
+                    "Orden": orden.get(nombre, 9),
                     "Aporte": round(float(c["aporte"]), 1),
                 }
             )
@@ -123,45 +205,71 @@ def datos_desglose(tema: dict) -> list[dict]:
 # --- Gráficos -------------------------------------------------------------------------
 
 
+def colores_evidencia(temas: list[dict]) -> dict[str, str]:
+    """Colores de los estados que aparecen en el gráfico (para su leyenda)."""
+    presentes = {f["Estado"] for f in datos_evidencia(temas)}
+    return {e: c for e, c in COLORES_ESTADO.items() if e in presentes}
+
+
+def colores_prioridad(temas: list[dict]) -> dict[str, str]:
+    presentes = {f["Prioridad"] for f in datos_noticias_por_dia(temas)}
+    return {f"Prioridad {p.lower()}": c for p, c in COLORES_BANDA.items() if p in presentes}
+
+
 def grafico_evidencia(temas: list[dict]) -> alt.Chart:
-    filas = datos_evidencia(temas)
-    datos = alt.Data(values=filas)
-    base = alt.Chart(datos).encode(
-        theta=alt.Theta("Temas:Q", stack=True),
-        color=alt.Color(
-            "Estado:N",
-            scale=_escala(COLORES_ESTADO),
-            sort=list(COLORES_ESTADO),
-            legend=alt.Legend(values=[f["Estado"] for f in filas], labelLimit=180, columns=1),
-        ),
-        tooltip=["Estado:N", "Temas:Q"],
+    datos = alt.Data(values=datos_evidencia(temas))
+    dona = (
+        alt.Chart(datos)
+        .mark_arc(innerRadius=56, outerRadius=82, padAngle=0.01)
+        .encode(
+            theta=alt.Theta("Temas:Q", stack=True),
+            color=alt.Color("Estado:N", scale=_escala(COLORES_ESTADO), legend=None),
+            tooltip=["Estado:N", "Temas:Q"],
+        )
     )
-    dona = base.mark_arc(innerRadius=52, outerRadius=82, cornerRadius=4, padAngle=0.02)
     return _estilo(dona, ALTO)
 
 
 def grafico_noticias_por_dia(temas: list[dict]) -> alt.Chart:
-    filas = datos_noticias_por_dia(temas)
-    por_dia = Counter()
+    filas = datos_noticias_por_periodo(temas)
+    totales: Counter[str] = Counter()
     for f in filas:
-        por_dia[f["Día"]] += f["Noticias"]
-    # Un poco de aire sobre la barra más alta, para que no toque el borde del gráfico.
-    tope = max(por_dia.values(), default=1) + 1
-    datos = alt.Data(values=filas)
+        totales[f["Periodo"]] += f["Noticias"]
+    # Aire sobre la barra más alta, para que no toque el borde del gráfico.
+    tope = max(totales.values(), default=0)
+    tope = tope + max(1, round(tope * 0.15))
+    etiquetas = list(dict.fromkeys(f["Etiqueta"] for f in filas))
     barras = (
-        alt.Chart(datos)
-        .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4, size=22)
+        alt.Chart(alt.Data(values=filas))
+        .mark_bar(cornerRadiusTopLeft=1, cornerRadiusTopRight=1)
         .encode(
-            x=alt.X("Día:T", title=None, axis=alt.Axis(format="%d %b", labelAngle=0, grid=False)),
+            # Eje por bandas: cada etiqueta queda centrada bajo su barra.
+            x=alt.X(
+                "Etiqueta:O",
+                title=None,
+                sort=etiquetas,  # cronológico
+                scale=alt.Scale(paddingInner=0.25, paddingOuter=0.15),
+                axis=alt.Axis(
+                    # Con muchos periodos las etiquetas se inclinan para no tocarse.
+                    labelAngle=-40 if len(etiquetas) > 4 else 0,
+                    labelAlign="right" if len(etiquetas) > 4 else "center",
+                    labelOverlap="greedy",
+                    ticks=False,
+                ),
+            ),
             y=alt.Y(
                 "sum(Noticias):Q",
                 title=None,
                 scale=alt.Scale(domain=[0, tope]),
-                axis=alt.Axis(tickMinStep=1),
+                axis=alt.Axis(tickMinStep=1, format="d", domain=False, ticks=False),
             ),
-            color=alt.Color("Banda:N", scale=_escala(COLORES_BANDA), sort=list(COLORES_BANDA)),
-            order=alt.Order("Banda:N", sort="ascending"),
-            tooltip=[alt.Tooltip("Día:T", format="%d/%m/%Y"), "Banda:N", "Noticias:Q"],
+            color=alt.Color("Prioridad:N", scale=_escala(COLORES_BANDA), legend=None),
+            order=alt.Order("Orden:Q"),
+            tooltip=[
+                alt.Tooltip("Etiqueta:O", title="Periodo"),
+                "Prioridad:N",
+                alt.Tooltip("sum(Noticias):Q", title="Noticias"),
+            ],
         )
     )
     return _estilo(barras, ALTO)
@@ -171,26 +279,26 @@ def grafico_aportes(temas: list[dict], limite: int = 8) -> alt.Chart:
     datos = alt.Data(values=datos_aportes(temas, limite))
     barras = (
         alt.Chart(datos)
-        .mark_bar(size=18, cornerRadius=2)
+        .mark_bar(size=16, cornerRadius=1)
         .encode(
             y=alt.Y(
                 "Tema:N",
                 title=None,
                 sort=alt.EncodingSortField("Posición", order="ascending"),
-                axis=alt.Axis(labelLimit=240, labelPadding=8, ticks=False, domain=False),
+                axis=alt.Axis(labelLimit=190, labelPadding=8, ticks=False, domain=False),
             ),
-            x=alt.X("sum(Aporte):Q", title="Puntaje (0-100)", scale=alt.Scale(domain=[0, 100])),
-            color=alt.Color(
-                "Componente:N",
-                scale=_escala(COLORES_COMPONENTE),
-                sort=list(COLORES_COMPONENTE),
-                legend=alt.Legend(columns=3, labelLimit=160),
+            x=alt.X(
+                "sum(Aporte):Q",
+                title="Puntaje (0-100)",
+                scale=alt.Scale(domain=[0, 100]),
+                axis=alt.Axis(tickCount=5),
             ),
-            order=alt.Order("Componente:N"),
-            tooltip=["Tema:N", "Componente:N", "Aporte:Q"],
+            color=alt.Color("Componente:N", scale=_escala(COLORES_COMPONENTE), legend=None),
+            order=alt.Order("Orden:Q"),
+            tooltip=["Titular:N", "Componente:N", "Aporte:Q"],
         )
     )
-    return _estilo(barras, max(ALTO - 40, 34 * min(len(temas), limite)))
+    return _estilo(barras, max(ALTO - 30, 34 * min(len(temas), limite)))
 
 
 def grafico_desglose(tema: dict) -> alt.Chart:
@@ -199,7 +307,7 @@ def grafico_desglose(tema: dict) -> alt.Chart:
     y = alt.Y("Componente:N", title=None, sort=orden, axis=alt.Axis(labelLimit=200))
     fondo = (
         alt.Chart(datos)
-        .mark_bar(size=14, cornerRadius=7, color="#E0E9F4")
+        .mark_bar(size=12, cornerRadius=1, color="#E8E3D8")
         .encode(
             y=y,
             x=alt.X(
@@ -211,7 +319,7 @@ def grafico_desglose(tema: dict) -> alt.Chart:
     )
     aporte = (
         alt.Chart(datos)
-        .mark_bar(size=14, cornerRadius=7)
+        .mark_bar(size=12, cornerRadius=1)
         .encode(
             y=y,
             x="Aporte:Q",

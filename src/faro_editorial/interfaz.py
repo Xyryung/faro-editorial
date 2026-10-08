@@ -11,6 +11,7 @@ un titular no pueda inyectar enlaces, imágenes ni formato en la pantalla.
 import html
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -22,9 +23,20 @@ ETIQUETAS_ESTADO = {
     "parcial": "Parcial",
     "suficiente_para_borrador": "Suficiente para borrador",
 }
-ETIQUETAS_BANDA = {"alto": "Alto", "medio": "Medio", "bajo": "Bajo"}
-# "Prioridad" es femenino: "Prioridad alta", no "Prioridad alto".
-PRIORIDAD = {"alto": "alta", "medio": "media", "bajo": "baja"}
+# En pantalla la banda se llama "Prioridad" (femenino): Alta, Media, Baja.
+ETIQUETAS_BANDA = {"alto": "Alta", "medio": "Media", "bajo": "Baja"}
+MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+SIN_TEMA = "sin clasificar"
+ETIQUETAS_TEMA = {
+    "economia": "Economía",
+    "logistica_canal": "Logística y Canal",
+    "turismo": "Turismo",
+    "servicios_publicos": "Servicios públicos",
+    "eventos_naturales": "Eventos naturales",
+    "regulacion": "Regulación",
+    "otro": "Otro",
+    SIN_TEMA: "Sin clasificar",
+}
 NOMBRES_COMPONENTES = {
     "R": "Relevancia",
     "I": "Impacto potencial",
@@ -137,8 +149,14 @@ def filtrar(
         for t in temas
         if (not bandas or t["banda"] in bandas)
         and (not estados or t["estado_evidencia"] in estados)
-        and (not temas_editoriales or (t["tema"] or "sin clasificar") in temas_editoriales)
+        and (not temas_editoriales or (t["tema"] or SIN_TEMA) in temas_editoriales)
     ]
+
+
+def etiqueta_tema(tema: str | None) -> str:
+    """Nombre legible del tema editorial ("logistica_canal" → "Logística y Canal")."""
+    clave = tema or SIN_TEMA
+    return ETIQUETAS_TEMA.get(clave, clave.replace("_", " ").capitalize())
 
 
 def filas_bandeja(temas: list[dict]) -> list[dict[str, Any]]:
@@ -147,15 +165,42 @@ def filas_bandeja(temas: list[dict]) -> list[dict[str, Any]]:
         {
             "#": t["posicion"],
             "Puntaje": t["puntaje"],
-            "Banda": ETIQUETAS_BANDA.get(t["banda"], t["banda"]),
+            "Prioridad": ETIQUETAS_BANDA.get(t["banda"], t["banda"]),
             "Evidencia": ETIQUETAS_ESTADO.get(t["estado_evidencia"], t["estado_evidencia"]),
-            "Tema": t["tema"] or "sin clasificar",
+            "Tema": etiqueta_tema(t["tema"]),
             "Titular": t["titulo"],
             "Fuentes": len(t.get("procedencias_independientes") or t["procedencias"]),
-            "Fecha original (Panamá)": t["fecha_original_panama"] or "sin fecha",
+            "Fecha original": t["fecha_original_panama"] or "sin fecha",
         }
         for t in temas
     ]
+
+
+def texto_datos(bandeja: dict) -> str:
+    """Explica de dónde salen los datos de la bandeja, sin jerga interna."""
+    fecha = bandeja["referencia_panama"]
+    origen = bandeja["origen_referencia"]
+    if origen.startswith("corte del snapshot"):
+        corte = f"Datos con corte al {fecha} (hora de Panamá)."
+    elif origen.startswith("noticia más reciente"):
+        corte = f"Datos hasta la noticia más reciente: {fecha} (hora de Panamá)."
+    else:
+        corte = "El snapshot no tiene fechas; la urgencia se calcula con la hora actual."
+    if bandeja["agrupacion"].startswith("una noticia por grupo"):
+        grupos = "Cada noticia es un tema: todavía no se agrupan las del mismo evento."
+    else:
+        grupos = "Las noticias del mismo evento están agrupadas en un tema."
+    return f"{corte} {grupos}"
+
+
+def leyenda_html(colores: dict[str, str]) -> str:
+    """Leyenda de un gráfico como HTML propio: se acomoda al ancho y no se corta."""
+    items = "".join(
+        f'<span><i style="background:{color}"></i>{escapar_html(nombre)}</span>'
+        for nombre, color in colores.items()
+        if re.fullmatch(r"#[0-9A-Fa-f]{6}", color)
+    )
+    return f'<div class="leyenda">{items}</div>'
 
 
 def filas_componentes(tema: dict) -> list[dict[str, Any]]:
@@ -212,24 +257,43 @@ def accion_recomendada(tema: dict) -> list[str]:
 
 
 def etiquetas_html(tema: dict) -> str:
-    """Etiquetas de banda y evidencia con el puntaje. Solo usa valores propios del sistema
-    (banda, estado, puntaje), nunca texto de las fuentes, así que el HTML es seguro."""
+    """Prioridad, evidencia y puntaje del tema como una línea de datos (rótulo y valor). Solo
+    usa valores propios del sistema, nunca texto de las fuentes, así que el HTML es seguro."""
     banda = tema["banda"] if tema["banda"] in ETIQUETAS_BANDA else "bajo"
     estado = tema["estado_evidencia"] if tema["estado_evidencia"] in ETIQUETAS_ESTADO else "parcial"
     puntaje = float(tema["puntaje"])
     ancho = min(max(puntaje, 0.0), 100.0)
     return (
-        '<div class="chips">'
-        f'<span class="etiqueta banda-{banda}">Prioridad {PRIORIDAD[banda]}</span>'
-        f'<span class="etiqueta ev-{estado}">Evidencia {ETIQUETAS_ESTADO[estado].lower()}</span>'
-        f'<span class="puntaje">Puntaje <b>{puntaje:.1f}</b><small>/100</small>'
-        f'<span class="barra"><span style="width:{ancho:.0f}%"></span></span></span>'
+        '<div class="datos-tema">'
+        f'<div class="dato"><span>Prioridad</span><b class="banda-{banda}">'
+        f"{ETIQUETAS_BANDA[banda]}</b></div>"
+        f'<div class="dato"><span>Evidencia</span><b class="ev-{estado}">'
+        f"{ETIQUETAS_ESTADO[estado]}</b></div>"
+        f'<div class="dato"><span>Puntaje</span><em><b>{puntaje:.1f}</b> de 100'
+        f'<i class="barra"><i style="width:{ancho:.0f}%"></i></i></em></div>'
         "</div>"
     )
 
 
-def resumen_html(resumen: dict) -> str:
-    """Tarjetas con los totales de la bandeja (solo números propios del sistema)."""
+def fecha_legible(texto: str | None) -> str:
+    """ "2025-09-20 08:00" → "20 sep 2025, 08:00". Si no tiene ese formato, la deja igual."""
+    if not texto:
+        return "sin fecha"
+    try:
+        fecha = datetime.strptime(texto[:16], "%Y-%m-%d %H:%M")
+    except ValueError:
+        return texto
+    return f"{fecha.day} {MESES_CORTOS[fecha.month - 1]} {fecha.year}, {fecha:%H:%M}"
+
+
+def version_legible(version: str) -> str:
+    """ "reglas-v1.0" → "Reglas v1.0"."""
+    return version.replace("-v", " v", 1).capitalize()
+
+
+def tarjetas_kpi(resumen: dict) -> list[str]:
+    """Los cuatro indicadores de la bandeja, cada uno como su propia tarjeta (solo números
+    propios del sistema)."""
     grupos = int(resumen["grupos"])
     altos = int(resumen["por_banda"].get("alto", 0))
     insuficientes = int(resumen["por_estado_evidencia"].get("insuficiente", 0))
@@ -241,15 +305,16 @@ def resumen_html(resumen: dict) -> str:
             f'<b>{valor}</b><span class="kpi-detalle">{detalle}</span></div>'
         )
 
-    return (
-        '<div class="kpis">'
-        + tarjeta("kpi-temas", "Temas", grupos, f"{int(resumen['noticias'])} noticias agrupadas")
-        + tarjeta("kpi-alto", "Prioridad alta", altos, f"de {grupos} temas")
-        + tarjeta(
+    return [
+        tarjeta("kpi-temas", "Temas", grupos, f"{int(resumen['noticias'])} noticias agrupadas"),
+        tarjeta("kpi-alto", "Prioridad alta", altos, f"de {grupos} temas"),
+        tarjeta(
             "kpi-insuficiente", "Evidencia insuficiente", insuficientes, "requieren investigar"
-        )
-        + tarjeta(
-            "kpi-suficiente", "Listos para borrador", suficientes, "sujetos a revisión humana"
-        )
-        + "</div>"
-    )
+        ),
+        tarjeta("kpi-suficiente", "Listos para borrador", suficientes, "sujetos a revisión humana"),
+    ]
+
+
+def resumen_html(resumen: dict) -> str:
+    """Los cuatro indicadores juntos, en una sola fila."""
+    return f'<div class="kpis">{"".join(tarjetas_kpi(resumen))}</div>'

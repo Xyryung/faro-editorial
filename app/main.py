@@ -12,10 +12,14 @@ import streamlit as st
 
 from faro_editorial import __version__
 from faro_editorial.graficos import (
+    COLORES_COMPONENTE,
+    colores_evidencia,
+    colores_prioridad,
     grafico_aportes,
     grafico_desglose,
     grafico_evidencia,
     grafico_noticias_por_dia,
+    periodo_noticias,
 )
 from faro_editorial.interfaz import (
     ETIQUETAS_BANDA,
@@ -23,15 +27,20 @@ from faro_editorial.interfaz import (
     accion_recomendada,
     cargar_bandeja,
     escapar_md,
+    etiqueta_tema,
     etiquetas_html,
+    fecha_legible,
     fila_html,
     filas_bandeja,
     filas_componentes,
     filtrar,
+    leyenda_html,
     medios_html,
     noticia_html,
     pasos_html,
-    resumen_html,
+    tarjetas_kpi,
+    texto_datos,
+    version_legible,
 )
 from faro_editorial.rules import load_rules
 from faro_editorial.settings import get_settings
@@ -69,6 +78,21 @@ def tarjeta(clave: str):
     return st.container(key=f"tarjeta_{clave}")
 
 
+PROPORCION_FICHA = [1, 1]  # mitades: el borde coincide con la cuadrícula de arriba
+
+
+def cuadricula(dividir_derecha: bool = True) -> list:
+    """Cuatro columnas armadas como dos mitades de dos. Con dividir_derecha=False la mitad
+    derecha queda entera; así sus bordes coinciden con los de una fila de cuatro."""
+    izquierda, derecha = st.columns(2, gap="small")
+    with izquierda:
+        columnas = list(st.columns(2, gap="small"))
+    if not dividir_derecha:
+        return [*columnas, derecha]
+    with derecha:
+        return [*columnas, *st.columns(2, gap="small")]
+
+
 def grafico(chart, descripcion: str) -> None:
     st.altair_chart(chart, width="stretch", theme=None, alt=descripcion)
 
@@ -78,66 +102,65 @@ def mostrar_ficha(tema: dict) -> None:
         st.subheader(escapar_md(tema["titulo"]))
         st.markdown(etiquetas_html(tema), unsafe_allow_html=True)
         # T03: la fecha original siempre a la vista, para no presentar algo viejo como nuevo.
-        fecha = html.escape(tema["fecha_original_panama"] or "sin fecha")
+        fecha = html.escape(fecha_legible(tema["fecha_original_panama"]))
         st.markdown(
-            f'<div class="meta">Fecha original <b>{fecha}</b> · hora de Panamá</div>',
+            f'<div class="meta">Fecha original: <b>{fecha}</b> (hora de Panamá)</div>',
             unsafe_allow_html=True,
         )
         st.markdown(f'<div class="nota">{html.escape(tema["aviso"])}</div>', unsafe_allow_html=True)
 
-    izquierda, derecha = st.columns([3, 2], gap="medium")
-    with izquierda:
-        with tarjeta("reporta"):
-            st.markdown("#### Qué se reporta")
-            filas = "".join(noticia_html(n) for n in tema["noticias"])
+    # La ficha va por filas: en cada fila las dos tarjetas tienen la misma altura y los bordes
+    # coinciden con los de la fila de abajo (mismas proporciones en todas).
+    reporta, accion = st.columns(PROPORCION_FICHA, gap="small")
+    with reporta, tarjeta("reporta"):
+        st.markdown("#### Qué se reporta")
+        filas = "".join(noticia_html(n) for n in tema["noticias"])
+        st.markdown(f'<div class="filas">{filas}</div>', unsafe_allow_html=True)
+        if any(n.get("alcance_texto") != "titular_descripcion" for n in tema["noticias"]):
+            st.caption("Parte de este tema se basa únicamente en titular y metadatos.")
+    with accion, tarjeta("accion"):
+        st.markdown("#### Acción recomendada")
+        st.markdown(pasos_html(accion_recomendada(tema)), unsafe_allow_html=True)
+
+    quien, falta = st.columns(PROPORCION_FICHA, gap="small")
+    with quien, tarjeta("quien"):
+        st.markdown("#### Quién lo reporta")
+        independientes = tema.get("procedencias_independientes") or [
+            [m] for m in tema["procedencias"]
+        ]
+        st.markdown(
+            f"{len(tema['procedencias'])} medio(s) y **{len(independientes)} procedencia(s) "
+            "independiente(s)**. Los titulares casi idénticos cuentan como una sola."
+        )
+        st.markdown(medios_html(independientes), unsafe_allow_html=True)
+    with falta, tarjeta("falta"):
+        st.markdown("#### Qué falta comprobar")
+        st.markdown(f"**{escapar_md(tema['motivo_estado'])}**")
+        if tema["pendientes"]:
+            filas = "".join(fila_html(p, "aviso") for p in tema["pendientes"])
             st.markdown(f'<div class="filas">{filas}</div>', unsafe_allow_html=True)
-            if any(n.get("alcance_texto") != "titular_descripcion" for n in tema["noticias"]):
-                st.caption("Parte de este tema se basa únicamente en titular y metadatos.")
+        else:
+            st.caption("No se detectaron datos concretos pendientes de verificar.")
 
-        with tarjeta("quien"):
-            st.markdown("#### Quién lo reporta")
-            independientes = tema.get("procedencias_independientes") or [
-                [m] for m in tema["procedencias"]
-            ]
+    with tarjeta("respaldo"):
+        st.markdown("#### Qué está respaldado")
+        if not tema["vinculos_oficiales"]:
+            st.markdown("Sin respaldo oficial vinculado (Banco Mundial o USGS).")
+        for v in tema["vinculos_oficiales"]:
             st.markdown(
-                f"{len(tema['procedencias'])} medio(s) y **{len(independientes)} procedencia(s) "
-                "independiente(s)**. Los titulares casi idénticos cuentan como una sola."
+                fila_html(v["cita"], "ok", codigo=v["id_evidencia"]), unsafe_allow_html=True
             )
-            st.markdown(medios_html(independientes), unsafe_allow_html=True)
-
-        with tarjeta("respaldo"):
-            st.markdown("#### Qué está respaldado")
-            if not tema["vinculos_oficiales"]:
-                st.markdown("Sin respaldo oficial vinculado (Banco Mundial o USGS).")
-            for v in tema["vinculos_oficiales"]:
-                st.markdown(
-                    fila_html(v["cita"], "ok", codigo=v["id_evidencia"]), unsafe_allow_html=True
-                )
-                with st.expander(f"Limitaciones y regla · {v['id_evidencia']}"):
-                    st.markdown(f"**Regla:** {escapar_md(v['regla'])}")
-                    st.markdown(" ".join(escapar_md(lim) for lim in v["limitaciones"]))
-                    if v.get("serie"):
-                        st.dataframe(
-                            [
-                                {"Año": a, "Valor": "sin dato" if valor is None else valor}
-                                for a, valor in v["serie"]
-                            ],
-                            hide_index=True,
-                        )
-
-    with derecha:
-        with tarjeta("accion"):
-            st.markdown("#### Acción recomendada")
-            st.markdown(pasos_html(accion_recomendada(tema)), unsafe_allow_html=True)
-
-        with tarjeta("falta"):
-            st.markdown("#### Qué falta comprobar")
-            st.markdown(f"**{escapar_md(tema['motivo_estado'])}**")
-            if tema["pendientes"]:
-                filas = "".join(fila_html(p, "aviso") for p in tema["pendientes"])
-                st.markdown(f'<div class="filas">{filas}</div>', unsafe_allow_html=True)
-            else:
-                st.caption("No se detectaron datos concretos pendientes de verificar.")
+            with st.expander(f"Limitaciones y regla · {v['id_evidencia']}"):
+                st.markdown(f"**Regla:** {escapar_md(v['regla'])}")
+                st.markdown(" ".join(escapar_md(lim) for lim in v["limitaciones"]))
+                if v.get("serie"):
+                    st.dataframe(
+                        [
+                            {"Año": a, "Valor": "sin dato" if valor is None else valor}
+                            for a, valor in v["serie"]
+                        ],
+                        hide_index=True,
+                    )
 
     with tarjeta("desglose"):
         st.markdown("#### Desglose del puntaje")
@@ -159,25 +182,18 @@ with zona_datos:
 
 bandeja, mensaje = cargar_bandeja(settings.processed_dir, regenerar=regenerar)
 
-estados_sistema = [
-    ("ok", "Bandeja lista") if bandeja is not None else ("aviso", "Sin snapshot"),
-    ("ok", "Modo sin conexión") if settings.offline else ("info", "En línea"),
-]
-pastillas = "".join(
-    f'<span class="estado estado-{clase}">{html.escape(texto)}</span>'
-    for clase, texto in estados_sistema
-)
-if bandeja is not None:
-    pastillas += "".join(
-        f'<span class="pastilla">{html.escape(texto)}</span>'
-        for texto in (
-            f"Corte {bandeja['referencia_panama']} · Panamá",
-            bandeja["version_reglas"],
-            bandeja["version_criterios"],
-        )
-    )
-with tarjeta("cabecera"):
-    marca, estado = st.columns([2, 3], vertical_alignment="center")
+# Cabecera: título y, a la derecha, el corte y las versiones como texto (sin pastillas).
+modo = "Sin conexión" if settings.offline else "En línea"
+if bandeja is None:
+    lineas = ["Sin snapshot cargado", modo]
+else:
+    lineas = [
+        f"Corte: {fecha_legible(bandeja['referencia_panama'])} (hora de Panamá)",
+        f"{version_legible(bandeja['version_reglas'])} · "
+        f"{version_legible(bandeja['version_criterios'])} · {modo}",
+    ]
+with st.container(key="cabecera"):
+    marca, estado = st.columns([1, 1], vertical_alignment="bottom")
     with marca:
         st.title("Faro Editorial")
         st.markdown(
@@ -185,7 +201,8 @@ with tarjeta("cabecera"):
             unsafe_allow_html=True,
         )
     with estado:
-        st.markdown(f'<div class="cabecera">{pastillas}</div>', unsafe_allow_html=True)
+        texto = "".join(f"<span>{html.escape(linea)}</span>" for linea in lineas)
+        st.markdown(f'<div class="cabecera">{texto}</div>', unsafe_allow_html=True)
 
 if bandeja is None:
     st.info(mensaje)
@@ -193,14 +210,14 @@ if bandeja is None:
     st.stop()
 
 with zona_datos:
-    st.caption(
-        f"{mensaje} Corte: {bandeja['origen_referencia']}. Agrupación: {bandeja['agrupacion']}."
-    )
+    st.caption(texto_datos(bandeja))
+if regenerar:
+    st.toast("Bandeja recalculada desde la base cargada.")
 
 with zona_filtros:
     st.subheader("Filtros")
     bandas = st.multiselect(
-        "Banda",
+        "Prioridad",
         list(ETIQUETAS_BANDA),
         format_func=ETIQUETAS_BANDA.get,
         placeholder="Todas",
@@ -213,28 +230,43 @@ with zona_filtros:
         placeholder="Todos",
         key="filtro_estado",
     )
-    temas_disponibles = sorted({t["tema"] or "sin clasificar" for t in bandeja["temas"]})
-    temas_sel = st.multiselect("Tema", temas_disponibles, placeholder="Todos", key="filtro_tema")
+    temas_disponibles = sorted(
+        {t["tema"] or "sin clasificar" for t in bandeja["temas"]}, key=etiqueta_tema
+    )
+    temas_sel = st.multiselect(
+        "Tema",
+        temas_disponibles,
+        format_func=etiqueta_tema,
+        placeholder="Todos",
+        key="filtro_tema",
+    )
 
 pestana_bandeja, pestana_consulta, pestana_borrador, pestana_config = st.tabs(
     ["Bandeja y ficha", "Consulta", "Borrador", "Configuración"]
 )
 
 with pestana_bandeja:
-    st.markdown(resumen_html(bandeja["resumen"]), unsafe_allow_html=True)
+    # Indicadores y gráficos sobre la misma cuadrícula de cuatro columnas.
+    for columna, kpi in zip(cuadricula(), tarjetas_kpi(bandeja["resumen"]), strict=True):
+        with columna:
+            st.markdown(kpi, unsafe_allow_html=True)
 
     visibles = filtrar(bandeja["temas"], bandas, estados, temas_sel)
     if visibles:
-        evidencia, por_dia, aportes = st.columns([1, 1.1, 2])
+        evidencia, por_dia, aportes = cuadricula(dividir_derecha=False)
         with evidencia, tarjeta("g_evidencia"):
             st.markdown("#### Evidencia")
             grafico(grafico_evidencia(visibles), "Temas por estado de evidencia")
+            st.markdown(leyenda_html(colores_evidencia(visibles)), unsafe_allow_html=True)
         with por_dia, tarjeta("g_dias"):
-            st.markdown("#### Noticias por día")
-            grafico(grafico_noticias_por_dia(visibles), "Noticias por día de publicación")
+            periodo = periodo_noticias(visibles)
+            st.markdown(f"#### Noticias por {periodo}")
+            grafico(grafico_noticias_por_dia(visibles), f"Noticias por {periodo} de publicación")
+            st.markdown(leyenda_html(colores_prioridad(visibles)), unsafe_allow_html=True)
         with aportes, tarjeta("g_aportes"):
             st.markdown("#### Qué compone el puntaje")
             grafico(grafico_aportes(visibles), "Aporte de cada componente por tema")
+            st.markdown(leyenda_html(COLORES_COMPONENTE), unsafe_allow_html=True)
 
     with tarjeta("bandeja"):
         st.markdown("#### Bandeja priorizada")
@@ -256,16 +288,18 @@ with pestana_bandeja:
                 hide_index=True,
                 width="stretch",
                 column_config={
-                    "#": st.column_config.NumberColumn(width="small"),
+                    "#": st.column_config.NumberColumn(width=44, alignment="left"),
                     "Puntaje": st.column_config.ProgressColumn(
-                        format="%.1f", min_value=0, max_value=100, width="small"
+                        format="%.1f", min_value=0, max_value=100, width=120
                     ),
-                    "Banda": st.column_config.TextColumn(width="small"),
+                    "Prioridad": st.column_config.TextColumn(width=84),
+                    "Evidencia": st.column_config.TextColumn(width=110),
+                    "Tema": st.column_config.TextColumn(width=140),
+                    "Titular": st.column_config.TextColumn(),  # ocupa el ancho que sobra
                     "Fuentes": st.column_config.NumberColumn(
-                        width="small", help="Procedencias independientes"
+                        width=72, alignment="left", help="Procedencias independientes"
                     ),
-                    "Titular": st.column_config.TextColumn(width="large"),
-                    "Fecha original (Panamá)": st.column_config.TextColumn(width="medium"),
+                    "Fecha original": st.column_config.TextColumn(width=136, help="Hora de Panamá"),
                 },
             )
             por_id = {t["id_grupo"]: t for t in visibles}

@@ -33,6 +33,8 @@ NOMBRES_COMPONENTES = {
 }
 
 _MARKDOWN_ESPECIAL = re.compile(r"([\\`*_{}\[\]()#+\-.!|>~<])")
+# Signos de HTML y de Markdown que se convierten en entidades dentro de HTML propio.
+_ESPECIAL_HTML = set("&<>\"'\\`*_{}[]()#!|~")
 
 
 def escapar_md(texto: str | None) -> str:
@@ -40,6 +42,33 @@ def escapar_md(texto: str | None) -> str:
     if not texto:
         return ""
     return _MARKDOWN_ESPECIAL.sub(r"\\\1", texto.replace("\n", " "))
+
+
+def escapar_html(texto: str | None) -> str:
+    """Texto de una fuente dentro de HTML propio: escapa el HTML y además convierte en entidades
+    los signos de Markdown, así no se interpreta ni como etiqueta ni como enlace."""
+    if not texto:
+        return ""
+    return "".join(f"&#{ord(c)};" if c in _ESPECIAL_HTML else c for c in texto.replace("\n", " "))
+
+
+def pasos_html(pasos: list[str]) -> str:
+    """Lista numerada de pasos (texto propio del sistema, escapado de todas formas)."""
+    filas = "".join(
+        f'<div class="paso"><span>{i}</span><p>{escapar_html(p)}</p></div>'
+        for i, p in enumerate(pasos, 1)
+    )
+    return f'<div class="pasos">{filas}</div>'
+
+
+def medios_html(grupos: list[list[str]]) -> str:
+    """Una pastilla por procedencia independiente; si agrupa varios medios, lo indica."""
+    pastillas = []
+    for medios in grupos:
+        nombre = " + ".join(escapar_html(m) for m in medios)
+        extra = "<em>posible agencia replicada</em>" if len(medios) > 1 else ""
+        pastillas.append(f'<span class="medio">{nombre}{extra}</span>')
+    return f'<div class="chips">{"".join(pastillas)}</div>'
 
 
 def cargar_bandeja(processed_dir: Path, regenerar: bool = False) -> tuple[dict | None, str]:
@@ -94,7 +123,7 @@ def filas_bandeja(temas: list[dict]) -> list[dict[str, Any]]:
             "Evidencia": ETIQUETAS_ESTADO.get(t["estado_evidencia"], t["estado_evidencia"]),
             "Tema": t["tema"] or "sin clasificar",
             "Titular": t["titulo"],
-            "Fuentes indep.": len(t.get("procedencias_independientes") or t["procedencias"]),
+            "Fuentes": len(t.get("procedencias_independientes") or t["procedencias"]),
             "Fecha original (Panamá)": t["fecha_original_panama"] or "sin fecha",
         }
         for t in temas

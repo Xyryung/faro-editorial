@@ -49,7 +49,15 @@ def _estilo(grafico: alt.Chart, alto: int) -> alt.Chart:
             titleFontWeight=600,
         )
         .configure_legend(
-            labelColor=_TEXTO, titleColor=_SUAVE, labelFontSize=11, orient="bottom", title=None
+            labelColor=_TEXTO,
+            titleColor=_SUAVE,
+            labelFontSize=11,
+            orient="bottom",
+            title=None,
+            symbolType="circle",
+            symbolSize=70,
+            columnPadding=14,
+            rowPadding=4,
         )
     )
 
@@ -133,13 +141,24 @@ def grafico_evidencia(temas: list[dict]) -> alt.Chart:
 
 
 def grafico_noticias_por_dia(temas: list[dict]) -> alt.Chart:
-    datos = alt.Data(values=datos_noticias_por_dia(temas))
+    filas = datos_noticias_por_dia(temas)
+    por_dia = Counter()
+    for f in filas:
+        por_dia[f["Día"]] += f["Noticias"]
+    # Un poco de aire sobre la barra más alta, para que no toque el borde del gráfico.
+    tope = max(por_dia.values(), default=1) + 1
+    datos = alt.Data(values=filas)
     barras = (
         alt.Chart(datos)
         .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4, size=22)
         .encode(
             x=alt.X("Día:T", title=None, axis=alt.Axis(format="%d %b", labelAngle=0, grid=False)),
-            y=alt.Y("sum(Noticias):Q", title="Noticias", axis=alt.Axis(tickMinStep=1)),
+            y=alt.Y(
+                "sum(Noticias):Q",
+                title=None,
+                scale=alt.Scale(domain=[0, tope]),
+                axis=alt.Axis(tickMinStep=1),
+            ),
             color=alt.Color("Banda:N", scale=_escala(COLORES_BANDA), sort=list(COLORES_BANDA)),
             order=alt.Order("Banda:N", sort="ascending"),
             tooltip=[alt.Tooltip("Día:T", format="%d/%m/%Y"), "Banda:N", "Noticias:Q"],

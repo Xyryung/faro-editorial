@@ -239,3 +239,17 @@ def test_datos_de_los_graficos_salen_de_la_bandeja(data_dir: Path):
     for grafico in (grafico_evidencia, grafico_noticias_por_dia, grafico_aportes):
         assert grafico(temas).to_dict()
     assert grafico_desglose(temas[0]).to_dict()
+
+
+def test_medios_y_pasos_no_interpretan_html_ni_markdown():
+    from faro_editorial.interfaz import escapar_html, medios_html, pasos_html
+
+    malicioso = "<img src=x onerror=alert(1)> [clic](https://evil.example) **x** &amp;"
+    escapado = escapar_html(malicioso)
+    assert "<" not in escapado and "[" not in escapado and "](" not in escapado
+    assert "*" not in escapado and "&amp;" not in escapado.replace("&#38;", "")
+    html = medios_html([[malicioso], ["TVN", "Telemetro"]])
+    assert "<img" not in html and "](" not in html
+    assert "TVN + Telemetro<em>posible agencia replicada</em>" in html
+    assert pasos_html(["Uno", "<b>dos</b>"]).count('class="paso"') == 2
+    assert "<b>dos" not in pasos_html(["<b>dos</b>"])

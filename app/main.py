@@ -27,6 +27,8 @@ from faro_editorial.interfaz import (
     filas_bandeja,
     filas_componentes,
     filtrar,
+    medios_html,
+    pasos_html,
     resumen_html,
 )
 from faro_editorial.rules import load_rules
@@ -85,7 +87,7 @@ def mostrar_ficha(tema: dict) -> None:
     with izquierda:
         with tarjeta("reporta"):
             st.markdown("#### Qué se reporta")
-            for n in tema["noticias"]:
+            for i, n in enumerate(tema["noticias"]):
                 publicada = n["fecha_publicacion_panama"] or "sin fecha"
                 detectada = (
                     f" · detectada {n['fecha_deteccion_panama']}"
@@ -93,11 +95,12 @@ def mostrar_ficha(tema: dict) -> None:
                     else ""
                 )
                 url = n["url"].replace(")", "%29")
-                st.markdown(
-                    f"- **{escapar_md(n['titulo'])}**  \n"
-                    f"  {escapar_md(n['medio'])} · publicada {publicada}{detectada}"
-                    f" · [abrir]({url})"
-                )
+                with st.container(key=f"fila_noticia_{i}"):
+                    st.markdown(f"**{escapar_md(n['titulo'])}**")
+                    st.caption(
+                        f"{escapar_md(n['medio'])} · publicada {publicada}{detectada}"
+                        f" · [Abrir nota]({url})"
+                    )
             if any(n.get("alcance_texto") != "titular_descripcion" for n in tema["noticias"]):
                 st.caption("Parte de este tema se basa únicamente en titular y metadatos.")
 
@@ -107,27 +110,21 @@ def mostrar_ficha(tema: dict) -> None:
                 [m] for m in tema["procedencias"]
             ]
             st.markdown(
-                f"{len(tema['procedencias'])} medio(s), **{len(independientes)} procedencia(s) "
-                "independiente(s)**."
+                f"{len(tema['procedencias'])} medio(s) y **{len(independientes)} procedencia(s) "
+                "independiente(s)**. Los titulares casi idénticos cuentan como una sola."
             )
-            for medios in independientes:
-                nota = (
-                    " (titulares casi idénticos: posible agencia replicada)"
-                    if len(medios) > 1
-                    else ""
-                )
-                st.markdown(f"- {escapar_md(', '.join(medios))}{nota}")
+            st.markdown(medios_html(independientes), unsafe_allow_html=True)
 
         with tarjeta("respaldo"):
             st.markdown("#### Qué está respaldado")
             if not tema["vinculos_oficiales"]:
                 st.markdown("Sin respaldo oficial vinculado (Banco Mundial o USGS).")
-            for v in tema["vinculos_oficiales"]:
-                st.markdown(f"- `{v['id_evidencia']}` · {escapar_md(v['cita'])}")
+            for i, v in enumerate(tema["vinculos_oficiales"]):
+                with st.container(key=f"fila_respaldo_{i}"):
+                    st.markdown(f"`{v['id_evidencia']}`  {escapar_md(v['cita'])}")
                 with st.expander(f"Limitaciones y regla · {v['id_evidencia']}"):
                     st.markdown(f"**Regla:** {escapar_md(v['regla'])}")
-                    for limitacion in v["limitaciones"]:
-                        st.markdown(f"- {escapar_md(limitacion)}")
+                    st.markdown(" ".join(escapar_md(lim) for lim in v["limitaciones"]))
                     if v.get("serie"):
                         st.dataframe(
                             [
@@ -140,17 +137,16 @@ def mostrar_ficha(tema: dict) -> None:
     with derecha:
         with tarjeta("accion"):
             st.markdown("#### Acción recomendada")
-            for accion in accion_recomendada(tema):
-                st.markdown(f"- {accion}")
+            st.markdown(pasos_html(accion_recomendada(tema)), unsafe_allow_html=True)
 
         with tarjeta("falta"):
             st.markdown("#### Qué falta comprobar")
-            st.markdown(f"Estado de evidencia: **{escapar_md(tema['motivo_estado'])}**")
-            if tema["pendientes"]:
-                for pendiente in tema["pendientes"]:
-                    st.markdown(f"- {escapar_md(pendiente)}")
-            else:
-                st.markdown("- No se detectaron datos pendientes de verificar.")
+            st.markdown(f"**{escapar_md(tema['motivo_estado'])}**")
+            for i, pendiente in enumerate(tema["pendientes"]):
+                with st.container(key=f"fila_pendiente_{i}"):
+                    st.markdown(escapar_md(pendiente))
+            if not tema["pendientes"]:
+                st.caption("No se detectaron datos concretos pendientes de verificar.")
 
     with tarjeta("desglose"):
         st.markdown("#### Desglose del puntaje")
@@ -159,10 +155,15 @@ def mostrar_ficha(tema: dict) -> None:
             st.dataframe(filas_componentes(tema), hide_index=True, width="stretch")
 
 
-with st.sidebar:
-    st.header("Bandeja")
+# Barra lateral: filtros arriba, datos abajo (el botón se crea antes de cargar la bandeja).
+zona_filtros = st.sidebar.container()
+zona_datos = st.sidebar.container(key="zona_datos")
+with zona_datos:
+    st.subheader("Datos")
     regenerar = st.button(
-        "Regenerar bandeja", help="Vuelve a calcular la bandeja desde la base cargada."
+        "Regenerar bandeja",
+        help="Vuelve a calcular la bandeja desde la base cargada.",
+        width="stretch",
     )
 
 bandeja, mensaje = cargar_bandeja(settings.processed_dir, regenerar=regenerar)
@@ -200,12 +201,12 @@ if bandeja is None:
     mostrar_configuracion()
     st.stop()
 
-with st.sidebar:
-    st.caption(mensaje)
+with zona_datos:
     st.caption(
-        f"Fecha de corte: {bandeja['origen_referencia']}. Agrupación: {bandeja['agrupacion']}."
+        f"{mensaje} Corte: {bandeja['origen_referencia']}. Agrupación: {bandeja['agrupacion']}."
     )
-    st.divider()
+
+with zona_filtros:
     st.subheader("Filtros")
     bandas = st.multiselect(
         "Banda",
@@ -252,8 +253,9 @@ with pestana_bandeja:
         )
         if bandeja["advertencias"]:
             with st.expander(f"Advertencias de la agrupación ({len(bandeja['advertencias'])})"):
-                for advertencia in bandeja["advertencias"]:
-                    st.markdown(f"- {escapar_md(advertencia)}")
+                for i, advertencia in enumerate(bandeja["advertencias"]):
+                    with st.container(key=f"fila_advertencia_{i}"):
+                        st.markdown(escapar_md(advertencia))
         if not bandeja["temas"]:
             st.info("La base no tiene noticias válidas. Revisa reporte_calidad.json.")
         elif not visibles:
@@ -269,8 +271,11 @@ with pestana_bandeja:
                         format="%.1f", min_value=0, max_value=100, width="small"
                     ),
                     "Banda": st.column_config.TextColumn(width="small"),
-                    "Fuentes indep.": st.column_config.NumberColumn(width="small"),
+                    "Fuentes": st.column_config.NumberColumn(
+                        width="small", help="Procedencias independientes"
+                    ),
                     "Titular": st.column_config.TextColumn(width="large"),
+                    "Fecha original (Panamá)": st.column_config.TextColumn(width="medium"),
                 },
             )
             por_id = {t["id_grupo"]: t for t in visibles}

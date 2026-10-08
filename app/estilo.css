@@ -71,7 +71,7 @@ h4 { color: var(--suave); font-size: 0.75rem !important; font-weight: 700; text-
   height: 32px; padding: 0 0.9rem !important; border-radius: 8px; color: var(--suave);
   border: none !important; box-shadow: none !important;
 }
-[data-testid="stTab"]::after { display: none; }
+[data-testid="stTab"]::after, [role="tablist"] .react-aria-SelectionIndicator { display: none; }
 [data-testid="stTab"] p { font-size: 0.85rem; font-weight: 600; }
 [data-testid="stTab"][aria-selected="true"] {
   background: var(--tarjeta); color: var(--azul); box-shadow: 0 1px 2px rgba(18, 53, 91, 0.14) !important;
@@ -134,3 +134,38 @@ h4 { color: var(--suave); font-size: 0.75rem !important; font-weight: 700; text-
 [data-testid="stSidebar"] h2 { color: var(--azul); font-size: 1.05rem; }
 [data-testid="stSidebar"] h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.07em;
   color: var(--suave); }
+
+/* Filas en lugar de viñetas: noticias, respaldos, pendientes y advertencias. */
+[class*="st-key-fila_"] {
+  background: #EEF4FC; border: 1px solid #DCE6F3; border-left: 3px solid #8FB4E8;
+  border-radius: 8px; padding: 0.55rem 0.8rem; gap: 0.1rem !important;
+}
+[class*="st-key-fila_"] p { margin: 0; }
+[class*="st-key-fila_pendiente"] { border-left-color: #F5A866; }
+[class*="st-key-fila_advertencia"] { border-left-color: #F5A866; }
+[class*="st-key-fila_respaldo"] { border-left-color: #6CC48C; }
+[class*="st-key-fila_"] [data-testid="stCaptionContainer"] p { font-size: 0.8rem; }
+
+/* Acción recomendada como pasos numerados. */
+.pasos { display: flex; flex-direction: column; gap: 0.5rem; }
+.paso { display: flex; align-items: flex-start; gap: 0.65rem; }
+.paso span {
+  flex: 0 0 22px; height: 22px; border-radius: 50%; background: var(--relleno); color: var(--azul);
+  font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 0.05rem;
+}
+.paso p { margin: 0 !important; line-height: 1.45; }
+
+/* Medios como pastillas. */
+.medio {
+  display: inline-flex; align-items: center; gap: 0.45rem; height: 26px; padding: 0 0.7rem;
+  border-radius: 999px; background: var(--relleno); color: var(--azul); font-size: 0.8rem; font-weight: 600;
+}
+.medio em { font-style: normal; font-weight: 500; color: #7A3E00; background: #FFE6CF;
+  border-radius: 999px; padding: 0.05rem 0.45rem; font-size: 0.72rem; }
+
+/* Sin el ícono de enlace que Streamlit pone junto a los títulos. */
+[data-testid="stHeaderActionElements"] { display: none; }
+
+/* Zona de datos de la barra lateral, separada de los filtros. */
+.st-key-zona_datos { border-top: 1px solid var(--borde); padding-top: 1rem; margin-top: 0.5rem; }

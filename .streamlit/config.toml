@@ -5,8 +5,8 @@
 base = "light"
 primaryColor = "#12355B"
 # Fondo azul pastel en vez de blanco puro: cansa menos la vista en sesiones largas.
-backgroundColor = "#EEF3F9"
-secondaryBackgroundColor = "#E0E9F4"
+backgroundColor = "#E6EFFB"
+secondaryBackgroundColor = "#D4E3F7"
 textColor = "#26303B"
 linkColor = "#1F5A96"
 font = "sans-serif"
@@ -14,14 +14,14 @@ baseFontSize = 15
 # h1 (título), h2, h3 (titular de la ficha), h4 (secciones de la ficha), h5, h6
 headingFontSizes = ["1.6rem", "1.35rem", "1.3rem", "0.95rem", "0.9rem", "0.85rem"]
 baseRadius = "0.2rem"
-borderColor = "#C8D5E5"
-dataframeBorderColor = "#D6E0EC"
+borderColor = "#B9CDE8"
+dataframeBorderColor = "#C9D9EF"
 showWidgetBorder = true
 showSidebarBorder = true
 
 [theme.sidebar]
-backgroundColor = "#E3ECF6"
-secondaryBackgroundColor = "#EEF3F9"
+backgroundColor = "#D6E5F8"
+secondaryBackgroundColor = "#E6EFFB"
 
 [client]
 # Sin el botón "Deploy" ni las opciones de desarrollo.

@@ -1,0 +1,91 @@
+# Clasificación temática de los grupos de noticias (issue #10, etapa 2 · Organizar).
+# Los códigos de tema son los de config/rules_v1.yaml. Cualquier cambio de pregunta,
+# descripciones o palabras clave crea una versión nueva y se justifica en un issue "decision".
+version: "clasificacion-v1.0"
+
+# jev: Jev Choice a través de la capa de decisiones (#8), con caché; si Jev se abstiene
+#      (sin internet y sin caché, error, respuesta inválida) se usa la línea base.
+# palabras: solo la línea base por palabras clave (sin llamadas a la IA).
+metodo: jev
+hilos: 8 # llamadas a Jev en paralelo
+titulares_por_grupo: 3 # cuántos titulares del grupo se envían como estado
+
+# Pregunta para Jev. Las descripciones son lo que el modelo usa para decidir: la clave del
+# tema nunca se envía como significado (el ID de la pregunta tampoco llega al modelo).
+pregunta:
+  es:
+    instrucciones: "¿Cuál es el tema principal de la noticia que describen estos titulares?"
+    opciones:
+      economia: >-
+        Economía y finanzas públicas: empleo, salarios, precios, inflación, comercio, empresas,
+        impuestos, presupuesto, deuda o inversión (excepto lo relativo al Canal de Panamá).
+      logistica_canal: >-
+        Canal de Panamá, puertos, transporte marítimo, navieras, aeropuertos, carga y logística
+        del comercio internacional.
+      turismo: >-
+        Turismo: visitantes, hoteles, cruceros, vuelos de pasajeros, destinos y promoción
+        turística.
+      servicios_publicos: >-
+        Servicios a la población: agua potable, electricidad, salud pública y hospitales,
+        educación y escuelas, transporte público, recolección de basura, calles y carreteras.
+      eventos_naturales: >-
+        Fenómenos naturales y clima: lluvias, inundaciones, sequía, El Niño, sismos,
+        deslizamientos, tormentas, incendios forestales y alertas de protección civil.
+      regulacion: >-
+        Leyes, decretos, reglamentos y reformas; debates y aprobaciones de la Asamblea; fallos
+        judiciales sobre normas; decisiones de entes reguladores.
+      otro: >-
+        Cualquier otro tema: sucesos y crimen, política sin una norma concreta, deportes,
+        espectáculos, cultura o noticias internacionales sin relación con los temas anteriores.
+  # Variante en inglés para la prueba go/no-go de Jev (#7): mismo contenido, otro idioma.
+  en:
+    instrucciones: "What is the main topic of the news story described by these headlines?"
+    opciones:
+      economia: >-
+        Economy and public finance: jobs, wages, prices, inflation, trade, companies, taxes,
+        budget, debt or investment (except matters about the Panama Canal).
+      logistica_canal: >-
+        Panama Canal, ports, shipping, shipping lines, airports, cargo and international trade
+        logistics.
+      turismo: >-
+        Tourism: visitors, hotels, cruises, passenger flights, destinations and tourism
+        promotion.
+      servicios_publicos: >-
+        Services to the population: drinking water, electricity, public health and hospitals,
+        education and schools, public transport, garbage collection, streets and roads.
+      eventos_naturales: >-
+        Natural phenomena and weather: rain, floods, drought, El Niño, earthquakes, landslides,
+        storms, wildfires and civil protection alerts.
+      regulacion: >-
+        Laws, decrees, regulations and reforms; National Assembly debates and approvals; court
+        rulings on rules; decisions by regulators.
+      otro: >-
+        Any other topic: crime and incidents, politics without a specific rule, sports,
+        entertainment, culture or international news unrelated to the topics above.
+
+# Línea base: gana el tema con más palabras clave distintas en los titulares (sin tildes ni
+# mayúsculas, palabras completas). Empate: el orden de esta lista. Ninguna: otro.
+# Se evita "canal" suelto: TVN es un canal de televisión.
+palabras_clave:
+  eventos_naturales: [lluvia, lluvias, aguacero, aguaceros, inundacion, inundaciones, sequia,
+    el nino, la nina, sismo, sismos, temblor, terremoto, deslizamiento, deslizamientos,
+    tormenta, tormentas, huracan, oleaje, sinaproc, crecida, crecidas, desbordamiento,
+    incendio forestal, clima en panama, fenomeno natural]
+  logistica_canal: [canal de panama, autoridad del canal, acp, esclusas, transito de buques,
+    transitos diarios, buques, naviera, navieras, puerto, puertos, portuario, portuaria,
+    contenedores, logistica, calado, panamax, neopanamax, gatun, rio indio, aeropuerto,
+    tocumen, zona libre, carga maritima]
+  servicios_publicos: [agua potable, idaan, potabilizadora, electricidad, energia electrica,
+    apagon, apagones, hospital, hospitales, css, caja de seguro social, minsa, medicamentos,
+    dengue, meduca, escuela, escuelas, clases, docentes, metro de panama, metrobus,
+    transporte publico, basura, recoleccion, carretera, carreteras, alcantarillado]
+  economia: [economia, economico, economica, pib, inflacion, desempleo, empleo, empleos,
+    salario, salarios, exportaciones, importaciones, mef, presupuesto, deuda, impuesto,
+    impuestos, dgi, inversion, inversiones, bancos, bancario, bancaria, precios,
+    costo de la vida, comercio, empresas, empresarial, mineria, cobre, credito, recaudacion,
+    fiscal]
+  regulacion: [ley, leyes, proyecto de ley, decreto, decretos, reforma, reformas, asamblea,
+    tercer debate, segundo debate, primer debate, normativa, reglamento, resolucion,
+    corte suprema, inconstitucional, regulacion, regulador, asep, gaceta oficial, veto, veta]
+  turismo: [turismo, turistas, turistico, turistica, visitantes, hotel, hoteles, hotelera,
+    crucero, cruceros, promtur, aerolinea, aerolineas, copa airlines]

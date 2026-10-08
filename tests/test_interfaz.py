@@ -126,8 +126,8 @@ def test_app_sin_snapshot_explica_como_cargarlo(monkeypatch, tmp_path: Path):
 def test_app_muestra_bandeja_y_ficha(monkeypatch, data_dir: Path):
     app = _app(monkeypatch, data_dir).run()
     assert not app.exception
-    metricas = {m.label: m.value for m in app.metric}
-    assert metricas["Temas"] == "3" and metricas["Noticias"] == "3"
+    textos = " ".join(m.value for m in app.markdown)
+    assert "<b>3</b> temas" in textos and "<b>3</b> noticias" in textos
     assert len(app.dataframe) >= 2  # bandeja y desglose del puntaje
 
     selector = app.selectbox(key="tema_elegido")
@@ -135,8 +135,9 @@ def test_app_muestra_bandeja_y_ficha(monkeypatch, data_dir: Path):
     titulares = [h.value for h in app.main.subheader]
     assert len(titulares) == 1
     # La ficha muestra el aviso, la acción recomendada y las secciones de evidencia.
-    assert any("no habilita publicación" in w.value for w in app.warning)
     textos = " ".join(m.value for m in app.markdown)
+    assert "no habilita publicación" in textos
+    assert 'class="etiqueta banda-' in textos
     for seccion in (
         "Acción recomendada",
         "Qué se reporta",
@@ -194,3 +195,13 @@ def test_bandeja_vieja_se_regenera_si_la_base_es_mas_nueva(data_dir: Path, raw: 
     bandeja, mensaje = cargar_bandeja(processed)
     assert mensaje == "Bandeja generada desde la base cargada."
     assert bandeja["resumen"]["noticias"] == 4
+
+
+def test_etiquetas_html_solo_usan_valores_del_sistema():
+    from faro_editorial.interfaz import etiquetas_html
+
+    html = etiquetas_html({"banda": "<script>", "estado_evidencia": "x", "puntaje": 91.66})
+    assert "<script>" not in html
+    assert "banda-bajo" in html and "ev-parcial" in html
+    assert "<b>91.7</b>" in html
+    assert "Prioridad baja" in html  # concordancia: "Prioridad" es femenino

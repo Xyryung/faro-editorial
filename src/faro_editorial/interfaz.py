@@ -22,6 +22,8 @@ ETIQUETAS_ESTADO = {
     "suficiente_para_borrador": "Suficiente para borrador",
 }
 ETIQUETAS_BANDA = {"alto": "Alto", "medio": "Medio", "bajo": "Bajo"}
+# "Prioridad" es femenino: "Prioridad alta", no "Prioridad alto".
+PRIORIDAD = {"alto": "alta", "medio": "media", "bajo": "baja"}
 NOMBRES_COMPONENTES = {
     "R": "Relevancia",
     "I": "Impacto potencial",
@@ -150,3 +152,26 @@ def accion_recomendada(tema: dict) -> list[str]:
             "Verificar la fecha original: puede ser una noticia antigua que vuelve a circular."
         )
     return acciones
+
+
+def etiquetas_html(tema: dict) -> str:
+    """Etiquetas de banda y evidencia con el puntaje. Solo usa valores propios del sistema
+    (banda, estado, puntaje), nunca texto de las fuentes, así que el HTML es seguro."""
+    banda = tema["banda"] if tema["banda"] in ETIQUETAS_BANDA else "bajo"
+    estado = tema["estado_evidencia"] if tema["estado_evidencia"] in ETIQUETAS_ESTADO else "parcial"
+    return (
+        f'<span class="etiqueta banda-{banda}">Prioridad {PRIORIDAD[banda]}</span>'
+        f'<span class="etiqueta ev-{estado}">Evidencia {ETIQUETAS_ESTADO[estado].lower()}</span>'
+        f'<span class="puntaje">Puntaje <b>{float(tema["puntaje"]):.1f}</b> / 100</span>'
+    )
+
+
+def resumen_html(resumen: dict) -> str:
+    """Una línea con los totales de la bandeja (solo números propios del sistema)."""
+    altos = int(resumen["por_banda"].get("alto", 0))
+    insuficientes = int(resumen["por_estado_evidencia"].get("insuficiente", 0))
+    return (
+        f'<div class="resumen"><b>{int(resumen["grupos"])}</b> temas · '
+        f"<b>{altos}</b> de prioridad alta · <b>{insuficientes}</b> con evidencia insuficiente · "
+        f"<b>{int(resumen['noticias'])}</b> noticias</div>"
+    )

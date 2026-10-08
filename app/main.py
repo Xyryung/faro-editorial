@@ -5,6 +5,8 @@ Ejecutar desde la raíz del repo:  uv run streamlit run app/main.py
 Lee data/processed/bandeja.json (o lo genera desde la base cargada). Funciona sin internet.
 """
 
+from pathlib import Path
+
 import streamlit as st
 
 from faro_editorial import __version__
@@ -14,9 +16,11 @@ from faro_editorial.interfaz import (
     accion_recomendada,
     cargar_bandeja,
     escapar_md,
+    etiquetas_html,
     filas_bandeja,
     filas_componentes,
     filtrar,
+    resumen_html,
 )
 from faro_editorial.rules import load_rules
 from faro_editorial.settings import get_settings
@@ -26,8 +30,9 @@ st.set_page_config(page_title="Faro Editorial", layout="wide")
 settings = get_settings()
 reglas = load_rules(settings.rules_path)
 
-st.title("Faro Editorial")
-st.caption("Copiloto de inteligencia informativa para TVN Media · hackIAthon")
+# Estilo propio (los colores base están en .streamlit/config.toml).
+estilo = (Path(__file__).parent / "estilo.css").read_text(encoding="utf-8")
+st.markdown(f"<style>{estilo}</style>", unsafe_allow_html=True)
 
 
 def mostrar_configuracion() -> None:
@@ -50,15 +55,12 @@ def mostrar_configuracion() -> None:
 
 def mostrar_ficha(tema: dict) -> None:
     st.subheader(escapar_md(tema["titulo"]))
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Puntaje", f"{tema['puntaje']:.1f}")
-    c2.metric("Banda", ETIQUETAS_BANDA.get(tema["banda"], tema["banda"]))
-    c3.metric("Evidencia", ETIQUETAS_ESTADO.get(tema["estado_evidencia"], tema["estado_evidencia"]))
+    st.markdown(etiquetas_html(tema), unsafe_allow_html=True)
     # T03: la fecha original siempre a la vista, para no presentar algo viejo como nuevo.
     st.markdown(
         f"**Fecha original:** {tema['fecha_original_panama'] or 'sin fecha'} (hora de Panamá)"
     )
-    st.warning(tema["aviso"])
+    st.markdown(f'<div class="nota">{tema["aviso"]}</div>', unsafe_allow_html=True)
 
     st.markdown("#### Acción recomendada")
     for accion in accion_recomendada(tema):
@@ -126,6 +128,15 @@ with st.sidebar:
 
 bandeja, mensaje = cargar_bandeja(settings.processed_dir, regenerar=regenerar)
 
+st.title("Faro Editorial")
+cabecera = "<b>TVN Media</b> · Mesa de evaluación editorial"
+if bandeja is not None:
+    cabecera += (
+        f" · Corte: <b>{bandeja['referencia_panama']}</b> (hora de Panamá)"
+        f" · {bandeja['version_reglas']} · {bandeja['version_criterios']}"
+    )
+st.markdown(f'<div class="cabecera">{cabecera}</div>', unsafe_allow_html=True)
+
 if bandeja is None:
     st.info(mensaje)
     mostrar_configuracion()
@@ -133,13 +144,8 @@ if bandeja is None:
 
 with st.sidebar:
     st.caption(mensaje)
-    st.markdown(
-        f"**Referencia:** {bandeja['referencia_panama']} (hora de Panamá)  \n"
-        f"{bandeja['origen_referencia']}"
-    )
-    st.markdown(
-        f"**Reglas:** {bandeja['version_reglas']} · {bandeja['version_criterios']}  \n"
-        f"**Agrupación:** {bandeja['agrupacion']}"
+    st.caption(
+        f"Fecha de corte: {bandeja['origen_referencia']}. Agrupación: {bandeja['agrupacion']}."
     )
     st.divider()
     st.subheader("Filtros")
@@ -165,12 +171,7 @@ pestana_bandeja, pestana_consulta, pestana_borrador, pestana_config = st.tabs(
 )
 
 with pestana_bandeja:
-    resumen = bandeja["resumen"]
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Temas", resumen["grupos"])
-    m2.metric("Prioridad alta", resumen["por_banda"].get("alto", 0))
-    m3.metric("Evidencia insuficiente", resumen["por_estado_evidencia"].get("insuficiente", 0))
-    m4.metric("Noticias", resumen["noticias"])
+    st.markdown(resumen_html(bandeja["resumen"]), unsafe_allow_html=True)
     st.caption(
         "La prioridad ordena qué revisar; no es una probabilidad de verdad ni habilita "
         "publicación. La decisión editorial es de la persona revisora."
@@ -186,7 +187,18 @@ with pestana_bandeja:
     elif not visibles:
         st.info("Ningún tema coincide con los filtros.")
     else:
-        st.dataframe(filas_bandeja(visibles), hide_index=True, width="stretch")
+        st.dataframe(
+            filas_bandeja(visibles),
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "#": st.column_config.NumberColumn(width="small"),
+                "Puntaje": st.column_config.NumberColumn(format="%.1f", width="small"),
+                "Banda": st.column_config.TextColumn(width="small"),
+                "Fuentes indep.": st.column_config.NumberColumn(width="small"),
+                "Titular": st.column_config.TextColumn(width="large"),
+            },
+        )
         por_id = {t["id_grupo"]: t for t in visibles}
         elegido = st.selectbox(
             "Abrir ficha",

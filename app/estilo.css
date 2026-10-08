@@ -1,0 +1,42 @@
+/* Estilo institucional de Faro Editorial (issue #16). Los colores base están en
+   .streamlit/config.toml; aquí solo los detalles que el tema no cubre. */
+
+.block-container { padding-top: 2.2rem; max-width: 1180px; }
+[data-testid="stDecoration"] { display: none; }  /* barra de color superior */
+footer { visibility: hidden; }
+
+h1 { color: #12355B; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.1rem; }
+h2, h3 { color: #12355B; font-weight: 600; }
+h4 {
+  color: #12355B; font-weight: 600; font-size: 0.95rem; text-transform: uppercase;
+  letter-spacing: 0.05em; border-bottom: 1px solid #E3E8EE; padding-bottom: 0.3rem;
+  margin-top: 1.4rem;
+}
+
+.cabecera {
+  color: #4A5563; font-size: 0.85rem; border-bottom: 2px solid #12355B;
+  padding-bottom: 0.5rem; margin-bottom: 1.2rem;
+}
+.cabecera b { color: #1A1A1A; font-weight: 600; }
+
+.resumen { font-size: 0.95rem; color: #1A1A1A; margin: 0.2rem 0 0.4rem 0; }
+.resumen b { color: #12355B; }
+
+.etiqueta {
+  display: inline-block; padding: 0.12rem 0.5rem; margin-right: 0.35rem; border-radius: 2px;
+  font-size: 0.74rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  border: 1px solid transparent; vertical-align: middle;
+}
+.banda-alto { background: #12355B; color: #FFFFFF; }
+.banda-medio { background: #DCE6F2; color: #12355B; border-color: #BCCDE2; }
+.banda-bajo { background: #EEF0F3; color: #4A5563; border-color: #D5DCE4; }
+.ev-insuficiente { background: #FBEFD9; color: #7A4B00; border-color: #E9CF9F; }
+.ev-parcial { background: #EEF1F5; color: #3D4B5C; border-color: #D5DCE4; }
+.ev-suficiente_para_borrador { background: #E3F1E7; color: #1D5E36; border-color: #B9DBC4; }
+.puntaje { font-size: 0.95rem; color: #1A1A1A; margin-left: 0.4rem; vertical-align: middle; }
+.puntaje b { font-size: 1.15rem; color: #12355B; }
+
+.nota {
+  border-left: 3px solid #12355B; background: #F2F5F9; color: #1A1A1A;
+  padding: 0.55rem 0.8rem; font-size: 0.9rem; margin: 0.6rem 0 0.2rem 0;
+}

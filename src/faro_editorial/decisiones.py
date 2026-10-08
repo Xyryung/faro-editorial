@@ -19,6 +19,7 @@ Todo llamado a Jev o al LLM pasa por ClienteDecisiones:
 import hashlib
 import json
 import os
+import threading
 import time
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
@@ -28,6 +29,8 @@ from typing import Annotated, Any, Literal, Protocol
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
 
 NOMBRE_REGISTRO = "registro_llamadas.jsonl"
+# Varias llamadas en paralelo (p. ej. la clasificación, #10) escriben en el mismo registro.
+_CANDADO_REGISTRO = threading.Lock()
 
 # El estado es lo que se evalúa: texto o un objeto JSON (Jev acepta ambos).
 Estado = str | dict[str, Any]
@@ -352,5 +355,5 @@ class ClienteDecisiones:
             **campos,
         }
         self.ruta_registro.parent.mkdir(parents=True, exist_ok=True)
-        with self.ruta_registro.open("a", encoding="utf-8") as f:
+        with _CANDADO_REGISTRO, self.ruta_registro.open("a", encoding="utf-8") as f:
             f.write(json.dumps(fila, ensure_ascii=False) + "\n")

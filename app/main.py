@@ -11,6 +11,12 @@ from pathlib import Path
 import streamlit as st
 
 from faro_editorial import __version__
+from faro_editorial.graficos import (
+    grafico_aportes,
+    grafico_desglose,
+    grafico_evidencia,
+    grafico_noticias_por_dia,
+)
 from faro_editorial.interfaz import (
     ETIQUETAS_BANDA,
     ETIQUETAS_ESTADO,
@@ -57,6 +63,10 @@ def mostrar_configuracion() -> None:
 def tarjeta(clave: str):
     """Contenedor con aspecto de tarjeta (el estilo de .st-key-tarjeta_* está en estilo.css)."""
     return st.container(key=f"tarjeta_{clave}")
+
+
+def grafico(chart, descripcion: str) -> None:
+    st.altair_chart(chart, width="stretch", theme=None, alt=descripcion)
 
 
 def mostrar_ficha(tema: dict) -> None:
@@ -144,7 +154,9 @@ def mostrar_ficha(tema: dict) -> None:
 
     with tarjeta("desglose"):
         st.markdown("#### Desglose del puntaje")
-        st.dataframe(filas_componentes(tema), hide_index=True, width="stretch")
+        grafico(grafico_desglose(tema), "Aporte de cada componente al puntaje del tema")
+        with st.expander("Ver criterios de cada componente"):
+            st.dataframe(filas_componentes(tema), hide_index=True, width="stretch")
 
 
 with st.sidebar:
@@ -155,10 +167,16 @@ with st.sidebar:
 
 bandeja, mensaje = cargar_bandeja(settings.processed_dir, regenerar=regenerar)
 
-st.title("Faro Editorial")
-pastillas = ""
+estados_sistema = [
+    ("ok", "Bandeja lista") if bandeja is not None else ("aviso", "Sin snapshot"),
+    ("ok", "Modo sin conexión") if settings.offline else ("info", "En línea"),
+]
+pastillas = "".join(
+    f'<span class="estado estado-{clase}">{html.escape(texto)}</span>'
+    for clase, texto in estados_sistema
+)
 if bandeja is not None:
-    pastillas = "".join(
+    pastillas += "".join(
         f'<span class="pastilla">{html.escape(texto)}</span>'
         for texto in (
             f"Corte {bandeja['referencia_panama']} · Panamá",
@@ -166,11 +184,16 @@ if bandeja is not None:
             bandeja["version_criterios"],
         )
     )
-st.markdown(
-    f'<div class="cabecera"><span class="marca">TVN Media · Mesa de evaluación editorial</span>'
-    f"{pastillas}</div>",
-    unsafe_allow_html=True,
-)
+with tarjeta("cabecera"):
+    marca, estado = st.columns([2, 3], vertical_alignment="center")
+    with marca:
+        st.title("Faro Editorial")
+        st.markdown(
+            '<div class="marca">TVN Media · Mesa de evaluación editorial</div>',
+            unsafe_allow_html=True,
+        )
+    with estado:
+        st.markdown(f'<div class="cabecera">{pastillas}</div>', unsafe_allow_html=True)
 
 if bandeja is None:
     st.info(mensaje)
@@ -209,6 +232,18 @@ with pestana_bandeja:
     st.markdown(resumen_html(bandeja["resumen"]), unsafe_allow_html=True)
 
     visibles = filtrar(bandeja["temas"], bandas, estados, temas_sel)
+    if visibles:
+        evidencia, por_dia, aportes = st.columns([1, 1.1, 2])
+        with evidencia, tarjeta("g_evidencia"):
+            st.markdown("#### Evidencia")
+            grafico(grafico_evidencia(visibles), "Temas por estado de evidencia")
+        with por_dia, tarjeta("g_dias"):
+            st.markdown("#### Noticias por día")
+            grafico(grafico_noticias_por_dia(visibles), "Noticias por día de publicación")
+        with aportes, tarjeta("g_aportes"):
+            st.markdown("#### Qué compone el puntaje")
+            grafico(grafico_aportes(visibles), "Aporte de cada componente por tema")
+
     with tarjeta("bandeja"):
         st.markdown("#### Bandeja priorizada")
         st.caption(

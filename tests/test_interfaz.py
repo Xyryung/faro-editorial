@@ -127,8 +127,8 @@ def test_app_muestra_bandeja_y_ficha(monkeypatch, data_dir: Path):
     app = _app(monkeypatch, data_dir).run()
     assert not app.exception
     textos = " ".join(m.value for m in app.markdown)
-    assert "<b>3</b> temas" in textos and "<b>3</b> noticias" in textos
-    assert len(app.dataframe) >= 2  # bandeja y desglose del puntaje
+    assert "Temas</span><b>3</b>" in textos and "3 noticias agrupadas" in textos
+    assert len(app.dataframe) >= 2  # bandeja y criterios del puntaje
 
     selector = app.selectbox(key="tema_elegido")
     assert len(selector.options) == 3
@@ -205,3 +205,37 @@ def test_etiquetas_html_solo_usan_valores_del_sistema():
     assert "banda-bajo" in html and "ev-parcial" in html
     assert "<b>91.7</b>" in html
     assert "Prioridad baja" in html  # concordancia: "Prioridad" es femenino
+
+
+# --- Gráficos -------------------------------------------------------------------------
+
+
+def test_datos_de_los_graficos_salen_de_la_bandeja(data_dir: Path):
+    from faro_editorial.graficos import (
+        datos_aportes,
+        datos_desglose,
+        datos_evidencia,
+        datos_noticias_por_dia,
+        grafico_aportes,
+        grafico_desglose,
+        grafico_evidencia,
+        grafico_noticias_por_dia,
+    )
+
+    temas = cargar_bandeja(data_dir / "processed")[0]["temas"]
+    assert sum(f["Temas"] for f in datos_evidencia(temas)) == len(temas)
+    assert sum(f["Noticias"] for f in datos_noticias_por_dia(temas)) == 3
+    # La suma de los aportes de cada tema es su puntaje.
+    for t in temas:
+        aportes = [f["Aporte"] for f in datos_aportes(temas) if f["Posición"] == t["posicion"]]
+        assert sum(aportes) == pytest.approx(t["puntaje"], abs=0.3)
+    assert {f["Componente"] for f in datos_desglose(temas[0])} == {
+        "Relevancia",
+        "Impacto potencial",
+        "Urgencia",
+        "Novedad",
+        "Evidencia disponible",
+    }
+    for grafico in (grafico_evidencia, grafico_noticias_por_dia, grafico_aportes):
+        assert grafico(temas).to_dict()
+    assert grafico_desglose(temas[0]).to_dict()

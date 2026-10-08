@@ -173,13 +173,26 @@ def etiquetas_html(tema: dict) -> str:
 
 def resumen_html(resumen: dict) -> str:
     """Tarjetas con los totales de la bandeja (solo números propios del sistema)."""
+    grupos = int(resumen["grupos"])
     altos = int(resumen["por_banda"].get("alto", 0))
     insuficientes = int(resumen["por_estado_evidencia"].get("insuficiente", 0))
+    suficientes = int(resumen["por_estado_evidencia"].get("suficiente_para_borrador", 0))
+
+    def tarjeta(clase: str, titulo: str, valor: int, detalle: str) -> str:
+        return (
+            f'<div class="kpi {clase}"><span class="kpi-titulo">{titulo}</span>'
+            f'<b>{valor}</b><span class="kpi-detalle">{detalle}</span></div>'
+        )
+
     return (
         '<div class="kpis">'
-        f'<div class="kpi"><b>{int(resumen["grupos"])}</b> temas</div>'
-        f'<div class="kpi kpi-alto"><b>{altos}</b> de prioridad alta</div>'
-        f'<div class="kpi kpi-insuficiente"><b>{insuficientes}</b> con evidencia insuficiente</div>'
-        f'<div class="kpi"><b>{int(resumen["noticias"])}</b> noticias</div>'
-        "</div>"
+        + tarjeta("kpi-temas", "Temas", grupos, f"{int(resumen['noticias'])} noticias agrupadas")
+        + tarjeta("kpi-alto", "Prioridad alta", altos, f"de {grupos} temas")
+        + tarjeta(
+            "kpi-insuficiente", "Evidencia insuficiente", insuficientes, "requieren investigar"
+        )
+        + tarjeta(
+            "kpi-suficiente", "Listos para borrador", suficientes, "sujetos a revisión humana"
+        )
+        + "</div>"
     )

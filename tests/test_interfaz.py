@@ -139,7 +139,7 @@ def test_app_muestra_bandeja_y_ficha(monkeypatch, data_dir: Path):
     # La ficha muestra el aviso, la acción recomendada y las secciones de evidencia.
     textos = " ".join(m.value for m in app.markdown)
     assert "no habilita publicación" in textos
-    assert 'class="etiqueta banda-' in textos
+    assert 'class="banda-' in textos and 'class="ev-' in textos
     for seccion in (
         "Acción recomendada",
         "Qué se reporta",
@@ -206,7 +206,7 @@ def test_etiquetas_html_solo_usan_valores_del_sistema():
     assert "<script>" not in html
     assert "banda-bajo" in html and "ev-parcial" in html
     assert "<b>91.7</b>" in html
-    assert "Prioridad baja" in html  # concordancia: "Prioridad" es femenino
+    assert ">Baja</b>" in html  # concordancia: "Prioridad" es femenino
 
 
 # --- Gráficos -------------------------------------------------------------------------
@@ -308,3 +308,13 @@ def test_periodo_de_las_noticias_segun_el_rango():
     assert periodo_noticias([tema("2025-06-01", "2025-09-20")]) == "semana"
     assert periodo_noticias([tema("2025-01-01", "2025-12-20")]) == "mes"
     assert periodo_noticias([tema("2025-09-15")]) == "día"
+
+
+def test_fecha_y_version_legibles():
+    from faro_editorial.interfaz import fecha_legible, version_legible
+
+    assert fecha_legible("2025-09-20 08:00") == "20 sep 2025, 08:00"
+    assert fecha_legible(None) == "sin fecha"
+    assert fecha_legible("no es fecha") == "no es fecha"
+    assert version_legible("reglas-v1.0") == "Reglas v1.0"
+    assert version_legible("criterios-v2.0") == "Criterios v2.0"

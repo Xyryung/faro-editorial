@@ -29,6 +29,7 @@ from faro_editorial.interfaz import (
     escapar_md,
     etiqueta_tema,
     etiquetas_html,
+    fecha_legible,
     fila_html,
     filas_bandeja,
     filas_componentes,
@@ -39,6 +40,7 @@ from faro_editorial.interfaz import (
     pasos_html,
     tarjetas_kpi,
     texto_datos,
+    version_legible,
 )
 from faro_editorial.rules import load_rules
 from faro_editorial.settings import get_settings
@@ -100,9 +102,9 @@ def mostrar_ficha(tema: dict) -> None:
         st.subheader(escapar_md(tema["titulo"]))
         st.markdown(etiquetas_html(tema), unsafe_allow_html=True)
         # T03: la fecha original siempre a la vista, para no presentar algo viejo como nuevo.
-        fecha = html.escape(tema["fecha_original_panama"] or "sin fecha")
+        fecha = html.escape(fecha_legible(tema["fecha_original_panama"]))
         st.markdown(
-            f'<div class="meta">Fecha original <b>{fecha}</b> · hora de Panamá</div>',
+            f'<div class="meta">Fecha original: <b>{fecha}</b> (hora de Panamá)</div>',
             unsafe_allow_html=True,
         )
         st.markdown(f'<div class="nota">{html.escape(tema["aviso"])}</div>', unsafe_allow_html=True)
@@ -180,24 +182,18 @@ with zona_datos:
 
 bandeja, mensaje = cargar_bandeja(settings.processed_dir, regenerar=regenerar)
 
-estados_sistema = [
-    ("ok", "Bandeja lista") if bandeja is not None else ("aviso", "Sin snapshot"),
-    ("ok", "Modo sin conexión") if settings.offline else ("info", "En línea"),
-]
-pastillas = "".join(
-    f'<span class="estado estado-{clase}">{html.escape(texto)}</span>'
-    for clase, texto in estados_sistema
-)
-if bandeja is not None:
-    pastillas += "".join(
-        f'<span class="pastilla">{html.escape(texto)}</span>'
-        for texto in (
-            f"Corte {bandeja['referencia_panama']} · Panamá",
-            f"{bandeja['version_reglas']} · {bandeja['version_criterios']}",
-        )
-    )
-with tarjeta("cabecera"):
-    marca, estado = st.columns([1, 2], vertical_alignment="center")
+# Cabecera: título y, a la derecha, el corte y las versiones como texto (sin pastillas).
+modo = "Sin conexión" if settings.offline else "En línea"
+if bandeja is None:
+    lineas = ["Sin snapshot cargado", modo]
+else:
+    lineas = [
+        f"Corte: {fecha_legible(bandeja['referencia_panama'])} (hora de Panamá)",
+        f"{version_legible(bandeja['version_reglas'])} · "
+        f"{version_legible(bandeja['version_criterios'])} · {modo}",
+    ]
+with st.container(key="cabecera"):
+    marca, estado = st.columns([1, 1], vertical_alignment="bottom")
     with marca:
         st.title("Faro Editorial")
         st.markdown(
@@ -205,7 +201,8 @@ with tarjeta("cabecera"):
             unsafe_allow_html=True,
         )
     with estado:
-        st.markdown(f'<div class="cabecera">{pastillas}</div>', unsafe_allow_html=True)
+        texto = "".join(f"<span>{html.escape(linea)}</span>" for linea in lineas)
+        st.markdown(f'<div class="cabecera">{texto}</div>', unsafe_allow_html=True)
 
 if bandeja is None:
     st.info(mensaje)

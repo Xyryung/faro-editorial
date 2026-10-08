@@ -1,5 +1,5 @@
-# Tema de la interfaz: institucional azul (issue #16). Todo local: la fuente es la que trae
-# Streamlit (Source Sans), así la demo funciona sin internet.
+# Tema de la interfaz: institucional azul (issue #16). Todo local: las fuentes son las que trae
+# Streamlit (Source Sans y Source Serif), así la demo funciona sin internet.
 
 [theme]
 base = "light"
@@ -10,10 +10,12 @@ secondaryBackgroundColor = "#D4E3F7"
 textColor = "#26303B"
 linkColor = "#1F5A96"
 font = "sans-serif"
+# Títulos con serifa, como en un diario (Source Serif viene con Streamlit: no necesita internet).
+headingFont = "serif"
 baseFontSize = 15
 # h1 (título), h2, h3 (titular de la ficha), h4 (secciones de la ficha), h5, h6
 headingFontSizes = ["1.6rem", "1.35rem", "1.3rem", "0.95rem", "0.9rem", "0.85rem"]
-baseRadius = "0.5rem"
+baseRadius = "0.375rem"
 borderColor = "#B9CDE8"
 dataframeBorderColor = "#C9D9EF"
 showWidgetBorder = true

@@ -11,6 +11,7 @@ un titular no pueda inyectar enlaces, imágenes ni formato en la pantalla.
 import html
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -24,7 +25,7 @@ ETIQUETAS_ESTADO = {
 }
 # En pantalla la banda se llama "Prioridad" (femenino): Alta, Media, Baja.
 ETIQUETAS_BANDA = {"alto": "Alta", "medio": "Media", "bajo": "Baja"}
-PRIORIDAD = {"alto": "alta", "medio": "media", "bajo": "baja"}
+MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
 SIN_TEMA = "sin clasificar"
 ETIQUETAS_TEMA = {
     "economia": "Economía",
@@ -256,20 +257,38 @@ def accion_recomendada(tema: dict) -> list[str]:
 
 
 def etiquetas_html(tema: dict) -> str:
-    """Etiquetas de banda y evidencia con el puntaje. Solo usa valores propios del sistema
-    (banda, estado, puntaje), nunca texto de las fuentes, así que el HTML es seguro."""
+    """Prioridad, evidencia y puntaje del tema como una línea de datos (rótulo y valor). Solo
+    usa valores propios del sistema, nunca texto de las fuentes, así que el HTML es seguro."""
     banda = tema["banda"] if tema["banda"] in ETIQUETAS_BANDA else "bajo"
     estado = tema["estado_evidencia"] if tema["estado_evidencia"] in ETIQUETAS_ESTADO else "parcial"
     puntaje = float(tema["puntaje"])
     ancho = min(max(puntaje, 0.0), 100.0)
     return (
-        '<div class="chips">'
-        f'<span class="etiqueta banda-{banda}">Prioridad {PRIORIDAD[banda]}</span>'
-        f'<span class="etiqueta ev-{estado}">Evidencia {ETIQUETAS_ESTADO[estado].lower()}</span>'
-        f'<span class="puntaje">Puntaje <b>{puntaje:.1f}</b><small>/100</small>'
-        f'<span class="barra"><span style="width:{ancho:.0f}%"></span></span></span>'
+        '<div class="datos-tema">'
+        f'<div class="dato"><span>Prioridad</span><b class="banda-{banda}">'
+        f"{ETIQUETAS_BANDA[banda]}</b></div>"
+        f'<div class="dato"><span>Evidencia</span><b class="ev-{estado}">'
+        f"{ETIQUETAS_ESTADO[estado]}</b></div>"
+        f'<div class="dato"><span>Puntaje</span><em><b>{puntaje:.1f}</b> de 100'
+        f'<i class="barra"><i style="width:{ancho:.0f}%"></i></i></em></div>'
         "</div>"
     )
+
+
+def fecha_legible(texto: str | None) -> str:
+    """ "2025-09-20 08:00" → "20 sep 2025, 08:00". Si no tiene ese formato, la deja igual."""
+    if not texto:
+        return "sin fecha"
+    try:
+        fecha = datetime.strptime(texto[:16], "%Y-%m-%d %H:%M")
+    except ValueError:
+        return texto
+    return f"{fecha.day} {MESES_CORTOS[fecha.month - 1]} {fecha.year}, {fecha:%H:%M}"
+
+
+def version_legible(version: str) -> str:
+    """ "reglas-v1.0" → "Reglas v1.0"."""
+    return version.replace("-v", " v", 1).capitalize()
 
 
 def tarjetas_kpi(resumen: dict) -> list[str]:

@@ -10,7 +10,12 @@ from datetime import date, timedelta
 
 import altair as alt
 
-from faro_editorial.interfaz import ETIQUETAS_BANDA, ETIQUETAS_ESTADO, NOMBRES_COMPONENTES
+from faro_editorial.interfaz import (
+    ETIQUETAS_BANDA,
+    ETIQUETAS_ESTADO,
+    MESES_CORTOS,
+    NOMBRES_COMPONENTES,
+)
 
 COLORES_ESTADO = {
     "Insuficiente": "#F5A866",
@@ -38,6 +43,7 @@ def _escala(colores: dict[str, str]) -> alt.Scale:
 def _estilo(grafico: alt.Chart, alto: int) -> alt.Chart:
     return (
         grafico.properties(height=alto, background="transparent")
+        .configure(font="Source Sans, sans-serif")
         .configure_view(stroke=None)
         .configure_axis(
             labelColor=_SUAVE,
@@ -106,7 +112,7 @@ def periodo_noticias(temas: list[dict]) -> str:
     return "día" if rango <= 45 else "semana" if rango <= 210 else "mes"
 
 
-_MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+_MESES = MESES_CORTOS
 
 
 def _inicio_periodo(dia: date, periodo: str) -> date:
@@ -214,7 +220,7 @@ def grafico_evidencia(temas: list[dict]) -> alt.Chart:
     datos = alt.Data(values=datos_evidencia(temas))
     dona = (
         alt.Chart(datos)
-        .mark_arc(innerRadius=52, outerRadius=82, cornerRadius=4, padAngle=0.02)
+        .mark_arc(innerRadius=56, outerRadius=82, padAngle=0.01)
         .encode(
             theta=alt.Theta("Temas:Q", stack=True),
             color=alt.Color("Estado:N", scale=_escala(COLORES_ESTADO), legend=None),
@@ -234,7 +240,7 @@ def grafico_noticias_por_dia(temas: list[dict]) -> alt.Chart:
     tope = tope + max(1, round(tope * 0.15))
     barras = (
         alt.Chart(alt.Data(values=filas))
-        .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
+        .mark_bar(cornerRadiusTopLeft=1, cornerRadiusTopRight=1)
         .encode(
             # Eje por bandas: cada etiqueta queda centrada bajo su barra.
             x=alt.X(
@@ -266,7 +272,7 @@ def grafico_aportes(temas: list[dict], limite: int = 8) -> alt.Chart:
     datos = alt.Data(values=datos_aportes(temas, limite))
     barras = (
         alt.Chart(datos)
-        .mark_bar(size=18, cornerRadius=2)
+        .mark_bar(size=16, cornerRadius=1)
         .encode(
             y=alt.Y(
                 "Tema:N",
@@ -294,7 +300,7 @@ def grafico_desglose(tema: dict) -> alt.Chart:
     y = alt.Y("Componente:N", title=None, sort=orden, axis=alt.Axis(labelLimit=200))
     fondo = (
         alt.Chart(datos)
-        .mark_bar(size=14, cornerRadius=7, color="#E0E9F4")
+        .mark_bar(size=12, cornerRadius=1, color="#E0E9F4")
         .encode(
             y=y,
             x=alt.X(
@@ -306,7 +312,7 @@ def grafico_desglose(tema: dict) -> alt.Chart:
     )
     aporte = (
         alt.Chart(datos)
-        .mark_bar(size=14, cornerRadius=7)
+        .mark_bar(size=12, cornerRadius=1)
         .encode(
             y=y,
             x="Aporte:Q",

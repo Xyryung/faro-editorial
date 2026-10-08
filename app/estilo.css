@@ -9,7 +9,7 @@ h1 { color: #12355B; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0
 h2, h3 { color: #12355B; font-weight: 600; }
 h4 {
   color: #12355B; font-weight: 600; font-size: 0.95rem; text-transform: uppercase;
-  letter-spacing: 0.05em; border-bottom: 1px solid #E3E8EE; padding-bottom: 0.3rem;
+  letter-spacing: 0.05em; border-bottom: 1px solid #D5DDE6; padding-bottom: 0.3rem;
   margin-top: 1.4rem;
 }
 
@@ -17,9 +17,9 @@ h4 {
   color: #4A5563; font-size: 0.85rem; border-bottom: 2px solid #12355B;
   padding-bottom: 0.5rem; margin-bottom: 1.2rem;
 }
-.cabecera b { color: #1A1A1A; font-weight: 600; }
+.cabecera b { color: #26303B; font-weight: 600; }
 
-.resumen { font-size: 0.95rem; color: #1A1A1A; margin: 0.2rem 0 0.4rem 0; }
+.resumen { font-size: 0.95rem; color: #26303B; margin: 0.2rem 0 0.4rem 0; }
 .resumen b { color: #12355B; }
 
 .etiqueta {
@@ -27,16 +27,16 @@ h4 {
   font-size: 0.74rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
   border: 1px solid transparent; vertical-align: middle;
 }
-.banda-alto { background: #12355B; color: #FFFFFF; }
-.banda-medio { background: #DCE6F2; color: #12355B; border-color: #BCCDE2; }
-.banda-bajo { background: #EEF0F3; color: #4A5563; border-color: #D5DCE4; }
-.ev-insuficiente { background: #FBEFD9; color: #7A4B00; border-color: #E9CF9F; }
-.ev-parcial { background: #EEF1F5; color: #3D4B5C; border-color: #D5DCE4; }
-.ev-suficiente_para_borrador { background: #E3F1E7; color: #1D5E36; border-color: #B9DBC4; }
-.puntaje { font-size: 0.95rem; color: #1A1A1A; margin-left: 0.4rem; vertical-align: middle; }
+.banda-alto { background: #C7DAF0; color: #12355B; border-color: #9DBBDF; }
+.banda-medio { background: #DDE8F5; color: #24486F; border-color: #C3D4E8; }
+.banda-bajo { background: #E6EAF0; color: #4A5563; border-color: #D5DCE4; }
+.ev-insuficiente { background: #FBEBD3; color: #7A4B00; border-color: #E9CF9F; }
+.ev-parcial { background: #E8E4F3; color: #4A3F6B; border-color: #D3CCE8; } /* lavanda */
+.ev-suficiente_para_borrador { background: #DCF0E3; color: #1D5E36; border-color: #B9DBC4; }
+.puntaje { font-size: 0.95rem; color: #26303B; margin-left: 0.4rem; vertical-align: middle; }
 .puntaje b { font-size: 1.15rem; color: #12355B; }
 
 .nota {
-  border-left: 3px solid #12355B; background: #F2F5F9; color: #1A1A1A;
+  border-left: 3px solid #12355B; background: #E0E9F4; color: #26303B;
   padding: 0.55rem 0.8rem; font-size: 0.9rem; margin: 0.6rem 0 0.2rem 0;
 }

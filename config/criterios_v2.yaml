@@ -1,0 +1,65 @@
+# Criterios para normalizar cada componente del puntaje de atención a 0-1 (issue #11).
+# v2: las procedencias independientes tratan los titulares casi idénticos de medios
+# distintos como una sola procedencia (agencia replicada, CU-03 y T02). v1 contaba medios.
+# Los pesos y rangos están en rules_v1.yaml; aquí solo cómo se mide cada componente.
+# Cualquier cambio crea una versión nueva (criterios_v2.yaml) justificada en un issue
+# con la etiqueta "decision".
+#
+# Esta versión es la línea base por reglas. R, I y U pueden reemplazarse por la rúbrica
+# de Jev Score (#8, decisión #25) sin cambiar el motor.
+version: "criterios-v2.0"
+
+# R · Relevancia: relación con Panamá (mitad) y con los temas editoriales (mitad).
+relevancia:
+  # Se considera relacionada con Panamá si el texto lo menciona o el medio es panameño.
+  palabras_panama: [panama, panameno, panamena, panamenos, panamenas]
+  dominios_panama: [tvn-2.com, .pa]
+
+# I · Impacto potencial por tema. Línea base fija: alcance típico del tema para el
+# público panameño, no el tono de la noticia (sin sensacionalismo).
+impacto_por_tema:
+  logistica_canal: 0.9   # el Canal pesa en el comercio y el empleo del país
+  economia: 0.8
+  servicios_publicos: 0.8 # agua, electricidad, transporte: afectan a toda la población
+  eventos_naturales: 0.7
+  regulacion: 0.6
+  turismo: 0.5
+  otro: 0.2
+impacto_sin_tema: 0.3     # todavía sin clasificar
+
+# U · Urgencia: qué tan reciente es la última noticia del grupo frente a la fecha de
+# referencia (el corte del snapshot, no "ahora"). 1 hasta horas_maxima, baja en línea
+# recta y llega a 0 en horas_cero.
+urgencia:
+  horas_maxima: 24
+  horas_cero: 168
+
+# N · Novedad: el evento empezó hace poco. Se mide desde la primera publicación del
+# grupo hasta la última; una noticia antigua que vuelve a circular (T03) no es nueva.
+# No depende de cuántas noticias tenga el grupo: duplicar no suma.
+novedad:
+  horas_maxima: 72
+  horas_cero: 720
+
+# Procedencia independiente: las notas del mismo medio son una procedencia, y los titulares
+# casi idénticos de medios distintos también (la misma nota de agencia replicada por varios
+# medios no es corroboración). "Casi idéntico": similitud de texto >= umbral, comparando
+# sin tildes, mayúsculas, signos ni la firma de agencia entre paréntesis ("(EFE)").
+# Límite conocido: dos notas propias con titulares casi iguales ("magnitud 5" / "magnitud 5,2")
+# se cuentan como una; es conservador (cuenta menos fuentes, nunca más).
+procedencia:
+  umbral_titulo_replicado: 0.9
+
+# E · Evidencia disponible: procedencias independientes (no noticias ni medios repetidos)
+# y respaldo oficial (Banco Mundial o USGS vinculado en la etapa 3).
+evidencia:
+  procedencias_para_maximo: 3
+  peso_procedencias: 0.5
+  peso_respaldo_oficial: 0.5
+
+# Estado de evidencia, independiente del puntaje (sección 4 del reto):
+# - insuficiente: una sola procedencia y sin respaldo oficial.
+# - suficiente_para_borrador: al menos procedencias_suficientes y sin pendientes de verificar.
+# - parcial: todo lo demás.
+estado_evidencia:
+  procedencias_suficientes: 2

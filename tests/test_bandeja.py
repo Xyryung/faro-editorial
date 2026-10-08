@@ -67,6 +67,7 @@ def test_grupos_de_la_agrupacion_y_advertencias(processed: Path):
     assert temas["g1"]["tema"] == "economia"
     # Dos noticias del mismo medio: una sola procedencia.
     assert temas["g1"]["procedencias"] == ["tvn"]
+    assert temas["g1"]["procedencias_independientes"] == [["tvn"]]
     advertencias = " | ".join(bandeja["advertencias"])
     assert "no-existe no está en la base" in advertencias
     assert "n007 ya estaba en otro grupo" in advertencias

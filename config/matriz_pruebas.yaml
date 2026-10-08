@@ -26,12 +26,16 @@ casos:
   T02:
     prueba: Tres registros del mismo evento
     esperado: Agrupar sin perder fuentes; no triplicar importancia ni corroboración.
-    entrada: Grupo con tres notas del mismo medio frente a una sola nota; grupos.jsonl con dos notas de TVN.
+    entrada: >-
+      Grupo con tres notas del mismo medio frente a una sola nota; cinco medios con la misma nota
+      de agencia (con y sin firma "(EFE)"); grupos.jsonl con dos notas de TVN.
     cobertura: parcial
-    falta: Agrupación por similitud de titulares de medios distintos (#9).
+    falta: Agrupar en un mismo grupo las notas del mismo evento de medios distintos (#9).
     issues: ["#9", "#11"]
     pruebas:
       - tests/test_puntaje.py::test_duplicar_noticias_no_infla_el_puntaje
+      - tests/test_puntaje.py::test_cinco_medios_que_replican_la_misma_agencia_son_una_procedencia
+      - tests/test_puntaje.py::test_medios_con_titulares_propios_son_independientes
       - tests/test_bandeja.py::test_grupos_de_la_agrupacion_y_advertencias
 
   T03:

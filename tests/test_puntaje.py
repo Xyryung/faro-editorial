@@ -78,7 +78,7 @@ def test_t08_prioridad_alta_expone_componentes_y_regla(motor):
     assert all(c.criterio for c in p.componentes.values())
     assert "BM:PAN:NY.GDP.MKTP.KD.ZG:2023" in p.componentes["E"].criterio
     assert p.version_reglas == "reglas-v1.0"
-    assert p.version_criterios == "criterios-v1.0"
+    assert p.version_criterios == "criterios-v2.0"
     # La prioridad no habilita publicación, y el modelo no permite marcarlo.
     assert p.habilita_publicacion is False
     assert "no habilita publicación" in p.aviso
@@ -257,3 +257,63 @@ def test_sismo_se_busca_desde_la_primera_noticia_del_grupo(motor):
     p = motor.puntuar(grupo, inicio + timedelta(days=5))
     assert "USGS:us7000aaaa" in p.componentes["E"].criterio
     assert p.pendientes == []
+
+
+def _replica(i: int, titulo: str, medio: str) -> Noticia:
+    return noticia(
+        f"r{i}", titulo, medio=medio, url=f"https://{medio}.example/r{i}", tema="economia"
+    )
+
+
+CINCO_MEDIOS_MISMA_NOTA = [
+    _replica(1, "Gobierno de Panamá anuncia alza del combustible (EFE)", "medio-a"),
+    _replica(2, "Gobierno de Panamá anuncia alza del combustible", "medio-b"),
+    _replica(3, "GOBIERNO DE PANAMA ANUNCIA ALZA DEL COMBUSTIBLE.", "medio-c"),
+    _replica(4, "Gobierno de Panamá anuncia alza del combustible - EFE", "medio-d"),
+    _replica(5, "Gobierno de Panamá anuncia alza del combustible", "medio-e"),
+]
+
+
+def test_cinco_medios_que_replican_la_misma_agencia_son_una_procedencia(motor):
+    """Pregunta del jurado (sección 11) y CU-03: cinco medios que replican la misma nota de
+    agencia cuentan como una sola procedencia independiente."""
+    replicada = motor.puntuar(
+        GrupoNoticias(id_grupo="r", noticias=CINCO_MEDIOS_MISMA_NOTA), REFERENCIA
+    )
+    una_sola = motor.puntuar(GrupoNoticias.de_noticia(CINCO_MEDIOS_MISMA_NOTA[0]), REFERENCIA)
+
+    assert len(replicada.procedencias) == 5
+    assert replicada.procedencias_independientes == [
+        ["medio-a", "medio-b", "medio-c", "medio-d", "medio-e"]
+    ]
+    # La repetición no suma corroboración: misma evidencia y mismo estado que una sola nota.
+    assert replicada.componentes["E"].valor == una_sola.componentes["E"].valor
+    assert replicada.estado_evidencia == "insuficiente"
+    assert "5 medios replican la misma nota" in replicada.motivo_estado
+    assert "posible agencia replicada" in replicada.componentes["E"].criterio
+
+
+def test_medios_con_titulares_propios_son_independientes(motor):
+    grupo = GrupoNoticias(
+        id_grupo="i",
+        noticias=[
+            *CINCO_MEDIOS_MISMA_NOTA[:3],
+            _replica(6, "Transportistas anuncian paro por el precio del diésel en Panamá", "tvn"),
+        ],
+    )
+    p = motor.puntuar(grupo, REFERENCIA)
+    assert p.procedencias_independientes == [["medio-a", "medio-b", "medio-c"], ["tvn"]]
+    assert p.estado_evidencia == "suficiente_para_borrador"
+    assert "4 medios, 2 procedencia(s) independiente(s)" in p.componentes["E"].criterio
+
+
+def test_criterios_v1_siguen_contando_medios(contexto_oficial):
+    """La versión anterior queda reproducible: v1 contaba cada medio como una procedencia."""
+    from faro_editorial.puntaje import load_criterios
+    from faro_editorial.settings import ROOT_DIR
+
+    v1 = load_criterios(ROOT_DIR / "config" / "criterios_v1.yaml")
+    motor_v1 = MotorPuntaje(criterios=v1, contexto_oficial=contexto_oficial)
+    p = motor_v1.puntuar(GrupoNoticias(id_grupo="r", noticias=CINCO_MEDIOS_MISMA_NOTA), REFERENCIA)
+    assert p.version_criterios == "criterios-v1.0"
+    assert len(p.procedencias_independientes) == 5

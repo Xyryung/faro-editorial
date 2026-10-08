@@ -22,7 +22,8 @@ No publica, no declara verdadera o falsa una noticia y, si no hay evidencia, se 
 | Usar USGS como evidencia de algo que no mide | USGS solo respalda noticias sobre sismos, con la advertencia de que la caja regional no equivale al territorio de Panamá; nunca inundaciones, daños ni pérdidas | [`contexto.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/contexto.py), [`contexto_v1.yaml`](https://github.com/Xyryung/faro-editorial/blob/main/config/contexto_v1.yaml) | `test_usgs_vincula_sismo_cercano_con_limitaciones`, `test_sin_relacion_sustentada_no_se_vincula` |
 | Que la prioridad se tome como permiso para publicar (T08) | `habilita_publicacion` está fijo en `false` y el modelo no admite otro valor; cada resultado lleva el aviso "no habilita publicación" | [`puntaje.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/puntaje.py) | `test_t08_prioridad_alta_expone_componentes_y_regla` |
 | Confundir relevancia con evidencia suficiente | El estado de evidencia (insuficiente / parcial / suficiente para borrador) se calcula aparte del puntaje: una prioridad alta con una sola fuente queda "insuficiente" | [`puntaje.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/puntaje.py) | `test_prioridad_alta_con_evidencia_insuficiente` |
-| Confundir repetición con corroboración (T02) | La evidencia cuenta medios distintos, no notas: tres notas del mismo medio son una procedencia y no suben el puntaje | [`puntaje.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/puntaje.py) | `test_duplicar_noticias_no_infla_el_puntaje` |
+| Confundir repetición con corroboración (T02) | La evidencia cuenta procedencias independientes, no notas: varias notas del mismo medio son una procedencia y no suben el puntaje | [`puntaje.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/puntaje.py) | `test_duplicar_noticias_no_infla_el_puntaje` |
+| Contar una agencia replicada como varias fuentes (CU-03) | Titulares casi idénticos de medios distintos (similitud ≥ 0.9, sin tildes, signos ni firma de agencia) cuentan como una sola procedencia: cinco medios con la misma nota de EFE son **una** fuente independiente | [`puntaje.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/puntaje.py), [`criterios_v2.yaml`](https://github.com/Xyryung/faro-editorial/blob/main/config/criterios_v2.yaml) | `test_cinco_medios_que_replican_la_misma_agencia_son_una_procedencia`, `test_medios_con_titulares_propios_son_independientes` |
 | Presentar una noticia vieja como nueva (T03) | La novedad usa también la fecha de detección; la bandeja muestra siempre la fecha original | [`puntaje.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/puntaje.py), [`bandeja.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/bandeja.py) | `test_una_sola_nota_vieja_detectada_hoy_no_es_novedad` (falló y se corrigió: [#42](https://github.com/Xyryung/faro-editorial/issues/42)) |
 | Datos alterados o con errores | Verificación SHA-256 contra el manifest; las filas inválidas se separan con su motivo sin detener la carga | [`carga.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/carga.py) | `test_integridad_detecta_archivo_alterado`, `test_t01_rechazos_con_motivo` |
 | Filtrar claves de API | Claves solo en `.env` (ignorado por Git) y como `SecretStr`, que no aparece en logs ni en `repr`; los errores registrados no incluyen la clave | [`settings.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/settings.py), [`.gitignore`](https://github.com/Xyryung/faro-editorial/blob/main/.gitignore) | `test_claves_no_aparecen_en_repr`, `test_env_example_sin_claves_reales`, `test_jev_error_http_se_vuelve_abstencion_sin_filtrar_la_clave` |
@@ -70,7 +71,7 @@ Las pruebas T01–T10 y su estado están en la
   pueden favorecer a TVN. Mitigación parcial: el componente de evidencia cuenta procedencias
   independientes, no cantidad de texto.
 - **Impacto por tema fijo.** El componente de impacto usa un valor por tema
-  ([`criterios_v1.yaml`](https://github.com/Xyryung/faro-editorial/blob/main/config/criterios_v1.yaml)),
+  ([`criterios_v2.yaml`](https://github.com/Xyryung/faro-editorial/blob/main/config/criterios_v2.yaml)),
   no el contenido de cada noticia. Es una línea base explícita y versionada; la rúbrica de Jev
   puede reemplazarla.
 - **Palabras clave.** El vínculo con datos oficiales exige que el titular mencione lo que mide el
@@ -78,9 +79,10 @@ Las pruebas T01–T10 y su estado están en la
   relaciones; a cambio, puede perder noticias que hablan del tema con otras palabras.
 - **Cobertura de medios.** GDELT indexa más algunos medios que otros; el corpus no representa a
   todos los medios panameños por igual.
-- **Agencias replicadas.** Hoy se cuentan medios distintos; una misma nota de agencia publicada
-  por cinco medios todavía contaría como cinco procedencias. **Pendiente:** la agrupación
-  ([#9](https://github.com/Xyryung/faro-editorial/issues/9)) debe tratarlas como una sola.
+- **Agencias replicadas.** Se detectan por similitud de titulares dentro de un grupo. Límite
+  conocido: dos notas propias con titulares casi iguales ("magnitud 5" y "magnitud 5,2") se
+  cuentan como una sola procedencia. Es un error conservador: cuenta menos fuentes, nunca más.
+  Una nota de agencia reescrita con otras palabras no se detecta como réplica.
 - **Caja regional de USGS.** Incluye zonas fuera de Panamá; por eso cada vínculo lo advierte.
 
 ## 5. Control humano

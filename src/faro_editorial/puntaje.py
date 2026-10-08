@@ -1,17 +1,22 @@
 """Etapa 4 · Priorizar: puntaje de atención explicable (issue #11, T08, CU-01).
 
 P = 30R + 25I + 20U + 15N + 10E, con pesos y rangos de config/rules_v1.yaml y criterios de
-normalización de config/criterios_v1.yaml. Es una herramienta de ordenamiento, no una
+normalización de config/criterios_v2.yaml. Es una herramienta de ordenamiento, no una
 probabilidad de verdad: cada componente muestra su valor, su aporte y el criterio usado, y el
 estado de evidencia se calcula aparte. Una prioridad alta nunca habilita publicación.
+
+La evidencia cuenta procedencias independientes: varias notas del mismo medio, o titulares
+casi idénticos de medios distintos (la misma nota de agencia replicada), son una sola (CU-03).
 
 Los componentes R, I y U pueden venir de otro evaluador (p. ej. Jev Score, #8) que cumpla
 EvaluadorComponentes; los que no entregue se calculan con las reglas base.
 """
 
+import re
 from collections import Counter
 from collections.abc import Sequence
 from datetime import datetime
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Literal, Protocol
 from urllib.parse import urlparse
@@ -19,12 +24,12 @@ from urllib.parse import urlparse
 import yaml
 from pydantic import BaseModel, Field
 
-from faro_editorial.contexto import Contexto, ContextoOficial, Vinculo, buscar_palabra
+from faro_editorial.contexto import Contexto, ContextoOficial, Vinculo, buscar_palabra, normalizar
 from faro_editorial.contrato import Noticia
 from faro_editorial.rules import COMPONENTES, Reglas, load_rules
 from faro_editorial.settings import ROOT_DIR, get_settings
 
-RUTA_CRITERIOS = ROOT_DIR / "config" / "criterios_v1.yaml"
+RUTA_CRITERIOS = ROOT_DIR / "config" / "criterios_v2.yaml"
 AVISO_PUBLICACION = (
     "La prioridad ordena qué revisar; no habilita publicación. La decisión editorial es de "
     "la persona revisora."
@@ -56,6 +61,10 @@ class _EstadoEvidencia(BaseModel):
     procedencias_suficientes: int
 
 
+class _Procedencia(BaseModel):
+    umbral_titulo_replicado: float = Field(gt=0, le=1)
+
+
 class Criterios(BaseModel):
     version: str
     relevancia: _Relevancia
@@ -65,6 +74,8 @@ class Criterios(BaseModel):
     novedad: _Tramo
     evidencia: _Evidencia
     estado_evidencia: _EstadoEvidencia
+    # Sin esta sección (criterios v1) cada medio distinto cuenta como una procedencia.
+    procedencia: _Procedencia | None = None
 
 
 def load_criterios(path: Path = RUTA_CRITERIOS) -> Criterios:
@@ -139,7 +150,9 @@ class Puntuacion(BaseModel):
     componentes: dict[str, ComponentePuntuado]
     estado_evidencia: EstadoEvidencia
     motivo_estado: str
-    procedencias: list[str]
+    procedencias: list[str]  # medios del grupo
+    # Medios agrupados por procedencia independiente: [["efe-medio-a", "medio-b"], ["tvn"]]
+    procedencias_independientes: list[list[str]] = []
     ids_noticias: list[str]
     vinculos: list[Vinculo] = []  # evidencia oficial con su cita (etapa 3)
     pendientes: list[str]
@@ -164,6 +177,56 @@ def _tramo(horas: float, tramo: _Tramo) -> float:
     if horas >= tramo.horas_cero:
         return 0.0
     return round(1 - (horas - tramo.horas_maxima) / (tramo.horas_cero - tramo.horas_maxima), 4)
+
+
+_FIRMA_AGENCIA = re.compile(r"\([^)]{1,40}\)")
+_NO_ALFANUMERICO = re.compile(r"[^a-z0-9]+")
+
+
+def _titulo_comparable(titulo: str) -> str:
+    """Sin firma de agencia entre paréntesis, tildes, mayúsculas ni signos."""
+    sin_firma = _FIRMA_AGENCIA.sub(" ", titulo)
+    return _NO_ALFANUMERICO.sub(" ", normalizar(sin_firma)).strip()
+
+
+def procedencias_independientes(grupo: GrupoNoticias, c: Criterios) -> list[list[str]]:
+    """Agrupa los medios del grupo en procedencias independientes. Mismo medio = misma
+    procedencia; titulares casi idénticos de medios distintos = misma procedencia (posible
+    nota de agencia replicada). Devuelve los medios de cada procedencia, ordenados."""
+    noticias = grupo.noticias
+    padre = list(range(len(noticias)))
+
+    def raiz(i: int) -> int:
+        while padre[i] != i:
+            padre[i] = padre[padre[i]]
+            i = padre[i]
+        return i
+
+    medios = [n.medio.strip().lower() for n in noticias]
+    titulos = [_titulo_comparable(n.titulo) for n in noticias]
+    umbral = c.procedencia.umbral_titulo_replicado if c.procedencia else None
+    for i in range(len(noticias)):
+        for j in range(i + 1, len(noticias)):
+            replicado = umbral is not None and (
+                SequenceMatcher(None, titulos[i], titulos[j]).ratio() >= umbral
+            )
+            if medios[i] == medios[j] or replicado:
+                padre[raiz(i)] = raiz(j)
+
+    grupos: dict[int, set[str]] = {}
+    for i, medio in enumerate(medios):
+        grupos.setdefault(raiz(i), set()).add(medio)
+    return sorted(sorted(m) for m in grupos.values())
+
+
+def _texto_procedencias(medios: int, independientes: int) -> str:
+    texto = f"{independientes} procedencia(s) independiente(s)"
+    if independientes < medios:
+        texto = (
+            f"{medios} medios, {texto}: titulares casi idénticos de medios distintos "
+            "(posible agencia replicada) cuentan como una"
+        )
+    return texto
 
 
 def _dominio_coincide(dominio: str, patron: str) -> bool:
@@ -237,7 +300,7 @@ def novedad(grupo: GrupoNoticias, c: Criterios) -> Componente:
 
 def evidencia(grupo: GrupoNoticias, contexto: Contexto | None, c: Criterios) -> Componente:
     e = c.evidencia
-    n = len(grupo.procedencias)
+    n = len(procedencias_independientes(grupo, c))
     oficiales = [v.id_evidencia for v in contexto.vinculos] if contexto else []
     valor = e.peso_procedencias * min(n, e.procedencias_para_maximo) / (
         e.procedencias_para_maximo
@@ -245,18 +308,26 @@ def evidencia(grupo: GrupoNoticias, contexto: Contexto | None, c: Criterios) -> 
     respaldo = f"respaldo oficial: {', '.join(oficiales)}" if oficiales else "sin respaldo oficial"
     return Componente(
         valor=round(min(valor, 1.0), 4),
-        criterio=f"{n} procedencia(s) independiente(s); {respaldo}.",
+        criterio=f"{_texto_procedencias(len(grupo.procedencias), n)}; {respaldo}.",
     )
 
 
 def estado_evidencia(
     grupo: GrupoNoticias, contexto: Contexto | None, c: Criterios
 ) -> tuple[EstadoEvidencia, str]:
-    n = len(grupo.procedencias)
+    n = len(procedencias_independientes(grupo, c))
     oficial = bool(contexto and contexto.vinculos)
     pendientes = contexto.pendientes if contexto else []
     if n == 1 and not oficial:
-        return "insuficiente", "Una sola procedencia y sin respaldo oficial: requiere investigar."
+        replica = (
+            f" ({len(grupo.procedencias)} medios replican la misma nota)"
+            if len(grupo.procedencias) > 1
+            else ""
+        )
+        return (
+            "insuficiente",
+            f"Una sola procedencia{replica} y sin respaldo oficial: requiere investigar.",
+        )
     if n >= c.estado_evidencia.procedencias_suficientes and not pendientes:
         return "suficiente_para_borrador", f"{n} procedencias independientes y sin pendientes."
     motivo = f"{n} procedencia(s)" + (" con respaldo oficial" if oficial else "")
@@ -319,6 +390,7 @@ class MotorPuntaje:
             estado_evidencia=estado,
             motivo_estado=motivo,
             procedencias=sorted(grupo.procedencias),
+            procedencias_independientes=procedencias_independientes(grupo, c),
             ids_noticias=[n.id_noticia for n in grupo.noticias],
             vinculos=contexto.vinculos if contexto else [],
             pendientes=contexto.pendientes if contexto else [],

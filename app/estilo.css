@@ -133,7 +133,10 @@ h4 { font-family: inherit !important; color: var(--texto); font-size: 0.95rem !i
 .leyenda i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 
 /* Tablas, desplegables y botones con el mismo radio que las tarjetas. */
-[data-testid="stDataFrame"] { border-radius: 6px; overflow: hidden; }
+/* Sin overflow: hidden en la tabla: su barra de herramientas (mostrar/ocultar columnas,
+   buscar, descargar) sobresale por arriba y quedaría cortada, y una columna oculta ya no se
+   podría volver a mostrar. */
+[data-testid="stDataFrame"] { border-radius: 6px; }
 [data-testid="stExpander"] details { border-radius: 6px; border-color: var(--borde); background: none; }
 .stButton button { border-radius: 6px; font-weight: 600; }
 

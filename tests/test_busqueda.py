@@ -207,3 +207,14 @@ def test_t10_sin_conexion_jev_responde_desde_la_cache(tmp_path):
     assert not r.abstencion and r.citas[0].id_noticia == "n3"
     assert "sin respuesta guardada" in r.motivo_respaldo
     assert buscador.responder("ajedrez en Noruega", sin_red).abstencion
+
+
+def test_el_id_de_la_cita_se_ve_sin_barras_de_escape():
+    """Dentro de `código` Markdown no procesa escapes: "tvn2\-7be8" se vería con la barra."""
+    from faro_editorial.interfaz import lineas_consulta
+
+    docs = [{"id_noticia": "tvn2-7be84659c0af", "titulo": "Casos de dengue bajan", "medio": "TVN"}]
+    config = load_config().model_copy(update={"umbral": 0.05, "k_recuperados": 1})
+    respuesta = Buscador(docs, config, RepresentadorTfidf()).responder("casos de dengue", None)
+    (linea,) = lineas_consulta(respuesta)["citas"]
+    assert "`tvn2-7be84659c0af`" in linea and "\\" not in linea

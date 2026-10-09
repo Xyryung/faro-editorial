@@ -60,6 +60,13 @@ def escapar_md(texto: str | None) -> str:
     return _MARKDOWN_ESPECIAL.sub(r"\\\1", texto.replace("\n", " "))
 
 
+def _codigo(texto: str | None) -> str:
+    """ID dentro de `código`: ahí Markdown no procesa escapes (la barra se vería), así que en vez
+    de escapar se dejan solo los caracteres de un ID (letras, números, punto, dos puntos y
+    guion). Un ID manipulado no puede cerrar el bloque ni formar un enlace."""
+    return re.sub(r"[^\w.:-]", "", texto or "")
+
+
 def escapar_html(texto: str | None) -> str:
     """Texto de una fuente dentro de HTML propio: escapa el HTML y además convierte en entidades
     los signos de Markdown, así no se interpreta ni como etiqueta ni como enlace."""
@@ -338,7 +345,7 @@ def lineas_consulta(respuesta: Any) -> dict[str, Any]:
     for cita in respuesta.citas:
         extra = f" · Noul {cita.prob_noul}" if cita.prob_noul is not None else ""
         citas.append(
-            f"- **{cita.puntaje:.2f}** `{escapar_md(cita.id_noticia)}` "
+            f"- **{cita.puntaje:.2f}** `{_codigo(cita.id_noticia)}` "
             f"{escapar_md(cita.titulo)} ({escapar_md(cita.medio)}){extra}"
         )
     return {

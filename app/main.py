@@ -47,6 +47,7 @@ from faro_editorial.revision import (
     avance_revision_html,
     conteo_revision,
     etiqueta_revision,
+    fecha_revision_legible,
     guardar_revision,
     historial,
     texto_para_notion,
@@ -197,7 +198,8 @@ def mostrar_revision(tema: dict) -> None:
         else:
             st.markdown(
                 f"Estado actual: **{etiqueta_revision(ultima['estado_revision'])}** · "
-                f"{escapar_md(ultima['revisor'])} · {ultima['fecha_revision_utc']} (UTC)"
+                f"{escapar_md(ultima['revisor'])} · "
+                f"{fecha_revision_legible(ultima['fecha_revision_utc'])} (hora de Panamá)"
             )
 
         estados = reglas.estados_revision
@@ -240,7 +242,7 @@ def mostrar_revision(tema: dict) -> None:
                 filas = "".join(
                     fila_html(
                         f"{etiqueta_revision(d['estado_revision'])} · {d['revisor']} · "
-                        f"{d['fecha_revision_utc']} (UTC)"
+                        f"{fecha_revision_legible(d['fecha_revision_utc'])}"
                         + (f" · {d['comentario']}" if d.get("comentario") else "")
                     )
                     for d in reversed(decisiones)

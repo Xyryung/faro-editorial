@@ -181,3 +181,20 @@ def test_avance_de_la_revision_cuenta_los_no_revisados_como_nuevos():
     assert "<b>0</b> de 0" in avance_revision_html(
         dict.fromkeys(conteo, 0)
     )  # sin división por cero
+
+
+def test_la_fecha_de_la_revision_se_muestra_en_hora_de_panama(data_dir: Path, reglas):
+    from faro_editorial.revision import fecha_revision_legible
+
+    # Se guarda en UTC sin microsegundos y se muestra en hora de Panamá (UTC-5).
+    ficha = guardar_revision(
+        data_dir / "processed",
+        _tema(data_dir),
+        Revision(estado_revision="en_revision", revisor="Ana"),
+        reglas,
+        datetime(2026, 10, 9, 0, 44, 49, 80010, tzinfo=UTC),
+    )
+    assert ficha["fecha_revision_utc"] == "2026-10-09T00:44:49Z"
+    assert fecha_revision_legible(ficha["fecha_revision_utc"]).startswith("8 oct 2026, ")
+    assert "19:44" in fecha_revision_legible(ficha["fecha_revision_utc"])
+    assert fecha_revision_legible("no es fecha") == "no es fecha"

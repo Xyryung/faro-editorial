@@ -977,10 +977,9 @@ def main(argv: list[str] | None = None) -> None:
         # El índice se prepara una vez, fuera de la medición por consulta (igual que en la
         # interfaz, que mantiene el buscador en memoria); su tiempo se reporta aparte.
         preparacion_s = buscador.preparar()
-        # Igual que la interfaz: con OFFLINE=1 la compuerta decide solo con el umbral. Un
-        # cliente offline sin caché haría que cada pregunta Noul se abstuviera y, con ella,
-        # todas las consultas, también las respondibles.
-        cliente = None if s.offline else crear_cliente("jev", s)
+        # Igual que la interfaz: con OFFLINE=1 Jev responde desde la caché y, si un candidato
+        # no tiene respuesta guardada, decide la compuerta de palabras clave.
+        cliente = crear_cliente("jev", s)
         datos = ejecutar_consultas(buscador, cliente, conjunto, s.cache_dir / NOMBRE_REGISTRO)
         datos["preparacion_indice_s"] = round(preparacion_s, 3)
         if buscador.motivo_respaldo:
@@ -996,8 +995,8 @@ def main(argv: list[str] | None = None) -> None:
             print(f"Aviso: {buscador.motivo_respaldo}")
         if s.offline:
             print(
-                "Aviso: OFFLINE=1, la compuerta decidió solo con el umbral, sin Jev. Para medir "
-                'la compuerta completa (umbral + Noul), corre con $env:OFFLINE="0".'
+                "Aviso: OFFLINE=1, Jev respondió solo desde la caché. Para medir la compuerta "
+                'completa en vivo (umbral + Noul), corre con $env:OFFLINE="0".'
             )
         print(f"Resultados: {ruta} · costo en vivo USD {datos['costo_usd_en_vivo']}")
         return

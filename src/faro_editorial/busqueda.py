@@ -7,8 +7,9 @@ inventa cifras ni citas.
 - Línea base: BM25 por palabras clave (sin IA).
 - Variante híbrida: BM25 + similitud semántica (embeddings, con caída a TF-IDF registrada).
 - Compuerta de abstención: umbral de recuperación + pregunta Noul a Jev ("la evidencia
-  responde la pregunta"). Sin cliente (offline sin caché), decide solo el umbral y queda
-  registrado el método.
+  responde la pregunta"). Sin conexión, Jev responde desde la caché las preguntas que ya se
+  hicieron en línea; si ningún candidato tiene respuesta guardada, o sin cliente, decide el
+  umbral más la cobertura de palabras clave y queda registrado el método.
 
 Comandos (desde la raíz del repo, después de la carga):
     uv run python -m faro_editorial.busqueda "¿qué lluvias hubo en Chiriquí?"
@@ -269,51 +270,29 @@ class Buscador:
                 f"{rechazo or 'sin candidatos'}; {self.config.version}.",
             )
         if cliente is None:
-            # Sin Jev no hay quien juzgue si el titular responde: además del umbral, el titular
-            # debe contener la mayoría de las palabras clave de la pregunta. Si no, abstención
-            # (T06): "resultados del campeonato de ajedrez" no puede responderse con "resultados
-            # del sorteo de la lotería" solo por compartir una palabra.
-            minimo = self.config.cobertura_minima
-            candidatos = [c for c in candidatos if cobertura(consulta, c.titulo) >= minimo]
-            if not candidatos:
-                return self._abstencion(
-                    consulta,
-                    metodo,
-                    "sin Jev, ningún titular contiene la mayoría de las palabras clave de la "
-                    f"pregunta (cobertura mínima {minimo}); {self.config.version}.",
-                )
-            for c in candidatos:
-                c.metodo = f"{metodo}+umbral"
-            notas = [
-                m
-                for m in (
-                    self.motivo_respaldo,
-                    "Sin Jev (offline sin caché): decide solo el umbral.",
-                )
-                if m
-            ]
-            return RespuestaConsulta(
-                pregunta=consulta,
-                abstencion=False,
-                citas=candidatos,
-                metodo=metodo,
-                motivo_respaldo=" ".join(notas),
-            )
+            return self._sin_jev(consulta, metodo, candidatos)
         pregunta = PreguntaNoul(
             instrucciones=self.config.pregunta_noul.instrucciones,
             criterio_si=self.config.pregunta_noul.criterio_si,
             criterio_no=self.config.pregunta_noul.criterio_no,
         )
-        aceptadas = []
+        sin_conexion = getattr(cliente, "offline", False)
+        aceptadas, juzgados = [], 0
         for c in candidatos:
             estado = f"Pregunta: {consulta}\nEvidencia: {c.titulo} ({c.medio})"
             decision = cliente.decidir(estado, {"responde": pregunta}, self.config.version)
+            if sin_conexion and decision.abstencion and not decision.desde_cache:
+                continue  # sin respuesta guardada: Jev no juzgó este candidato
+            juzgados += 1
             respuesta = decision.respuesta("responde")
             if decision.abstencion or respuesta is None:
                 continue
             c.prob_noul = round(respuesta.probabilidad, 4)
             if respuesta.probabilidad >= self.config.umbral_noul:
                 aceptadas.append(c)
+        if sin_conexion and not juzgados:
+            # Pregunta nueva sin conexión: ninguna respuesta de Jev en la caché.
+            return self._sin_jev(consulta, metodo, candidatos)
         if not aceptadas:
             return self._abstencion(
                 consulta,
@@ -323,6 +302,39 @@ class Buscador:
             )
         return RespuestaConsulta(
             pregunta=consulta, abstencion=False, citas=aceptadas, metodo=metodo
+        )
+
+    def _sin_jev(self, consulta: str, metodo: str, candidatos: list[Cita]) -> RespuestaConsulta:
+        # Sin Jev no hay quien juzgue si el titular responde: además del umbral, el titular
+        # debe contener la mayoría de las palabras clave de la pregunta. Si no, abstención
+        # (T06): "resultados del campeonato de ajedrez" no puede responderse con "resultados
+        # del sorteo de la lotería" solo por compartir una palabra.
+        minimo = self.config.cobertura_minima
+        candidatos = [c for c in candidatos if cobertura(consulta, c.titulo) >= minimo]
+        if not candidatos:
+            return self._abstencion(
+                consulta,
+                metodo,
+                "sin Jev, ningún titular contiene la mayoría de las palabras clave de la "
+                f"pregunta (cobertura mínima {minimo}); {self.config.version}.",
+            )
+        for c in candidatos:
+            c.metodo = f"{metodo}+umbral"
+        notas = [
+            m
+            for m in (
+                self.motivo_respaldo,
+                "Sin Jev (sin conexión y sin respuesta guardada): decide el umbral y "
+                "las palabras clave.",
+            )
+            if m
+        ]
+        return RespuestaConsulta(
+            pregunta=consulta,
+            abstencion=False,
+            citas=candidatos,
+            metodo=metodo,
+            motivo_respaldo=" ".join(notas),
         )
 
     def _abstencion(self, consulta: str, metodo: str, motivo: str) -> RespuestaConsulta:
@@ -373,10 +385,10 @@ def main(argv: list[str] | None = None) -> None:
     buscador = Buscador(leer_corpus(s.processed_dir), config)
 
     def cliente() -> ClienteDecisiones | None:
-        if s.offline:
-            print("Aviso: OFFLINE=1, sin Jev: decide solo el umbral.")
-            return None
         from faro_editorial.proveedores import crear_cliente
+
+        if s.offline:
+            print("Aviso: OFFLINE=1: Jev responde solo desde la caché.")
 
         return crear_cliente("jev")
 

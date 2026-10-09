@@ -8,6 +8,8 @@ import pytest
 
 from faro_editorial.agrupacion import RepresentadorTfidf
 from faro_editorial.busqueda import Buscador, load_config
+from faro_editorial.decisiones import ClienteDecisiones, RespuestaNoul
+from faro_editorial.proveedores import ProveedorSimulado
 
 DOCS = [
     {"id_noticia": "n1", "titulo": "Lluvias, crecidas y alertas en Chiriquí", "medio": "TVN"},
@@ -178,3 +180,30 @@ def test_palabras_clave_y_cobertura():
     assert cobertura("tránsito del canal", "Tránsitos por el Canal") == 1  # singular y plural
     assert cobertura("ajedrez en Noruega", "Resultados del sorteo de la lotería") == 0
     assert cobertura("¿qué?", "cualquier titular") == 0
+
+
+def test_t10_sin_conexion_jev_responde_desde_la_cache(tmp_path):
+    """La demo corre sin internet: lo que Jev decidió en línea se reutiliza desde la caché, y
+    una pregunta nueva, sin respuesta guardada, pasa a la compuerta de palabras clave."""
+    config = load_config().model_copy(update={"umbral": 0.05, "k_recuperados": 3})
+    buscador = Buscador(DOCS, config, RepresentadorTfidf())
+
+    # En línea, Jev dice que el titular de lluvias no responde esta pregunta.
+    no_responde = {"responde": RespuestaNoul(probabilidad=0.05)}
+    en_linea = ClienteDecisiones(ProveedorSimulado(no_responde), tmp_path, offline=False)
+    assert buscador.responder("lluvias en Chiriquí", en_linea).abstencion
+
+    # Sin conexión, la misma pregunta usa esa decisión guardada (sin llamar al proveedor),
+    # aunque las palabras clave por sí solas la habrían respondido.
+    proveedor = ProveedorSimulado(error=RuntimeError("sin red"))
+    sin_red = ClienteDecisiones(proveedor, tmp_path, offline=True)
+    r = buscador.responder("lluvias en Chiriquí", sin_red)
+    assert r.abstencion and "Noul" in r.motivo
+    assert proveedor.llamadas == 0
+    assert not buscador.responder("lluvias en Chiriquí", None).abstencion
+
+    # Pregunta nueva sin caché: decide la compuerta de palabras clave y queda registrado.
+    r = buscador.responder("¿hubo tránsitos en el Canal?", sin_red)
+    assert not r.abstencion and r.citas[0].id_noticia == "n3"
+    assert "sin respuesta guardada" in r.motivo_respaldo
+    assert buscador.responder("ajedrez en Noruega", sin_red).abstencion

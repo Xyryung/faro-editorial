@@ -203,8 +203,18 @@ casos:
       - tests/test_interfaz.py::test_app_sin_snapshot_explica_como_cargarlo
       - tests/test_clasificacion.py::test_offline_sin_cache_usa_la_linea_base_y_con_cache_usa_jev
       - tests/test_clasificacion.py::test_segunda_corrida_sale_de_la_cache
+      - tests/test_busqueda.py::test_t10_sin_conexion_jev_responde_desde_la_cache
     correcciones:
       - fallo: Un estado con fechas lanzaba TypeError en vez de decidir o abstenerse, contra la regla "nunca un error".
         correccion: Serialización con default=str en la clave y en la caché.
         pr: "#40"
         issue: "#44"
+      - fallo: >-
+          En el ensayo sin internet en la laptop de la demo, la consulta ignoraba la caché de Jev y
+          decidía solo con palabras clave; "¿salario mínimo aprobado para 2027?" respondía con el
+          presupuesto del Canal (5/10 abstenciones en vez de 8/10).
+        correccion: >-
+          Sin conexión, la consulta usa las decisiones de Jev guardadas en la caché; solo una
+          pregunta sin respuesta guardada pasa a la compuerta de palabras clave (8/10 y 10/10).
+        pr: "#72"
+        issue: "#73"

@@ -585,11 +585,11 @@ with pestana_consulta:
     if st.button("Consultar", key="consulta_boton") and (pregunta or "").strip():
         with st.spinner("Buscando evidencia… (la primera consulta prepara el índice)"):
             buscador = buscador_en_memoria(str(settings.processed_dir), marca_base())
-            cliente = None
-            if not settings.offline:
-                from faro_editorial.proveedores import crear_cliente
+            from faro_editorial.proveedores import crear_cliente
 
-                cliente = crear_cliente("jev")
+            # Sin conexión, Jev responde desde la caché; una pregunta nueva sin respuesta
+            # guardada pasa a la compuerta de palabras clave (busqueda.responder).
+            cliente = crear_cliente("jev")
             respuesta = buscador.responder(pregunta.strip(), cliente)
         # El texto de las fuentes y de la pregunta se escapa (T07): es dato, no formato.
         textos = lineas_consulta(respuesta)

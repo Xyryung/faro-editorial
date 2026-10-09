@@ -20,7 +20,9 @@ from faro_editorial.carga import NOMBRE_DB
 from faro_editorial.contrato import plural
 
 ETIQUETAS_ESTADO = {
-    "insuficiente": "Insuficiente",
+    # En pantalla "Sin corroborar": una sola fuente y sin dato oficial. El valor interno
+    # sigue siendo "insuficiente" (reglas, fichas y matriz no cambian).
+    "insuficiente": "Sin corroborar",
     "parcial": "Parcial",
     "suficiente_para_borrador": "Suficiente para borrador",
 }
@@ -311,7 +313,7 @@ def tarjetas_kpi(resumen: dict) -> list[str]:
         tarjeta("kpi-temas", "Temas", grupos, f"{int(resumen['noticias'])} noticias agrupadas"),
         tarjeta("kpi-alto", "Prioridad alta", altos, f"de {grupos} temas"),
         tarjeta(
-            "kpi-insuficiente", "Evidencia insuficiente", insuficientes, "requieren investigar"
+            "kpi-insuficiente", "Sin corroborar", insuficientes, "una sola fuente, sin dato oficial"
         ),
         tarjeta("kpi-suficiente", "Listos para borrador", suficientes, "sujetos a revisión humana"),
     ]

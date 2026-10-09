@@ -15,9 +15,7 @@ from faro_editorial.bandeja import nombres_medios
 from faro_editorial.borradores import leer_borradores
 from faro_editorial.contrato import plural
 from faro_editorial.graficos import (
-    COLORES_COMPONENTE,
     colores_prioridad,
-    grafico_aportes,
     grafico_desglose,
     grafico_noticias_por_dia,
     periodo_noticias,
@@ -507,7 +505,8 @@ with pestana_bandeja:
         if not revisiones_sel or vigentes.get(t["id_grupo"], ESTADO_INICIAL) in revisiones_sel
     ]
     if visibles:
-        evidencia, por_dia, aportes = cuadricula(dividir_derecha=False)
+        # Dos mitades: sus bordes coinciden con los de la fila de indicadores.
+        evidencia, por_dia = st.columns(2, gap="small")
         with evidencia, tarjeta("g_revision"):
             # Avance de la revisión humana: cuánto le falta al editor (cambia al revisar).
             st.markdown("#### Revisión")
@@ -520,10 +519,6 @@ with pestana_bandeja:
             st.markdown(f"#### Noticias por {periodo}")
             grafico(grafico_noticias_por_dia(visibles), f"Noticias por {periodo} de publicación")
             st.markdown(leyenda_html(colores_prioridad(visibles)), unsafe_allow_html=True)
-        with aportes, tarjeta("g_aportes"):
-            st.markdown("#### Qué compone el puntaje")
-            grafico(grafico_aportes(visibles), "Aporte de cada componente por tema")
-            st.markdown(leyenda_html(COLORES_COMPONENTE), unsafe_allow_html=True)
 
     with tarjeta("bandeja"):
         st.markdown("#### Bandeja priorizada")

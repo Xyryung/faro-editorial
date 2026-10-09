@@ -253,7 +253,7 @@ Riesgos, derechos por fuente, sesgos y cada control con su código y su prueba:
 
 - Kenneth ([@Xyryung](https://github.com/Xyryung))
 - Rafael Aboulafia ([@rafael23231](https://github.com/rafael23231))
-- [@Cod7777](https://github.com/Cod7777)
+- David ([@Cod7777](https://github.com/Cod7777))
 
 ## Licencia
 

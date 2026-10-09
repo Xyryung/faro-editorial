@@ -45,9 +45,9 @@ escrito exactamente así:
 
 | Integrante | Titulares |
 |---|---|
-| Rafael Aboulafia | 20 |
-| David | 20 |
-| Kenneth | 20 |
+| Rafael Aboulafia ([@rafael23231](https://github.com/rafael23231)) | 20 |
+| David ([@Cod7777](https://github.com/Cod7777)) | 20 |
+| Kenneth ([@Xyryung](https://github.com/Xyryung)) | 20 |
 
 - **A ciegas:** cada integrante etiquetó su parte **sin consultar al modelo ni a ninguna IA**,
   como pide la herramienta de muestra. El CSV no traía el tema propuesto por el sistema.

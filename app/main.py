@@ -13,11 +13,9 @@ import streamlit as st
 from faro_editorial import __version__
 from faro_editorial.graficos import (
     COLORES_COMPONENTE,
-    colores_evidencia,
     colores_prioridad,
     grafico_aportes,
     grafico_desglose,
-    grafico_evidencia,
     grafico_noticias_por_dia,
     periodo_noticias,
 )
@@ -41,6 +39,16 @@ from faro_editorial.interfaz import (
     tarjetas_kpi,
     texto_datos,
     version_legible,
+)
+from faro_editorial.revision import (
+    ESTADO_INICIAL,
+    Revision,
+    avance_revision_html,
+    conteo_revision,
+    etiqueta_revision,
+    guardar_revision,
+    historial,
+    texto_para_notion,
 )
 from faro_editorial.rules import load_rules
 from faro_editorial.settings import get_settings
@@ -168,6 +176,76 @@ def mostrar_ficha(tema: dict) -> None:
         with st.expander("Ver criterios de cada componente"):
             st.dataframe(filas_componentes(tema), hide_index=True, width="stretch")
 
+    mostrar_revision(tema)
+
+
+def mostrar_revision(tema: dict) -> None:
+    """Control humano (issue #17): la persona revisora registra su decisión sobre el tema."""
+    decisiones = historial(settings.processed_dir).get(tema["id_grupo"], [])
+    ultima = decisiones[-1] if decisiones else None
+    with tarjeta("revision"):
+        st.markdown("#### Revisión humana")
+        aviso = st.session_state.pop("revision_guardada", None)
+        if aviso:
+            st.success(aviso)
+        if ultima is None:
+            st.markdown("Estado actual: **Nuevo** (sin revisar).")
+        else:
+            st.markdown(
+                f"Estado actual: **{etiqueta_revision(ultima['estado_revision'])}** · "
+                f"{escapar_md(ultima['revisor'])} · {ultima['fecha_revision_utc']} (UTC)"
+            )
+
+        estados = reglas.estados_revision
+        actual = ultima["estado_revision"] if ultima else ESTADO_INICIAL
+        caso = tema["id_grupo"]
+        # Claves por tema: al cambiar de ficha, el formulario no arrastra la decisión anterior.
+        with st.form(key=f"form_revision_{caso}", border=False, clear_on_submit=True):
+            estado = st.selectbox(
+                "Decisión",
+                estados,
+                index=estados.index(actual) if actual in estados else 0,
+                format_func=etiqueta_revision,
+                key=f"revision_estado_{caso}",
+            )
+            revisor = st.text_input(
+                "Persona revisora",
+                value=st.session_state.get("ultimo_revisor", ""),
+                max_chars=80,
+                key=f"revision_revisor_{caso}",
+            )
+            comentario = st.text_area(
+                "Comentario", max_chars=2000, height=80, key=f"revision_comentario_{caso}"
+            )
+            st.caption("Aprobar como borrador no publica nada: solo registra la decisión.")
+            guardar = st.form_submit_button("Guardar revisión", key=f"revision_guardar_{caso}")
+        if guardar:
+            if not revisor.strip():
+                st.error("Escribe el nombre de la persona revisora.")
+            else:
+                revision = Revision(estado_revision=estado, revisor=revisor, comentario=comentario)
+                guardar_revision(settings.processed_dir, tema, revision, reglas)
+                st.session_state["ultimo_revisor"] = revision.revisor
+                st.session_state["revision_guardada"] = (
+                    f"Revisión guardada: {etiqueta_revision(estado)}."
+                )
+                st.rerun()  # para que la bandeja muestre el estado nuevo
+
+        if len(decisiones) > 1:
+            with st.expander(f"Historial de revisiones ({len(decisiones)})"):
+                filas = "".join(
+                    fila_html(
+                        f"{etiqueta_revision(d['estado_revision'])} · {d['revisor']} · "
+                        f"{d['fecha_revision_utc']} (UTC)"
+                        + (f" · {d['comentario']}" if d.get("comentario") else "")
+                    )
+                    for d in reversed(decisiones)
+                )
+                st.markdown(f'<div class="filas">{filas}</div>', unsafe_allow_html=True)
+        with st.expander("Copiar ficha para Notion"):
+            st.caption("Usa el botón de copiar del recuadro y pégalo en 'Casos y evidencias'.")
+            st.code(texto_para_notion(tema, ultima), language="markdown", wrap_lines=True)
+
 
 # Barra lateral: filtros arriba, datos abajo (el botón se crea antes de cargar la bandeja).
 zona_filtros = st.sidebar.container()
@@ -240,6 +318,19 @@ with zona_filtros:
         placeholder="Todos",
         key="filtro_tema",
     )
+    revisiones_sel = st.multiselect(
+        "Revisión",
+        reglas.estados_revision,
+        format_func=etiqueta_revision,
+        placeholder="Todas",
+        key="filtro_revision",
+    )
+
+# Estado de revisión vigente de cada tema (los no revisados están en "nuevo").
+vigentes = {
+    caso: decisiones[-1]["estado_revision"]
+    for caso, decisiones in historial(settings.processed_dir).items()
+}
 
 pestana_bandeja, pestana_consulta, pestana_borrador, pestana_config = st.tabs(
     ["Bandeja y ficha", "Consulta", "Borrador", "Configuración"]
@@ -251,13 +342,20 @@ with pestana_bandeja:
         with columna:
             st.markdown(kpi, unsafe_allow_html=True)
 
-    visibles = filtrar(bandeja["temas"], bandas, estados, temas_sel)
+    visibles = [
+        t
+        for t in filtrar(bandeja["temas"], bandas, estados, temas_sel)
+        if not revisiones_sel or vigentes.get(t["id_grupo"], ESTADO_INICIAL) in revisiones_sel
+    ]
     if visibles:
         evidencia, por_dia, aportes = cuadricula(dividir_derecha=False)
-        with evidencia, tarjeta("g_evidencia"):
-            st.markdown("#### Evidencia")
-            grafico(grafico_evidencia(visibles), "Temas por estado de evidencia")
-            st.markdown(leyenda_html(colores_evidencia(visibles)), unsafe_allow_html=True)
+        with evidencia, tarjeta("g_revision"):
+            # Avance de la revisión humana: cuánto le falta al editor (cambia al revisar).
+            st.markdown("#### Revisión")
+            st.markdown(
+                avance_revision_html(conteo_revision(visibles, vigentes)),
+                unsafe_allow_html=True,
+            )
         with por_dia, tarjeta("g_dias"):
             periodo = periodo_noticias(visibles)
             st.markdown(f"#### Noticias por {periodo}")
@@ -283,8 +381,11 @@ with pestana_bandeja:
         elif not visibles:
             st.info("Ningún tema coincide con los filtros.")
         else:
+            filas = filas_bandeja(visibles)
+            for fila, tema in zip(filas, visibles, strict=True):
+                fila["Revisión"] = etiqueta_revision(vigentes.get(tema["id_grupo"], ESTADO_INICIAL))
             st.dataframe(
-                filas_bandeja(visibles),
+                filas,
                 hide_index=True,
                 width="stretch",
                 column_config={
@@ -300,6 +401,7 @@ with pestana_bandeja:
                         width=72, alignment="left", help="Procedencias independientes"
                     ),
                     "Fecha original": st.column_config.TextColumn(width=136, help="Hora de Panamá"),
+                    "Revisión": st.column_config.TextColumn(width=150),
                 },
             )
             por_id = {t["id_grupo"]: t for t in visibles}

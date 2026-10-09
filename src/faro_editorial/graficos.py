@@ -22,7 +22,7 @@ COLORES_ESTADO = {
     "Parcial": "#8E86B0",
     "Suficiente para borrador": "#5E9C76",
 }
-COLORES_BANDA = {"Alta": "#1F3A5F", "Media": "#7D8FA6", "Baja": "#C9C2B4"}
+COLORES_BANDA = {"Alta": "#1F3A5F", "Media": "#7D8FA6", "Baja": "#C9D0DC"}
 COLORES_COMPONENTE = {
     "Relevancia": "#1F3A5F",
     "Impacto potencial": "#3D5A80",
@@ -30,9 +30,9 @@ COLORES_COMPONENTE = {
     "Novedad": "#A3B3C7",
     "Evidencia disponible": "#5E9C76",
 }
-_TEXTO = "#2B2926"
-_SUAVE = "#6E6A62"
-_REJILLA = "#E2DCCF"
+_TEXTO = "#26303B"
+_SUAVE = "#5B6B80"
+_REJILLA = "#D6E0EC"
 ALTO = 200  # alto común de los gráficos de la bandeja, para que las tarjetas se alineen
 
 
@@ -275,18 +275,34 @@ def grafico_noticias_por_dia(temas: list[dict]) -> alt.Chart:
     return _estilo(barras, ALTO)
 
 
-def grafico_aportes(temas: list[dict], limite: int = 8) -> alt.Chart:
+def grafico_aportes(temas: list[dict], limite: int = 8) -> alt.LayerChart:
+    """Barras apiladas por tema. El titular va escrito encima de su barra, alineado a la
+    izquierda y con todo el ancho de la tarjeta (como etiqueta del eje se cortaba y quedaba
+    desalineado)."""
     datos = alt.Data(values=datos_aportes(temas, limite))
+    rotulos = alt.Data(
+        values=[
+            {
+                "Tema": f"#{t['posicion']} {_corto(t['titulo'], 28)}",
+                "Posición": t["posicion"],
+                "Rótulo": f"#{t['posicion']}  {t['titulo']}",
+            }
+            for t in temas[:limite]
+        ]
+    )
+    # Mismo eje y (oculto) en las dos capas, o Vega no puede combinarlas.
+    y = alt.Y(
+        "Tema:N",
+        title=None,
+        sort=alt.EncodingSortField("Posición", order="ascending"),
+        axis=None,
+        scale=alt.Scale(paddingInner=0.6, paddingOuter=0.4),
+    )
     barras = (
         alt.Chart(datos)
-        .mark_bar(size=16, cornerRadius=1)
+        .mark_bar(size=14, cornerRadius=1)
         .encode(
-            y=alt.Y(
-                "Tema:N",
-                title=None,
-                sort=alt.EncodingSortField("Posición", order="ascending"),
-                axis=alt.Axis(labelLimit=190, labelPadding=8, ticks=False, domain=False),
-            ),
+            y=y,
             x=alt.X(
                 "sum(Aporte):Q",
                 title="Puntaje (0-100)",
@@ -298,7 +314,12 @@ def grafico_aportes(temas: list[dict], limite: int = 8) -> alt.Chart:
             tooltip=["Titular:N", "Componente:N", "Aporte:Q"],
         )
     )
-    return _estilo(barras, max(ALTO - 30, 34 * min(len(temas), limite)))
+    titulos = (
+        alt.Chart(rotulos)
+        .mark_text(align="left", baseline="bottom", dy=-9, fontSize=12, color=_TEXTO, limit=460)
+        .encode(y=y, x=alt.value(0), text="Rótulo:N")
+    )
+    return _estilo(alt.layer(barras, titulos), max(ALTO - 30, 64 * min(len(temas), limite)))
 
 
 def grafico_desglose(tema: dict) -> alt.Chart:
@@ -307,7 +328,7 @@ def grafico_desglose(tema: dict) -> alt.Chart:
     y = alt.Y("Componente:N", title=None, sort=orden, axis=alt.Axis(labelLimit=200))
     fondo = (
         alt.Chart(datos)
-        .mark_bar(size=12, cornerRadius=1, color="#E8E3D8")
+        .mark_bar(size=12, cornerRadius=1, color="#E0E9F4")
         .encode(
             y=y,
             x=alt.X(

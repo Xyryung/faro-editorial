@@ -1,4 +1,4 @@
-# Tema de la interfaz (issue #16): paleta "papel" y letra IBM Plex Sans.
+# Tema de la interfaz (issue #16): azul pastel y letra IBM Plex Sans.
 # La letra está en app/static/fonts (licencia SIL OFL 1.1, ver OFL-IBM-Plex.txt) y Streamlit
 # la sirve localmente, así la demo funciona sin internet.
 
@@ -8,20 +8,20 @@ enableStaticServing = true
 
 [theme]
 base = "light"
-# Fondo crema cálido en vez de blanco puro (cansa menos la vista); texto casi negro cálido y un
-# solo color de acento, el azul marino.
+# Fondo azul pastel afuera y tarjetas casi blancas con un toque azul (app/estilo.css), en vez de
+# blanco puro: cansa menos la vista. Un solo color de acento, el azul marino.
 primaryColor = "#1F3A5F"
-backgroundColor = "#F4F1EA"
-secondaryBackgroundColor = "#EAE5DA"
-textColor = "#2B2926"
-linkColor = "#24507F"
+backgroundColor = "#E6EFFB"
+secondaryBackgroundColor = "#EEF3FA"
+textColor = "#26303B"
+linkColor = "#1F5A96"
 font = "IBM Plex Sans, sans-serif"
 baseFontSize = 15
 # h1 (título), h2, h3 (titular de la ficha), h4 (secciones de la ficha), h5, h6
 headingFontSizes = ["1.6rem", "1.35rem", "1.3rem", "0.95rem", "0.9rem", "0.85rem"]
 baseRadius = "0.375rem"
-borderColor = "#DDD7CB"
-dataframeBorderColor = "#E2DCCF"
+borderColor = "#C9D8EC"
+dataframeBorderColor = "#D6E0EC"
 showWidgetBorder = true
 showSidebarBorder = true
 
@@ -50,8 +50,8 @@ weight = 700
 style = "normal"
 
 [theme.sidebar]
-backgroundColor = "#EDE9E0"
-secondaryBackgroundColor = "#F4F1EA"
+backgroundColor = "#DCE7F6"
+secondaryBackgroundColor = "#EEF3FA"
 
 [client]
 # Sin el botón "Deploy" ni las opciones de desarrollo.

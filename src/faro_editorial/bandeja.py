@@ -212,6 +212,17 @@ def escribir_bandeja(bandeja: dict[str, Any], processed_dir: Path) -> Path:
     return ruta
 
 
+def nombres_medios(tema: dict) -> list[list[str]]:
+    """Procedencias independientes con el nombre del medio como viene en la noticia ("TVN"),
+    no con la clave normalizada que usa el puntaje para comparar ("tvn")."""
+    nombres: dict[str, str] = {}
+    for n in tema["noticias"]:
+        medio = (n.get("medio") or "").strip()
+        nombres.setdefault(medio.lower(), medio)
+    grupos = tema.get("procedencias_independientes") or [[m] for m in tema["procedencias"]]
+    return [[nombres.get(m, m) for m in grupo] for grupo in grupos]
+
+
 def main(argv: list[str] | None = None) -> None:
     from faro_editorial.settings import get_settings
 
@@ -252,9 +263,10 @@ def main(argv: list[str] | None = None) -> None:
         return
     print(f"\nLos {min(args.top, len(bandeja['temas']))} temas que merecen revisión:")
     for t in bandeja["temas"][: args.top]:
+        medios = ", ".join(m for grupo in nombres_medios(t) for m in grupo)
         print(
             f"{t['posicion']:>2}. [{t['puntaje']:5.1f} {t['banda']:<5}] {t['titulo']}\n"
-            f"    evidencia: {t['estado_evidencia']} · fuentes: {', '.join(t['procedencias'])}"
+            f"    evidencia: {t['estado_evidencia']} · fuentes: {medios}"
             f" ({plural(len(t['procedencias_independientes']), 'independiente')})"
         )
     print(f"\nBandeja completa: {ruta}")

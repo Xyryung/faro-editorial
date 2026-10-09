@@ -11,6 +11,7 @@ from pathlib import Path
 import streamlit as st
 
 from faro_editorial import __version__
+from faro_editorial.bandeja import nombres_medios
 from faro_editorial.borradores import leer_borradores
 from faro_editorial.contrato import plural
 from faro_editorial.graficos import (
@@ -147,7 +148,7 @@ def mostrar_ficha(tema: dict) -> None:
             f"{plural(len(tema['procedencias']), 'medio')} y **{procedencias}**. "
             "Los titulares casi idénticos cuentan como una sola."
         )
-        st.markdown(medios_html(independientes), unsafe_allow_html=True)
+        st.markdown(medios_html(nombres_medios(tema)), unsafe_allow_html=True)
     with falta, tarjeta("falta"):
         st.markdown("#### Qué falta comprobar")
         st.markdown(f"**{escapar_md(tema['motivo_estado'])}**")

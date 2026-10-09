@@ -18,7 +18,7 @@ from faro_editorial.interfaz import (
 )
 
 COLORES_ESTADO = {
-    "Insuficiente": "#C98A4B",
+    "Sin corroborar": "#C98A4B",
     "Parcial": "#8E86B0",
     "Suficiente para borrador": "#5E9C76",
 }
@@ -169,27 +169,6 @@ def datos_noticias_por_periodo(temas: list[dict]) -> list[dict]:
     return filas
 
 
-def datos_aportes(temas: list[dict], limite: int = 8) -> list[dict]:
-    """Aporte de cada componente al puntaje de los primeros temas del ranking."""
-    orden = {nombre: i for i, nombre in enumerate(COLORES_COMPONENTE)}
-    filas = []
-    for t in temas[:limite]:
-        etiqueta = f"#{t['posicion']} {_corto(t['titulo'], 28)}"
-        for clave, c in t["componentes"].items():
-            nombre = NOMBRES_COMPONENTES.get(clave, clave)
-            filas.append(
-                {
-                    "Tema": etiqueta,
-                    "Titular": t["titulo"],
-                    "Posición": t["posicion"],
-                    "Componente": nombre,
-                    "Orden": orden.get(nombre, 9),
-                    "Aporte": round(float(c["aporte"]), 1),
-                }
-            )
-    return filas
-
-
 def datos_desglose(tema: dict) -> list[dict]:
     """Aporte de cada componente frente a su peso máximo."""
     return [
@@ -273,53 +252,6 @@ def grafico_noticias_por_dia(temas: list[dict]) -> alt.Chart:
         )
     )
     return _estilo(barras, ALTO)
-
-
-def grafico_aportes(temas: list[dict], limite: int = 8) -> alt.LayerChart:
-    """Barras apiladas por tema. El titular va escrito encima de su barra, alineado a la
-    izquierda y con todo el ancho de la tarjeta (como etiqueta del eje se cortaba y quedaba
-    desalineado)."""
-    datos = alt.Data(values=datos_aportes(temas, limite))
-    rotulos = alt.Data(
-        values=[
-            {
-                "Tema": f"#{t['posicion']} {_corto(t['titulo'], 28)}",
-                "Posición": t["posicion"],
-                "Rótulo": f"#{t['posicion']}  {t['titulo']}",
-            }
-            for t in temas[:limite]
-        ]
-    )
-    # Mismo eje y (oculto) en las dos capas, o Vega no puede combinarlas.
-    y = alt.Y(
-        "Tema:N",
-        title=None,
-        sort=alt.EncodingSortField("Posición", order="ascending"),
-        axis=None,
-        scale=alt.Scale(paddingInner=0.6, paddingOuter=0.4),
-    )
-    barras = (
-        alt.Chart(datos)
-        .mark_bar(size=14, cornerRadius=1)
-        .encode(
-            y=y,
-            x=alt.X(
-                "sum(Aporte):Q",
-                title="Puntaje (0-100)",
-                scale=alt.Scale(domain=[0, 100]),
-                axis=alt.Axis(tickCount=5),
-            ),
-            color=alt.Color("Componente:N", scale=_escala(COLORES_COMPONENTE), legend=None),
-            order=alt.Order("Orden:Q"),
-            tooltip=["Titular:N", "Componente:N", "Aporte:Q"],
-        )
-    )
-    titulos = (
-        alt.Chart(rotulos)
-        .mark_text(align="left", baseline="bottom", dy=-9, fontSize=12, color=_TEXTO, limit=460)
-        .encode(y=y, x=alt.value(0), text="Rótulo:N")
-    )
-    return _estilo(alt.layer(barras, titulos), max(ALTO - 30, 64 * min(len(temas), limite)))
 
 
 def grafico_desglose(tema: dict) -> alt.Chart:

@@ -215,11 +215,9 @@ def test_etiquetas_html_solo_usan_valores_del_sistema():
 
 def test_datos_de_los_graficos_salen_de_la_bandeja(data_dir: Path):
     from faro_editorial.graficos import (
-        datos_aportes,
         datos_desglose,
         datos_evidencia,
         datos_noticias_por_dia,
-        grafico_aportes,
         grafico_desglose,
         grafico_evidencia,
         grafico_noticias_por_dia,
@@ -228,9 +226,9 @@ def test_datos_de_los_graficos_salen_de_la_bandeja(data_dir: Path):
     temas = cargar_bandeja(data_dir / "processed")[0]["temas"]
     assert sum(f["Temas"] for f in datos_evidencia(temas)) == len(temas)
     assert sum(f["Noticias"] for f in datos_noticias_por_dia(temas)) == 3
-    # La suma de los aportes de cada tema es su puntaje.
+    # La suma de los aportes del desglose de cada tema es su puntaje.
     for t in temas:
-        aportes = [f["Aporte"] for f in datos_aportes(temas) if f["Posición"] == t["posicion"]]
+        aportes = [f["Aporte"] for f in datos_desglose(t)]
         assert sum(aportes) == pytest.approx(t["puntaje"], abs=0.3)
     assert {f["Componente"] for f in datos_desglose(temas[0])} == {
         "Relevancia",
@@ -239,7 +237,7 @@ def test_datos_de_los_graficos_salen_de_la_bandeja(data_dir: Path):
         "Novedad",
         "Evidencia disponible",
     }
-    for grafico in (grafico_evidencia, grafico_noticias_por_dia, grafico_aportes):
+    for grafico in (grafico_evidencia, grafico_noticias_por_dia):
         assert grafico(temas).to_dict()
     assert grafico_desglose(temas[0]).to_dict()
 
@@ -345,3 +343,22 @@ def test_plural():
     assert plural(0, "procedencia independiente", "procedencias independientes") == (
         "0 procedencias independientes"
     )
+
+
+def test_la_evidencia_insuficiente_se_muestra_como_sin_corroborar():
+    from faro_editorial.interfaz import ETIQUETAS_ESTADO, etiquetas_html, filas_bandeja
+
+    assert ETIQUETAS_ESTADO["insuficiente"] == "Sin corroborar"
+    tema = {
+        "posicion": 1,
+        "puntaje": 80,
+        "banda": "alto",
+        "estado_evidencia": "insuficiente",  # el valor interno no cambia
+        "tema": None,
+        "titulo": "x",
+        "procedencias": ["tvn"],
+        "procedencias_independientes": [["tvn"]],
+        "fecha_original_panama": None,
+    }
+    assert filas_bandeja([tema])[0]["Evidencia"] == "Sin corroborar"
+    assert "sin corroborar" in etiquetas_html(tema).lower()

@@ -21,7 +21,12 @@ from pathlib import Path
 from pydantic import BaseModel, Field, field_validator
 
 from faro_editorial.contexto import ZONA_PANAMA
-from faro_editorial.interfaz import NOMBRES_COMPONENTES, escapar_md, fecha_legible
+from faro_editorial.interfaz import (
+    ETIQUETAS_ESTADO,
+    NOMBRES_COMPONENTES,
+    escapar_md,
+    fecha_legible,
+)
 from faro_editorial.rules import Reglas
 
 NOMBRE_FICHAS = "fichas.jsonl"
@@ -144,6 +149,7 @@ def estados_vigentes(processed_dir: Path) -> dict[str, str]:
 def texto_para_notion(tema: dict, ultima: dict | None) -> str:
     """La ficha en Markdown, lista para pegar en la página "Casos y evidencias" de Notion. El
     texto de las fuentes va escapado para que no se convierta en enlaces o formato al pegarlo."""
+    evidencia = ETIQUETAS_ESTADO.get(tema["estado_evidencia"], tema["estado_evidencia"])
     lineas = [
         f"## {escapar_md(tema['titulo'])}",
         "",
@@ -151,8 +157,7 @@ def texto_para_notion(tema: dict, ultima: dict | None) -> str:
         f"- **Modalidad:** {MODALIDAD}",
         f"- **Fecha original (Panamá):** {fecha_legible(tema.get('fecha_original_panama'))}",
         f"- **Puntaje:** {float(tema['puntaje']):.1f} de 100 (no es probabilidad de verdad)",
-        f"- **Estado de evidencia:** {tema['estado_evidencia']} — "
-        f"{escapar_md(tema['motivo_estado'])}",
+        f"- **Estado de evidencia:** {evidencia} — {escapar_md(tema['motivo_estado'])}",
         "",
         "**Fuentes**",
     ]

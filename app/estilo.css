@@ -5,11 +5,11 @@
 
 :root {
   --azul: #1F3A5F;
-  --texto: #2B2926;
-  --suave: #6E6A62;
-  --tarjeta: #FBFAF6;
-  --borde: #DDD7CB;
-  --linea: #E8E3D8;
+  --texto: #26303B;
+  --suave: #5B6B80;
+  --tarjeta: #F8FBFF;
+  --borde: #D3E1F4;
+  --linea: #DCE6F3;
   --radio: 8px;
 }
 
@@ -108,7 +108,7 @@ h4 { font-family: inherit !important; color: var(--texto); font-size: 0.95rem !i
 .fila p { margin: 0 !important; line-height: 1.45; }
 .fila-titulo { font-weight: 600; color: var(--texto); }
 .fila-meta { font-size: 0.82rem !important; color: var(--suave); margin-top: 0.15rem !important; }
-.fila-meta a { color: #24507F; }
+.fila-meta a { color: #1F5A96; }
 .fila code { background: none; color: var(--suave); padding: 0; font-size: 0.8rem; margin-right: 0.4rem; }
 
 /* Acción recomendada: pasos numerados con el número como texto. */

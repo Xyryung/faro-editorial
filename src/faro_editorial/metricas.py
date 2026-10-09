@@ -11,8 +11,13 @@ Nunca se rellena un número.
 | Validez de sustento    | data/evaluacion/pares_sustento.csv, etiquetado por personas    |
 | Abstención             | config/consultas_v1.yaml corrido con la búsqueda (#13)         |
 | Clasificación          | data/evaluacion/evaluacion_tema.json (clasificacion evaluar)   |
+| Agrupación             | data/evaluacion/evaluacion_agrupacion.json (pares a ciegas)    |
 | Precision@5            | data/evaluacion/seleccion_editor.csv, selección a ciegas       |
 | Eficiencia             | tiempos y costos de consultas y borradores                     |
+| Ahorro de tiempo       | data/evaluacion/ahorro_tiempo.csv, tarea manual y asistida     |
+
+Cada proporción lleva su intervalo de confianza de Wilson al 95 %: con muestras de 5 a 60
+casos, el intervalo dice cuánto podría cambiar el resultado con otra muestra.
 
 Las entradas con titulares viven en data/evaluacion/ (no se versiona, decisión #28). El
 reporte, en evaluacion/metricas.md y .json, solo lleva conteos e IDs.
@@ -54,6 +59,9 @@ NOMBRE_PARES = "pares_sustento.csv"
 NOMBRE_SELECCION = "seleccion_editor.csv"
 NOMBRE_RESULTADOS_CONSULTAS = "consultas_resultados.json"
 NOMBRE_EVALUACION_TEMA = "evaluacion_tema.json"
+NOMBRE_EVALUACION_AGRUPACION = "evaluacion_agrupacion.json"
+NOMBRE_AHORRO = "ahorro_tiempo.csv"
+COLUMNAS_AHORRO = ["tarea", "modo", "persona", "minutos", "completa", "comentario"]
 NOMBRE_METRICAS = "metricas"
 
 # Metas orientativas de la sección 9.1 (no son resultados).
@@ -88,6 +96,36 @@ SI = {"x", "si", "sí", "1", "true", "s"}
 
 def _ratio(numerador: int, denominador: int) -> float | None:
     return round(numerador / denominador, 4) if denominador else None
+
+
+def intervalo_wilson(numerador: int, denominador: int, z: float = 1.96) -> list[float] | None:
+    """Intervalo de Wilson al 95 % para una proporción. A diferencia del intervalo normal,
+    no se sale de [0, 1] ni colapsa a un punto con 0/n o n/n, que es lo común en muestras
+    chicas."""
+    if not denominador:
+        return None
+    p = numerador / denominador
+    z2 = z * z
+    centro = (p + z2 / (2 * denominador)) / (1 + z2 / denominador)
+    margen = (
+        z
+        * ((p * (1 - p) / denominador + z2 / (4 * denominador * denominador)) ** 0.5)
+        / (1 + z2 / denominador)
+    )
+    return [round(max(0.0, centro - margen), 4), round(min(1.0, centro + margen), 4)]
+
+
+def _con_intervalos(dato: Any) -> Any:
+    """Agrega ic95 a cada proporción (dict con numerador y denominador) del reporte."""
+    if isinstance(dato, dict):
+        nuevo = {k: _con_intervalos(v) for k, v in dato.items()}
+        num, den = dato.get("numerador"), dato.get("denominador")
+        if isinstance(num, int) and isinstance(den, int):
+            nuevo.setdefault("ic95", intervalo_wilson(num, den))
+        return nuevo
+    if isinstance(dato, list):
+        return [_con_intervalos(x) for x in dato]
+    return dato
 
 
 def _pendiente(motivo: str, comando: str) -> dict[str, Any]:
@@ -530,6 +568,69 @@ def metrica_clasificacion(ruta_evaluacion: Path) -> dict[str, Any]:
     }
 
 
+def metrica_agrupacion(ruta_evaluacion: Path) -> dict[str, Any]:
+    if not Path(ruta_evaluacion).exists():
+        return _pendiente(
+            "No hay pares de titulares etiquetados para la agrupación.",
+            "uv run python -m faro_editorial.evaluacion_agrupacion pares (y luego evaluar)",
+        )
+    datos = json.loads(Path(ruta_evaluacion).read_text(encoding="utf-8"))
+    return {
+        "estado": "medida",
+        "metodo": datos["metodo"],
+        "pares": datos["etiquetados"],
+        "mismo_evento": datos["mismo_evento"],
+        "etiquetadores": datos["etiquetadores"],
+        "estratos": datos["estratos"],
+        "metodos": datos["metodos"],
+    }
+
+
+def metrica_ahorro_tiempo(ruta: Path) -> dict[str, Any]:
+    """Tarea equivalente hecha a mano y con Faro (sección 9.1): mediana de minutos por modo.
+    Solo cuenta las tareas completas; con pocas pruebas por modo es un dato orientativo."""
+    if not Path(ruta).exists():
+        return _pendiente(
+            "No hay tareas cronometradas a mano y con Faro.",
+            f"completar data/evaluacion/{NOMBRE_AHORRO} (protocolo en docs/ahorro_tiempo.md)",
+        )
+    with Path(ruta).open(encoding="utf-8", newline="") as f:
+        filas = [x for x in csv.DictReader(f) if (x.get("minutos") or "").strip()]
+    por_modo: dict[str, list[float]] = {"manual": [], "asistido": []}
+    incompletas = 0
+    for x in filas:
+        modo = (x.get("modo") or "").strip().lower()
+        if modo not in por_modo:
+            continue
+        if (x.get("completa") or "").strip().lower() not in SI:
+            incompletas += 1
+            continue
+        por_modo[modo].append(float(x["minutos"].replace(",", ".")))
+    if not por_modo["manual"] or not por_modo["asistido"]:
+        return _pendiente(
+            "Falta al menos una tarea completa a mano y otra con Faro.",
+            f"completar data/evaluacion/{NOMBRE_AHORRO}",
+        )
+    manual = statistics.median(por_modo["manual"])
+    asistido = statistics.median(por_modo["asistido"])
+    return {
+        "estado": "medida",
+        "metodo": (
+            "Misma tarea (de fuentes sueltas a un tema con evidencia y preguntas pendientes) "
+            "hecha a mano y con Faro, cronometrada; mediana de minutos por modo. Solo tareas "
+            "completas."
+        ),
+        "tareas": len({(x.get("tarea") or "").strip() for x in filas}),
+        "n_manual": len(por_modo["manual"]),
+        "n_asistido": len(por_modo["asistido"]),
+        "mediana_manual_min": round(manual, 2),
+        "mediana_asistido_min": round(asistido, 2),
+        "ahorro": round(1 - asistido / manual, 4) if manual else None,
+        "incompletas": incompletas,
+        "personas": sorted({(x.get("persona") or "").strip() for x in filas} - {""}),
+    }
+
+
 def metrica_eficiencia(
     ruta_resultados: Path, borradores: dict[str, dict[str, Any]], ruta_registro: Path
 ) -> dict[str, Any]:
@@ -601,23 +702,31 @@ def generar_reporte(data_dir: Path, carpeta_eval: Path | None = None) -> dict[st
     except Exception:  # sin base cargada: Precision@5 queda pendiente
         bandeja = None
     resultados = carpeta_eval / NOMBRE_RESULTADOS_CONSULTAS
-    return {
+    reporte = {
         "generado_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "referencia_snapshot": bandeja.get("referencia_panama") if bandeja else None,
         "cobertura_citas": metrica_cobertura(borradores),
         "validez_sustento": metrica_sustento(carpeta_eval / NOMBRE_PARES, borradores),
         "abstencion": metrica_abstencion(resultados),
         "clasificacion": metrica_clasificacion(carpeta_eval / NOMBRE_EVALUACION_TEMA),
+        "agrupacion": metrica_agrupacion(carpeta_eval / NOMBRE_EVALUACION_AGRUPACION),
         "precision_5": metrica_precision5(bandeja, carpeta_eval / NOMBRE_SELECCION),
         "eficiencia": metrica_eficiencia(
             resultados, borradores, data_dir / "cache" / NOMBRE_REGISTRO
         ),
+        "ahorro_tiempo": metrica_ahorro_tiempo(carpeta_eval / NOMBRE_AHORRO),
     }
+    return _con_intervalos(reporte)
 
 
 def _fraccion(m: dict[str, Any]) -> str:
     valor = f"{m['valor'] * 100:.1f} %" if m.get("valor") is not None else "—"
     return f"{m['numerador']}/{m['denominador']} ({valor})"
+
+
+def _ic(m: dict[str, Any]) -> str:
+    ic = m.get("ic95") or intervalo_wilson(m["numerador"], m["denominador"])
+    return f"{ic[0] * 100:.1f}–{ic[1] * 100:.1f} %" if ic else "—"
 
 
 def _cumple(m: dict[str, Any]) -> str:
@@ -634,8 +743,8 @@ def reporte_markdown(r: dict[str, Any]) -> str:
         "Metas orientativas de la sección 9.1 del reto, no resultados. Cada métrica muestra "
         "numerador, denominador y fallos. Una métrica pendiente no tiene número: dice qué falta.",
         "",
-        "| Métrica | Resultado | Meta | Cumple |",
-        "|---|---|---|---|",
+        "| Métrica | Resultado | IC 95 % (Wilson) | Meta | Cumple |",
+        "|---|---|---|---|---|",
     ]
     filas = [
         ("Cobertura de citas", "cobertura_citas", "100 %"),
@@ -645,30 +754,40 @@ def reporte_markdown(r: dict[str, Any]) -> str:
     for nombre, clave, meta in filas:
         m = r[clave]
         if m["estado"] == "pendiente":
-            lineas.append(f"| {nombre} | pendiente | {meta} | — |")
+            lineas.append(f"| {nombre} | pendiente | — | {meta} | — |")
         else:
-            lineas.append(f"| {nombre} | {_fraccion(m)} | {meta} | {_cumple(m)} |")
+            lineas.append(f"| {nombre} | {_fraccion(m)} | {_ic(m)} | {meta} | {_cumple(m)} |")
     p5 = r["precision_5"]
-    lineas.append(
-        "| Precision@5 (exploratoria) | "
-        + (_fraccion(p5) if p5["estado"] == "medida" else "pendiente")
-        + " | — | — |"
-    )
+    if p5["estado"] == "medida":
+        lineas.append(f"| Precision@5 (exploratoria) | {_fraccion(p5)} | {_ic(p5)} | — | — |")
+    else:
+        lineas.append("| Precision@5 (exploratoria) | pendiente | — | — | — |")
     c = r["clasificacion"]
     if c["estado"] == "medida":
         for nombre, v in c["variantes"].items():
             lineas.append(
                 f"| Macro-F1 clasificación · {nombre} | {v['macro_f1']:.3f} "
-                f"({v['aciertos']}/{v['n']}) | — | — |"
+                f"({v['aciertos']}/{v['n']} aciertos) | "
+                f"{_ic({'numerador': v['aciertos'], 'denominador': v['n']})} (aciertos) | — | — |"
             )
     else:
-        lineas.append("| Macro-F1 clasificación | pendiente | — | — |")
+        lineas.append("| Macro-F1 clasificación | pendiente | — | — | — |")
+    ag = r["agrupacion"]
+    if ag["estado"] == "medida":
+        for nombre, v in ag["metodos"].items():
+            lineas.append(
+                f"| Agrupación · {nombre} | F1 {v['f1']:.3f} · precisión "
+                f"{_fraccion(v['precision'])} · recall {_fraccion(v['recall'])} | "
+                f"P {_ic(v['precision'])} · R {_ic(v['recall'])} | — | — |"
+            )
+    else:
+        lineas.append("| Agrupación (precisión y recall) | pendiente | — | — | — |")
     e = r["eficiencia"].get("consultas", {})
     if e.get("estado") == "pendiente":
-        lineas.append("| Mediana por consulta | pendiente | ≤ 15 s | — |")
+        lineas.append("| Mediana por consulta | pendiente | — | ≤ 15 s | — |")
     else:
         lineas.append(
-            f"| Mediana por consulta (p95) | {e['mediana_s']} s ({e['p95_s']} s) | ≤ 15 s | "
+            f"| Mediana por consulta (p95) | {e['mediana_s']} s ({e['p95_s']} s) | — | ≤ 15 s | "
             f"{'sí' if e['cumple_meta'] else 'no'} |"
         )
     lineas.append("")
@@ -679,6 +798,8 @@ def reporte_markdown(r: dict[str, Any]) -> str:
         ("Abstención", "abstencion", None),
         ("Precision@5", "precision_5", None),
         ("Clasificación", "clasificacion", None),
+        ("Agrupación", "agrupacion", None),
+        ("Ahorro de tiempo", "ahorro_tiempo", None),
     ]
     for titulo, clave, lista in secciones:
         m = r[clave]
@@ -727,6 +848,26 @@ def reporte_markdown(r: dict[str, Any]) -> str:
         if clave == "clasificacion":
             lineas.append(
                 f"- {m['n_etiquetas']} titulares etiquetados; método en {m['metodo_etiquetado']}."
+            )
+        if clave == "agrupacion":
+            lineas.append(
+                f"- {m['pares']} pares etiquetados por {', '.join(m['etiquetadores']) or '—'}, "
+                f"{m['mismo_evento']} del mismo evento · estratos: "
+                + ", ".join(f"{k} {v}" for k, v in m["estratos"].items())
+                + "."
+            )
+            for nombre, v in m["metodos"].items():
+                lineas.append(
+                    f"- {nombre}: TP {v['tp']} · FP {v['fp']} · FN {v['fn']} · TN {v['tn']}; "
+                    f"errores: {', '.join(v['errores']) or 'ninguno'}."
+                )
+        if clave == "ahorro_tiempo":
+            lineas.append(
+                f"- A mano: mediana {m['mediana_manual_min']} min (n = {m['n_manual']}) · con "
+                f"Faro: {m['mediana_asistido_min']} min (n = {m['n_asistido']}) · ahorro "
+                f"{m['ahorro'] * 100:.0f} % · personas: {', '.join(m['personas']) or '—'} · "
+                f"tareas incompletas: {m['incompletas']}. Con tan pocas pruebas es un dato "
+                "orientativo."
             )
         if lista and m.get(lista):
             lineas += [f"- Fallo: {x}" for x in m[lista]]

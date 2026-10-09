@@ -206,7 +206,13 @@ uv run python -m faro_editorial.metricas pares       # afirmación-evidencia par
 uv run python -m faro_editorial.metricas seleccion   # 15 temas a ciegas para Precision@5
 uv run python -m faro_editorial.metricas consultas   # abstención con config/consultas_v1.yaml
 uv run python -m faro_editorial.metricas reporte     # escribe evaluacion/metricas.md
+uv run python -m faro_editorial.evaluacion_agrupacion pares    # 40 pares de titulares a ciegas
+uv run python -m faro_editorial.evaluacion_agrupacion evaluar  # e5 vs TF-IDF, tras etiquetar
 ```
+
+Cada proporción del reporte lleva su intervalo de confianza de Wilson al 95 %. El método de
+etiquetado está en [`docs/etiquetado.md`](docs/etiquetado.md) y el protocolo para medir el ahorro
+de tiempo (tarea manual frente a asistida), en [`docs/ahorro_tiempo.md`](docs/ahorro_tiempo.md).
 
 `consultas` mide la compuerta completa (umbral + Jev Noul) solo con `OFFLINE=0`; con
 `OFFLINE=1` decide solo el umbral, igual que la interfaz sin internet.
@@ -224,8 +230,9 @@ uv run python -m faro_editorial.paquete
 Genera en `dist/` un `.zip` con el snapshot, el manifest, el diccionario, el catálogo con las
 licencias y condiciones de cada fuente y el reporte de calidad.
 
-Para la demo se usa un recorte de **300 noticias de los 30 días previos al corte**, como pide el
-reto (meta: 200 registros únicos; mínimo: 100, con al menos 20 de TVN). Se reparten por día y,
+La demo usa el snapshot completo. Como herramienta aparte, se puede armar un recorte de **300
+noticias de los 30 días previos al corte**, como pide la sección 6 del reto (meta: 200 registros
+únicos; mínimo: 100, con al menos 20 de TVN). Se reparten por día y,
 dentro de cada día, alternando medios; el manifest del recorte registra el criterio y la
 cobertura efectiva (días, medios y cuántas son de TVN), y la carga verifica su integridad igual
 que con el snapshot completo:
@@ -236,6 +243,9 @@ $env:DATA_DIR = "data/demo300"   # luego carga, agrupacion, clasificacion y band
 ```
 
 ## Demo y preguntas del jurado
+
+Recorrido de las siete etapas con su pantalla, prueba y métrica, y el ensayo sin internet:
+[`docs/guia_jurado.md`](docs/guia_jurado.md).
 
 Respuestas preparadas para las cuatro pruebas dinámicas del jurado, con qué mostrar en pantalla:
 [`docs/preguntas_jurado.md`](docs/preguntas_jurado.md). Para mostrar el registro original detrás

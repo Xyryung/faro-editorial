@@ -1,5 +1,5 @@
 {
-  "generado_utc": "2026-10-09T03:24:41+00:00",
+  "generado_utc": "2026-10-09T08:00:23+00:00",
   "referencia_snapshot": "2026-10-01 00:00",
   "cobertura_citas": {
     "estado": "medida",
@@ -13,7 +13,11 @@
     "rechazadas": 0,
     "borradores_con_marcas_invalidas": [],
     "fallos": [],
-    "metodo": "Afirmaciones factuales emitidas con al menos una cita a un ID de la evidencia recuperada del tema / afirmaciones factuales emitidas (incluye las rechazadas). Las hipótesis no cuentan: se investigan, no se afirman."
+    "metodo": "Afirmaciones factuales emitidas con al menos una cita a un ID de la evidencia recuperada del tema / afirmaciones factuales emitidas (incluye las rechazadas). Las hipótesis no cuentan: se investigan, no se afirman.",
+    "ic95": [
+      0.8928,
+      1.0
+    ]
   },
   "validez_sustento": {
     "estado": "medida",
@@ -42,9 +46,17 @@
         "tvn2-a549c78c052b:a3 (persona: respaldada, Jev: dudosa)",
         "critica-d08d53cd9537:a2 (persona: no_respaldada, Jev: respaldada)"
       ],
-      "metodo": "Jev 'respaldada' frente a la persona; 'dudosa' y 'no_respaldada' cuentan como no respaldada."
+      "metodo": "Jev 'respaldada' frente a la persona; 'dudosa' y 'no_respaldada' cuentan como no respaldada.",
+      "ic95": [
+        0.7193,
+        0.9503
+      ]
     },
-    "metodo": "Afirmaciones que la persona marca 'respaldada' por la evidencia citada / pares etiquetados. Etiquetado a ciegas: el CSV no muestra el veredicto de Jev."
+    "metodo": "Afirmaciones que la persona marca 'respaldada' por la evidencia citada / pares etiquetados. Etiquetado a ciegas: el CSV no muestra el veredicto de Jev.",
+    "ic95": [
+      0.7985,
+      0.9827
+    ]
   },
   "abstencion": {
     "estado": "medida",
@@ -59,24 +71,40 @@
     ],
     "dificiles_rechazadas": {
       "numerador": 3,
-      "denominador": 4
+      "denominador": 4,
+      "ic95": [
+        0.3006,
+        0.9544
+      ]
     },
     "abstenciones_incorrectas": {
       "numerador": 0,
       "denominador": 10,
       "valor": 0.0,
-      "ids": []
+      "ids": [],
+      "ic95": [
+        0.0,
+        0.2775
+      ]
     },
     "respondidas_con_evidencia_esperada": {
       "numerador": 10,
       "denominador": 10,
       "valor": 1.0,
-      "fallos": []
+      "fallos": [],
+      "ic95": [
+        0.7225,
+        1.0
+      ]
     },
     "con_jev": true,
     "conjunto": "consultas-v1",
     "revisado_por": "Kenneth",
-    "metodo": "No respondibles rechazadas / no respondibles del conjunto. Una respondible solo cuenta como bien respondida si cita al menos una evidencia esperada."
+    "metodo": "No respondibles rechazadas / no respondibles del conjunto. Una respondible solo cuenta como bien respondida si cita al menos una evidencia esperada.",
+    "ic95": [
+      0.4902,
+      0.9433
+    ]
   },
   "clasificacion": {
     "estado": "medida",
@@ -101,6 +129,113 @@
         "aciertos": 48,
         "n": 60,
         "abstenciones": 0
+      }
+    }
+  },
+  "agrupacion": {
+    "estado": "medida",
+    "metodo": "Pares de titulares etiquetados a ciegas como 'mismo evento' o no; precisión = pares agrupados que son el mismo evento / pares agrupados; recall = pares del mismo evento que el método agrupó / pares del mismo evento de la muestra. Muestra estratificada, no poblacional.",
+    "pares": 40,
+    "mismo_evento": 24,
+    "etiquetadores": [
+      "David",
+      "Kenneth",
+      "Rafael"
+    ],
+    "estratos": {
+      "solo_tfidf": 9,
+      "parecido_no_agrupado": 13,
+      "agrupado_snapshot": 18
+    },
+    "metodos": {
+      "e5": {
+        "tp": 15,
+        "fp": 3,
+        "fn": 9,
+        "tn": 13,
+        "precision": {
+          "numerador": 15,
+          "denominador": 18,
+          "valor": 0.8333,
+          "ic95": [
+            0.6078,
+            0.9416
+          ]
+        },
+        "recall": {
+          "numerador": 15,
+          "denominador": 24,
+          "valor": 0.625,
+          "ic95": [
+            0.4271,
+            0.7884
+          ]
+        },
+        "f1": 0.7143,
+        "errores": [
+          "P02",
+          "P07",
+          "P10",
+          "P13",
+          "P17",
+          "P21",
+          "P26",
+          "P27",
+          "P29",
+          "P34",
+          "P39",
+          "P40"
+        ]
+      },
+      "tfidf": {
+        "tp": 6,
+        "fp": 5,
+        "fn": 18,
+        "tn": 11,
+        "precision": {
+          "numerador": 6,
+          "denominador": 11,
+          "valor": 0.5455,
+          "ic95": [
+            0.2801,
+            0.7873
+          ]
+        },
+        "recall": {
+          "numerador": 6,
+          "denominador": 24,
+          "valor": 0.25,
+          "ic95": [
+            0.12,
+            0.449
+          ]
+        },
+        "f1": 0.3429,
+        "errores": [
+          "P01",
+          "P03",
+          "P08",
+          "P09",
+          "P11",
+          "P12",
+          "P17",
+          "P19",
+          "P20",
+          "P21",
+          "P22",
+          "P23",
+          "P24",
+          "P25",
+          "P26",
+          "P27",
+          "P28",
+          "P30",
+          "P32",
+          "P33",
+          "P34",
+          "P36",
+          "P38"
+        ]
       }
     }
   },
@@ -129,7 +264,11 @@
     ],
     "exploratoria": true,
     "candidatos": 15,
-    "metodo": "Una persona eligió a ciegas 5 de los 15 temas mejor puntuados, presentados en orden aleatorio y sin puntaje; P@5 = coincidencias con el top 5 del sistema / 5. Exploratoria: la eligió un integrante del equipo, no un editor de TVN."
+    "metodo": "Una persona eligió a ciegas 5 de los 15 temas mejor puntuados, presentados en orden aleatorio y sin puntaje; P@5 = coincidencias con el top 5 del sistema / 5. Exploratoria: la eligió un integrante del equipo, no un editor de TVN.",
+    "ic95": [
+      0.0362,
+      0.6245
+    ]
   },
   "eficiencia": {
     "estado": "medida",
@@ -160,5 +299,10 @@
         "salida": 41310
       }
     }
+  },
+  "ahorro_tiempo": {
+    "estado": "pendiente",
+    "motivo": "No hay tareas cronometradas a mano y con Faro.",
+    "comando": "completar data/evaluacion/ahorro_tiempo.csv (protocolo en docs/ahorro_tiempo.md)"
   }
 }

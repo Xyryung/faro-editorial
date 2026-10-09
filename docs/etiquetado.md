@@ -76,7 +76,36 @@ escrito exactamente así:
 - Sin una medida formal de acuerdo entre personas (por ejemplo, kappa de Cohen): cada titular
   tuvo un etiquetador principal y solo los dudosos pasaron por la discusión de la sección 5.
 
-## 8. Pares afirmación–evidencia (pendiente)
+## 8. Pares afirmación–evidencia
 
-El issue #6 pide también 30 pares afirmación–evidencia etiquetados como respaldado / no
-respaldado. Dependen de los borradores con citas (#15), que todavía no existen.
+32 pares de los 9 borradores con citas (#15), en `data/evaluacion/pares_sustento.csv`
+(`uv run python -m faro_editorial.metricas pares`). Los etiquetó Kenneth a ciegas: el CSV no
+muestra el veredicto de Jev. Resultado en `evaluacion/metricas.md` (validez de sustento).
+
+## 9. Pares de titulares para la agrupación
+
+Para medir la agrupación contra la línea base (sección 9.1: precisión y recall sobre etiquetas
+humanas), `uv run python -m faro_editorial.evaluacion_agrupacion pares` arma 40 pares de
+titulares en `data/evaluacion/pares_agrupacion.csv`:
+
+- un tercio que agrupó el método del snapshot (e5),
+- un tercio que solo agrupó la línea base TF-IDF,
+- un tercio de titulares parecidos y cercanos en el tiempo que ninguno agrupó, para encontrar
+  lo que ambos se pierden.
+
+El CSV va en orden aleatorio y sin la predicción de ningún método (quedan aparte, en
+`pares_agrupacion.predicciones.json`). Criterio para `mismo_evento`:
+
+- **si**: los dos titulares cuentan el mismo hecho, aunque con otras palabras o desde otro
+  medio ("Asamblea aprueba presupuesto del Canal" y "Aprobado en tercer debate el presupuesto de
+  la ACP").
+- **no**: hechos distintos, aunque sean del mismo tema, del mismo actor o del mismo tipo
+  ("Condenan a 20 años a hombre en Chiriquí" y "Condenan a 16 años a un hombre en Coclé").
+
+Si un titular es otro aspecto o una actualización del mismo acontecimiento (la asistencia y las claves de una misma feria; 72 y luego 75 muertos), también es **si**. La pregunta guía: ¿un editor querría ver las dos notas en una sola ficha porque son el mismo asunto?
+
+Los 40 pares los etiquetaron Rafael (P01–P20), David (P21–P30) y Kenneth (P31–P40), con esta regla acordada antes de empezar y sin ver las respuestas de los demás. Cada par tuvo una sola persona, así que no hay medida de acuerdo entre etiquetadores.
+
+Sin consultar a la IA. Luego `evaluacion_agrupacion evaluar` calcula precisión, recall y F1 de
+cada método con su intervalo de Wilson. La muestra es estratificada: el recall se mide sobre los
+pares "mismo evento" de la muestra, no sobre todo el snapshot.

@@ -15,7 +15,7 @@ se vincula con su fuente, fecha y alcance; cuando no hay evidencia suficiente, e
 | 2 · Organizar | `agrupacion.py`, `clasificacion.py` | Agrupación (#9) y tema por grupo con Jev y línea base por palabras clave (#10) |
 | 3 · Contextualizar | `contexto.py` | Implementada (#12) |
 | 4 · Priorizar | `puntaje.py`, `rules.py`, `bandeja.py` | Implementada con reglas; R, I y U admiten Jev (#11, #8) |
-| 5 · Explicar | `app/main.py`, `interfaz.py` | Bandeja y ficha de evidencia en Streamlit (#16); consulta y contradicciones en desarrollo (#13, #14) |
+| 5 · Explicar | `app/main.py`, `interfaz.py`, `busqueda.py` | Bandeja y ficha de evidencia en Streamlit (#16); consulta en español con búsqueda híbrida (BM25 + semántica) y compuerta de abstención (#13); contradicciones en desarrollo (#14) |
 | 6 · Producir | | En desarrollo (#15) |
 | 7 · Revisar | `revision.py`, `app/main.py` | Revisión humana en la ficha: estado, persona revisora y comentario en `fichas.jsonl` con historial, y ficha lista para Notion (#17) |
 
@@ -120,10 +120,37 @@ Completa `.env` solo si vas a hacer llamadas en vivo. Sin `.env`, la app arranca
    uv run streamlit run app/main.py
    ```
 
+   - **Bandeja y ficha:** temas ordenados por puntaje; cada ficha muestra qué se reporta, quién
+     lo reporta, qué está respaldado, qué falta comprobar, la acción recomendada y el puntaje
+     desglosado.
+   - **Revisión humana:** al final de cada ficha, la persona revisora elige el estado (nuevo, en
+     revisión, requiere evidencia, aprobado como borrador o descartado), escribe su nombre y un
+     comentario. Cada decisión se agrega a `data/processed/fichas.jsonl` con su historial.
+     Aprobar no publica nada. "Copiar ficha para Notion" la deja lista para "Casos y evidencias".
+   - **Consulta:** pregunta en español; responde con las noticias que la sustentan o se abstiene
+     y explica qué falta. También desde la consola:
+
+     ```powershell
+     uv run python -m faro_editorial.busqueda "¿qué lluvias hubo en Chiriquí?"
+     ```
+
 ### Modo offline
 
 Con `OFFLINE=1` (valor por defecto) la aplicación usa solo datos y respuestas en caché locales:
-no necesita internet ni claves. Así se ejecuta la demo ante el jurado.
+no necesita internet ni claves. Así se ejecuta la demo ante el jurado. El flujo completo (carga,
+agrupación, clasificación, bandeja, interfaz y revisión) se ensayó sin internet sobre un clon
+limpio del repositorio (#61); la letra de la interfaz (IBM Plex Sans) viene incluida en
+`app/static/fonts`.
+
+- **Jev:** responde desde la caché (`data/cache/`). Sin respuesta guardada, la clasificación usa
+  la línea base por palabras clave y la consulta se abstiene; ambas lo declaran.
+- **Modelo de embeddings** (`intfloat/multilingual-e5-small`): sin internet se usa solo si ya
+  está descargado; si no, la agrupación y la consulta usan TF-IDF al instante y lo avisan. Para
+  la demo, descárgalo antes con internet (una sola vez):
+
+  ```powershell
+  uv run python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('intfloat/multilingual-e5-small')"
+  ```
 
 ## Pruebas y calidad
 
@@ -150,7 +177,12 @@ Qué pruebas cubren cada caso se define en `config/matriz_pruebas.yaml`; una pru
 queda en la matriz junto a su issue de "Prueba fallida" y el PR que la corrigió.
 
 Las métricas de la ejecución final (cobertura de citas, abstención, macro-F1, Precision@5 y
-tiempos) se registran en #19.
+tiempos) se registran en #19. La clasificación se evalúa contra etiquetas humanas:
+
+```powershell
+uv run python -m faro_editorial.clasificacion muestra   # titulares para etiquetar a mano
+uv run python -m faro_editorial.clasificacion evaluar   # macro-F1 de Jev y de la línea base
+```
 
 ## Datos
 
@@ -196,12 +228,15 @@ registro oficial del reto.
 ## Estructura
 
 ```
-app/                 Interfaz Streamlit
-config/              Reglas versionadas: puntaje y sus criterios, contexto oficial y catálogo
-data/                raw/ (snapshot), processed/ (regenerable), cache/ (respuestas IA)
-                     y CONTRATO.md (diccionario de datos)
+app/                 Interfaz Streamlit (estilo en estilo.css, letra en static/fonts)
+config/              Reglas versionadas: puntaje y criterios, contexto oficial, agrupación,
+                     clasificación, búsqueda, catálogo y matriz de pruebas
+data/                raw/ (snapshot), processed/ (regenerable, incluye fichas.jsonl),
+                     cache/ (respuestas IA) y CONTRATO.md (diccionario de datos)
+docs/                Riesgos y ética, respuestas a las preguntas del jurado
+evaluacion/          Matriz T01–T10 generada (Markdown, CSV para Notion y JSON)
 src/faro_editorial/  Paquete principal
-tests/               Pruebas (incluirán T01–T10 del reto)
+tests/               Pruebas, incluidas las de aceptación T01–T10 del reto
 .github/             CI, plantillas de issues y de PR
 ```
 

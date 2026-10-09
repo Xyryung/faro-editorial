@@ -26,7 +26,7 @@ from pydantic import BaseModel, ValidationError
 from faro_editorial import __version__
 from faro_editorial.carga import NOMBRE_DB, NOMBRE_REPORTE
 from faro_editorial.contexto import ZONA_PANAMA, ContextoOficial
-from faro_editorial.contrato import Noticia
+from faro_editorial.contrato import Noticia, plural
 from faro_editorial.puntaje import GrupoNoticias, MotorPuntaje, Puntuacion
 
 NOMBRE_GRUPOS = "grupos.jsonl"
@@ -111,7 +111,9 @@ def armar_grupos(
         id_grupo = _id_unico(n.id_noticia, ids_usados, advertencias)
         grupos.append(GrupoNoticias(id_grupo=id_grupo, noticias=[n]))
     if sueltas:
-        advertencias.append(f"{len(sueltas)} noticia(s) sin grupo: cada una forma su propio grupo")
+        advertencias.append(
+            f"{plural(len(sueltas), 'noticia')} sin grupo: cada una forma su propio grupo"
+        )
     return grupos, f"{ruta_grupos.name} ({len(grupos) - len(sueltas)} grupos)", advertencias
 
 

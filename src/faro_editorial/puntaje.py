@@ -25,7 +25,7 @@ import yaml
 from pydantic import BaseModel, Field
 
 from faro_editorial.contexto import Contexto, ContextoOficial, Vinculo, buscar_palabra, normalizar
-from faro_editorial.contrato import Noticia
+from faro_editorial.contrato import Noticia, plural
 from faro_editorial.rules import COMPONENTES, Reglas, load_rules
 from faro_editorial.settings import ROOT_DIR, get_settings
 
@@ -220,7 +220,7 @@ def procedencias_independientes(grupo: GrupoNoticias, c: Criterios) -> list[list
 
 
 def _texto_procedencias(medios: int, independientes: int) -> str:
-    texto = f"{independientes} procedencia(s) independiente(s)"
+    texto = plural(independientes, "procedencia independiente", "procedencias independientes")
     if independientes < medios:
         texto = (
             f"{medios} medios, {texto}: titulares casi idénticos de medios distintos "
@@ -330,9 +330,9 @@ def estado_evidencia(
         )
     if n >= c.estado_evidencia.procedencias_suficientes and not pendientes:
         return "suficiente_para_borrador", f"{n} procedencias independientes y sin pendientes."
-    motivo = f"{n} procedencia(s)" + (" con respaldo oficial" if oficial else "")
+    motivo = plural(n, "procedencia") + (" con respaldo oficial" if oficial else "")
     if pendientes:
-        motivo += f"; {len(pendientes)} dato(s) pendiente(s) de verificar"
+        motivo += f"; {plural(len(pendientes), 'dato pendiente', 'datos pendientes')} de verificar"
     return "parcial", motivo + "."
 
 

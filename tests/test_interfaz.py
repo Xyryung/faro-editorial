@@ -57,7 +57,7 @@ def test_accion_recomendada_nunca_sugiere_publicar():
 
     parcial = accion_recomendada(_tema("parcial", pendientes=["x", "y"]))
     assert parcial == [
-        "Verificar 2 dato(s) pendiente(s) antes de pasar a borrador.",
+        "Verificar 2 datos pendientes antes de pasar a borrador.",
         "Buscar una segunda fuente independiente.",
     ]
 
@@ -139,6 +139,7 @@ def test_app_muestra_bandeja_y_ficha(monkeypatch, data_dir: Path):
     # La ficha muestra el aviso, la acción recomendada y las secciones de evidencia.
     textos = " ".join(m.value for m in app.markdown)
     assert "no habilita publicación" in textos
+    assert "(s)" not in textos  # plurales bien escritos, no "procedencia(s)"
     assert 'class="banda-' in textos and 'class="ev-' in textos
     for seccion in (
         "Acción recomendada",
@@ -334,3 +335,13 @@ def test_las_fuentes_del_tema_estan_en_el_repo():
         ruta = ROOT_DIR / "app" / cara["url"].removeprefix("app/")
         assert ruta.read_bytes()[:4] == b"wOF2", ruta
     assert (ROOT_DIR / "app" / "static" / "fonts" / "OFL-IBM-Plex.txt").exists()
+
+
+def test_plural():
+    from faro_editorial.contrato import plural
+
+    assert plural(1, "medio") == "1 medio"
+    assert plural(2, "medio") == "2 medios"
+    assert plural(0, "procedencia independiente", "procedencias independientes") == (
+        "0 procedencias independientes"
+    )

@@ -19,6 +19,7 @@ import yaml
 from pydantic import BaseModel
 
 from faro_editorial.carga import ResultadoArchivo, ResultadoCarga, motivo_corto
+from faro_editorial.contrato import plural
 from faro_editorial.settings import ROOT_DIR
 
 RUTA_CONFIG = ROOT_DIR / "config" / "fuentes_catalogo.yaml"
@@ -66,7 +67,7 @@ def _cobertura(archivo: str, validos: list[Any]) -> str:
         con_fecha = [f for f in fechas if f]
         medios = len({n.medio for n in validos})
         return (
-            f"{_rango(con_fecha)}; {len(validos)} noticias de {medios} medio(s); "
+            f"{_rango(con_fecha)}; {len(validos)} noticias de {plural(medios, 'medio')}; "
             f"{len(validos) - len(con_fecha)} sin fecha"
         )
     if archivo == "indicadores.csv":

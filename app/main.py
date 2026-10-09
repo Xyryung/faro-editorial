@@ -11,6 +11,7 @@ from pathlib import Path
 import streamlit as st
 
 from faro_editorial import __version__
+from faro_editorial.contrato import plural
 from faro_editorial.graficos import (
     COLORES_COMPONENTE,
     colores_prioridad,
@@ -136,9 +137,12 @@ def mostrar_ficha(tema: dict) -> None:
         independientes = tema.get("procedencias_independientes") or [
             [m] for m in tema["procedencias"]
         ]
+        procedencias = plural(
+            len(independientes), "procedencia independiente", "procedencias independientes"
+        )
         st.markdown(
-            f"{len(tema['procedencias'])} medio(s) y **{len(independientes)} procedencia(s) "
-            "independiente(s)**. Los titulares casi idénticos cuentan como una sola."
+            f"{plural(len(tema['procedencias']), 'medio')} y **{procedencias}**. "
+            "Los titulares casi idénticos cuentan como una sola."
         )
         st.markdown(medios_html(independientes), unsafe_allow_html=True)
     with falta, tarjeta("falta"):

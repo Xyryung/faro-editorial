@@ -17,6 +17,7 @@ from typing import Any
 
 from faro_editorial.bandeja import NOMBRE_BANDEJA, escribir_bandeja, generar_bandeja
 from faro_editorial.carga import NOMBRE_DB
+from faro_editorial.contrato import plural
 
 ETIQUETAS_ESTADO = {
     "insuficiente": "Insuficiente",
@@ -238,7 +239,8 @@ def accion_recomendada(tema: dict) -> list[str]:
     elif estado == "parcial":
         if pendientes:
             acciones.append(
-                f"Verificar {len(pendientes)} dato(s) pendiente(s) antes de pasar a borrador."
+                f"Verificar {plural(len(pendientes), 'dato pendiente', 'datos pendientes')} "
+                "antes de pasar a borrador."
             )
         if independientes < 2:
             acciones.append("Buscar una segunda fuente independiente.")

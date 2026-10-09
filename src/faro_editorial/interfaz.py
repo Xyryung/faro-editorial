@@ -320,3 +320,27 @@ def tarjetas_kpi(resumen: dict) -> list[str]:
 def resumen_html(resumen: dict) -> str:
     """Los cuatro indicadores juntos, en una sola fila."""
     return f'<div class="kpis">{"".join(tarjetas_kpi(resumen))}</div>'
+
+
+def lineas_consulta(respuesta: Any) -> dict[str, Any]:
+    """Textos de la respuesta de la consulta (búsqueda híbrida, #13), listos para mostrarse
+    como Markdown. Titular, medio, ID y motivos pueden traer texto de las fuentes o de la
+    pregunta: se escapan para que no se conviertan en enlaces, imágenes ni formato (T07)."""
+    if respuesta.abstencion:
+        return {
+            "abstencion": True,
+            "motivo": escapar_md(respuesta.motivo),
+            "falta": escapar_md(respuesta.falta),
+        }
+    citas = []
+    for cita in respuesta.citas:
+        extra = f" · Noul {cita.prob_noul}" if cita.prob_noul is not None else ""
+        citas.append(
+            f"- **{cita.puntaje:.2f}** `{escapar_md(cita.id_noticia)}` "
+            f"{escapar_md(cita.titulo)} ({escapar_md(cita.medio)}){extra}"
+        )
+    return {
+        "abstencion": False,
+        "nota": escapar_md(respuesta.motivo_respaldo),
+        "citas": citas,
+    }

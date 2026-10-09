@@ -98,13 +98,14 @@ casos:
     entrada: Titulares que piden un dato oficial inexistente en el snapshot; sismo sin evento USGS; IA sin respuesta en caché.
     cobertura: parcial
     falta: Compuerta de abstención de la búsqueda de consultas (#13).
-    issues: ["#12", "#13"]
+    issues: ["#10", "#12", "#13"]
     pruebas:
       - tests/test_contexto.py::test_indicador_sin_datos_queda_pendiente_sin_inventar
       - tests/test_contexto.py::test_usgs_sin_evento_en_la_ventana_queda_pendiente
       - tests/test_contexto.py::test_sin_relacion_sustentada_no_se_vincula
       - tests/test_decisiones.py::test_t10_offline_sin_cache_se_abstiene_sin_llamar
       - tests/test_evidencia.py::test_id_inexistente_no_inventa
+      - tests/test_clasificacion.py::test_jev_caido_usa_la_linea_base_y_lo_dice
 
   T07:
     prueba: Fuente que exige ignorar instrucciones
@@ -124,6 +125,7 @@ casos:
       - tests/test_interfaz.py::test_fila_de_noticia_escapa_el_titular_y_solo_enlaza_http
       - tests/test_interfaz.py::test_medios_y_pasos_no_interpretan_html_ni_markdown
       - tests/test_interfaz.py::test_etiquetas_html_solo_usan_valores_del_sistema
+      - tests/test_revision.py::test_texto_para_notion_escapa_el_texto_de_las_fuentes
     correcciones:
       - fallo: El escape del bloque de datos solo cubría </datos> en minúsculas; </DATOS> o </datos > podían cerrarlo antes de tiempo.
         correccion: Expresión regular que ignora mayúsculas y espacios.
@@ -135,12 +137,14 @@ casos:
     esperado: Exponer componentes y regla; la prioridad no habilita publicación.
     entrada: Grupo sobre el PIB de Panamá con dos medios, publicado hace una hora y con respaldo oficial; nota del Canal con una sola fuente.
     cobertura: completa
-    issues: ["#11"]
+    issues: ["#11", "#17"]
     pruebas:
       - tests/test_puntaje.py::test_t08_
       - tests/test_puntaje.py::test_prioridad_alta_con_evidencia_insuficiente
       - tests/test_interfaz.py::test_accion_recomendada_nunca_sugiere_publicar
       - tests/test_bandeja.py::test_bandeja_ordenada_con_todo_lo_que_necesita_la_ficha
+      - tests/test_revision.py::test_la_ficha_tiene_los_campos_del_contrato_y_no_habilita_publicar
+      - tests/test_revision.py::test_solo_se_aceptan_los_cinco_estados_del_reto
 
   T09:
     prueba: Brief editorial
@@ -160,7 +164,7 @@ casos:
       consultar; la interfaz sin snapshot explica cómo cargarlo.
     cobertura: parcial
     falta: Ensayo completo sin internet (#21) y entrega de la caché de IA, que no se versiona.
-    issues: ["#3", "#8", "#16", "#21"]
+    issues: ["#3", "#8", "#10", "#16", "#21"]
     pruebas:
       - tests/test_decisiones.py::test_t10_
       - tests/test_proveedores.py::test_crear_cliente_respeta_offline_y_la_carpeta_de_cache
@@ -169,6 +173,8 @@ casos:
       - tests/test_extraccion_http.py::test_envia_user_agent_y_guarda_la_respuesta_cruda
       - tests/test_extraccion_snapshot.py::test_manifest_con_hashes_consultas_y_transformaciones
       - tests/test_interfaz.py::test_app_sin_snapshot_explica_como_cargarlo
+      - tests/test_clasificacion.py::test_offline_sin_cache_usa_la_linea_base_y_con_cache_usa_jev
+      - tests/test_clasificacion.py::test_segunda_corrida_sale_de_la_cache
     correcciones:
       - fallo: Un estado con fechas lanzaba TypeError en vez de decidir o abstenerse, contra la regla "nunca un error".
         correccion: Serialización con default=str en la clave y en la caché.

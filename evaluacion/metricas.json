@@ -1,5 +1,5 @@
 {
-  "generado_utc": "2026-10-09T03:24:41+00:00",
+  "generado_utc": "2026-10-09T06:59:53+00:00",
   "referencia_snapshot": "2026-10-01 00:00",
   "cobertura_citas": {
     "estado": "medida",
@@ -13,7 +13,11 @@
     "rechazadas": 0,
     "borradores_con_marcas_invalidas": [],
     "fallos": [],
-    "metodo": "Afirmaciones factuales emitidas con al menos una cita a un ID de la evidencia recuperada del tema / afirmaciones factuales emitidas (incluye las rechazadas). Las hipótesis no cuentan: se investigan, no se afirman."
+    "metodo": "Afirmaciones factuales emitidas con al menos una cita a un ID de la evidencia recuperada del tema / afirmaciones factuales emitidas (incluye las rechazadas). Las hipótesis no cuentan: se investigan, no se afirman.",
+    "ic95": [
+      0.8928,
+      1.0
+    ]
   },
   "validez_sustento": {
     "estado": "medida",
@@ -42,9 +46,17 @@
         "tvn2-a549c78c052b:a3 (persona: respaldada, Jev: dudosa)",
         "critica-d08d53cd9537:a2 (persona: no_respaldada, Jev: respaldada)"
       ],
-      "metodo": "Jev 'respaldada' frente a la persona; 'dudosa' y 'no_respaldada' cuentan como no respaldada."
+      "metodo": "Jev 'respaldada' frente a la persona; 'dudosa' y 'no_respaldada' cuentan como no respaldada.",
+      "ic95": [
+        0.7193,
+        0.9503
+      ]
     },
-    "metodo": "Afirmaciones que la persona marca 'respaldada' por la evidencia citada / pares etiquetados. Etiquetado a ciegas: el CSV no muestra el veredicto de Jev."
+    "metodo": "Afirmaciones que la persona marca 'respaldada' por la evidencia citada / pares etiquetados. Etiquetado a ciegas: el CSV no muestra el veredicto de Jev.",
+    "ic95": [
+      0.7985,
+      0.9827
+    ]
   },
   "abstencion": {
     "estado": "medida",
@@ -59,24 +71,40 @@
     ],
     "dificiles_rechazadas": {
       "numerador": 3,
-      "denominador": 4
+      "denominador": 4,
+      "ic95": [
+        0.3006,
+        0.9544
+      ]
     },
     "abstenciones_incorrectas": {
       "numerador": 0,
       "denominador": 10,
       "valor": 0.0,
-      "ids": []
+      "ids": [],
+      "ic95": [
+        0.0,
+        0.2775
+      ]
     },
     "respondidas_con_evidencia_esperada": {
       "numerador": 10,
       "denominador": 10,
       "valor": 1.0,
-      "fallos": []
+      "fallos": [],
+      "ic95": [
+        0.7225,
+        1.0
+      ]
     },
     "con_jev": true,
     "conjunto": "consultas-v1",
     "revisado_por": "Kenneth",
-    "metodo": "No respondibles rechazadas / no respondibles del conjunto. Una respondible solo cuenta como bien respondida si cita al menos una evidencia esperada."
+    "metodo": "No respondibles rechazadas / no respondibles del conjunto. Una respondible solo cuenta como bien respondida si cita al menos una evidencia esperada.",
+    "ic95": [
+      0.4902,
+      0.9433
+    ]
   },
   "clasificacion": {
     "estado": "medida",
@@ -104,6 +132,11 @@
       }
     }
   },
+  "agrupacion": {
+    "estado": "pendiente",
+    "motivo": "No hay pares de titulares etiquetados para la agrupación.",
+    "comando": "uv run python -m faro_editorial.evaluacion_agrupacion pares (y luego evaluar)"
+  },
   "precision_5": {
     "estado": "medida",
     "numerador": 1,
@@ -129,7 +162,11 @@
     ],
     "exploratoria": true,
     "candidatos": 15,
-    "metodo": "Una persona eligió a ciegas 5 de los 15 temas mejor puntuados, presentados en orden aleatorio y sin puntaje; P@5 = coincidencias con el top 5 del sistema / 5. Exploratoria: la eligió un integrante del equipo, no un editor de TVN."
+    "metodo": "Una persona eligió a ciegas 5 de los 15 temas mejor puntuados, presentados en orden aleatorio y sin puntaje; P@5 = coincidencias con el top 5 del sistema / 5. Exploratoria: la eligió un integrante del equipo, no un editor de TVN.",
+    "ic95": [
+      0.0362,
+      0.6245
+    ]
   },
   "eficiencia": {
     "estado": "medida",
@@ -160,5 +197,10 @@
         "salida": 41310
       }
     }
+  },
+  "ahorro_tiempo": {
+    "estado": "pendiente",
+    "motivo": "No hay tareas cronometradas a mano y con Faro.",
+    "comando": "completar data/evaluacion/ahorro_tiempo.csv (protocolo en docs/ahorro_tiempo.md)"
   }
 }

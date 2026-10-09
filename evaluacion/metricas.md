@@ -1,19 +1,20 @@
 # Métricas de la ejecución final
 
-Generado el 2026-10-09T03:24:41+00:00 con `uv run python -m faro_editorial.metricas reporte` · snapshot con corte 2026-10-01 00:00 (hora de Panamá).
+Generado el 2026-10-09T06:59:53+00:00 con `uv run python -m faro_editorial.metricas reporte` · snapshot con corte 2026-10-01 00:00 (hora de Panamá).
 
 Metas orientativas de la sección 9.1 del reto, no resultados. Cada métrica muestra numerador, denominador y fallos. Una métrica pendiente no tiene número: dice qué falta.
 
-| Métrica | Resultado | Meta | Cumple |
-|---|---|---|---|
-| Cobertura de citas | 32/32 (100.0 %) | 100 % | sí |
-| Validez de sustento (revisión humana) | 30/32 (93.8 %) | ≥ 90 % con ≥ 30 pares | sí |
-| Abstención en consultas sin respuesta | 8/10 (80.0 %) | ≥ 80 % | sí |
-| Precision@5 (exploratoria) | 1/5 (20.0 %) | — | — |
-| Macro-F1 clasificación · palabras | 0.764 (45/60) | — | — |
-| Macro-F1 clasificación · jev_es | 0.741 (44/60) | — | — |
-| Macro-F1 clasificación · jev_en | 0.805 (48/60) | — | — |
-| Mediana por consulta (p95) | 0.032 s (0.035 s) | ≤ 15 s | sí |
+| Métrica | Resultado | IC 95 % (Wilson) | Meta | Cumple |
+|---|---|---|---|---|
+| Cobertura de citas | 32/32 (100.0 %) | 89.3–100.0 % | 100 % | sí |
+| Validez de sustento (revisión humana) | 30/32 (93.8 %) | 79.8–98.3 % | ≥ 90 % con ≥ 30 pares | sí |
+| Abstención en consultas sin respuesta | 8/10 (80.0 %) | 49.0–94.3 % | ≥ 80 % | sí |
+| Precision@5 (exploratoria) | 1/5 (20.0 %) | 3.6–62.5 % | — | — |
+| Macro-F1 clasificación · palabras | 0.764 (45/60 aciertos) | 62.8–84.2 % (aciertos) | — | — |
+| Macro-F1 clasificación · jev_es | 0.741 (44/60 aciertos) | 61.0–82.9 % (aciertos) | — | — |
+| Macro-F1 clasificación · jev_en | 0.805 (48/60 aciertos) | 68.2–88.2 % (aciertos) | — | — |
+| Agrupación (precisión y recall) | pendiente | — | — | — |
+| Mediana por consulta (p95) | 0.032 s (0.035 s) | — | ≤ 15 s | sí |
 
 ## Cobertura de citas
 
@@ -57,6 +58,14 @@ Método: Una persona eligió a ciegas 5 de los 15 temas mejor puntuados, present
 Método: macro-F1 sobre los temas presentes en las etiquetas humanas; una abstención de la IA cuenta como error.
 
 - 60 titulares etiquetados; método en docs/etiquetado.md.
+
+## Agrupación
+
+Pendiente: No hay pares de titulares etiquetados para la agrupación. Comando: `uv run python -m faro_editorial.evaluacion_agrupacion pares (y luego evaluar)`
+
+## Ahorro de tiempo
+
+Pendiente: No hay tareas cronometradas a mano y con Faro. Comando: `completar data/evaluacion/ahorro_tiempo.csv (protocolo en docs/ahorro_tiempo.md)`
 
 ## Eficiencia
 

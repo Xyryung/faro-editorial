@@ -304,7 +304,7 @@ def test_medios_con_titulares_propios_son_independientes(motor):
     p = motor.puntuar(grupo, REFERENCIA)
     assert p.procedencias_independientes == [["medio-a", "medio-b", "medio-c"], ["tvn"]]
     assert p.estado_evidencia == "suficiente_para_borrador"
-    assert "4 medios, 2 procedencia(s) independiente(s)" in p.componentes["E"].criterio
+    assert "4 medios, 2 procedencias independientes" in p.componentes["E"].criterio
 
 
 def test_criterios_v1_siguen_contando_medios(contexto_oficial):

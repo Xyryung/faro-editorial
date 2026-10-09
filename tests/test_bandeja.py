@@ -73,7 +73,7 @@ def test_grupos_de_la_agrupacion_y_advertencias(processed: Path):
     assert "n007 ya estaba en otro grupo" in advertencias
     assert "g2: sin noticias válidas" in advertencias
     assert "línea 3: inválida" in advertencias
-    assert "1 noticia(s) sin grupo" in advertencias
+    assert "1 noticia sin grupo" in advertencias
 
 
 def test_no_incluye_la_descripcion_del_rss(raw: Path, tmp_path: Path):

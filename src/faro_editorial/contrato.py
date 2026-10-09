@@ -197,3 +197,8 @@ class Manifest(BaseModel):
     archivos: dict[str, ArchivoManifest]
     consultas: list[Any] | dict[str, Any] | None = None
     transformaciones: list[Any] | str | None = None
+
+
+def plural(n: int, singular: str, plural: str | None = None) -> str:
+    """ "1 medio", "2 medios": el número con la palabra en singular o plural."""
+    return f"{n} {singular if n == 1 else (plural or singular + 's')}"

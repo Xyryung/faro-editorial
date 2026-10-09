@@ -254,7 +254,7 @@ def test_comando(processed: Path, monkeypatch, capsys):
 
 
 def test_auto_cae_a_tfidf_si_e5_no_esta_disponible(monkeypatch):
-    def sin_modelo(modelo):
+    def sin_modelo(modelo, solo_local=False):
         raise OSError("modelo no descargado y sin internet")
 
     monkeypatch.setattr(agrupacion, "RepresentadorE5", sin_modelo)
@@ -284,3 +284,32 @@ def test_e5_agrupa_el_mismo_evento():
     )
     grupos, _ = agrupar(noticias, vectores, load_config().umbral["e5"], CONFIG)
     assert ["e1", "e2", "e3"] in ids(noticias, grupos)
+
+
+def test_offline_no_intenta_descargar_el_modelo(monkeypatch):
+    """Con OFFLINE=1 el modelo se pide solo a la caché local. Si no está descargado, se usa
+    TF-IDF al instante, sin importar torch ni reintentar la descarga (antes tardaba cerca de
+    un minuto en la demo sin internet)."""
+    import sys
+    import types
+
+    from faro_editorial.agrupacion import RepresentadorTfidf, crear_representador
+
+    pedidos = []
+
+    class ModeloFalso:
+        def __init__(self, nombre, device, local_files_only):
+            pedidos.append(local_files_only)
+
+    monkeypatch.setitem(
+        sys.modules, "sentence_transformers", types.SimpleNamespace(SentenceTransformer=ModeloFalso)
+    )
+    # Sin el modelo en la caché: ni siquiera se intenta cargar.
+    monkeypatch.setattr(agrupacion, "_en_cache_local", lambda modelo: False)
+    representador, motivo = crear_representador("auto", "modelo-x", solo_local=True)
+    assert pedidos == []
+    assert isinstance(representador, RepresentadorTfidf) and "caché local" in motivo
+    # Con el modelo en la caché: se carga, pero sin ir a internet.
+    monkeypatch.setattr(agrupacion, "_en_cache_local", lambda modelo: True)
+    representador, motivo = crear_representador("auto", "modelo-x", solo_local=True)
+    assert pedidos == [True] and motivo is None

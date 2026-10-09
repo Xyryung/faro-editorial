@@ -118,6 +118,7 @@ def test_comando_escribe_bandeja_y_muestra_top(processed: Path, monkeypatch, cap
     assert "Los 2 temas que merecen revisión" in salida
     assert " 1. [" in salida and " 3. [" not in salida
     assert "no habilita publicación" in salida
+    assert "/s)" not in salida and "(s)" not in salida  # plurales bien escritos
     assert json.loads((processed / "bandeja.json").read_text(encoding="utf-8"))["temas"]
 
 

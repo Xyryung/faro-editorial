@@ -255,7 +255,7 @@ def main(argv: list[str] | None = None) -> None:
         print(
             f"{t['posicion']:>2}. [{t['puntaje']:5.1f} {t['banda']:<5}] {t['titulo']}\n"
             f"    evidencia: {t['estado_evidencia']} · fuentes: {', '.join(t['procedencias'])}"
-            f" ({len(t['procedencias_independientes'])} independiente/s)"
+            f" ({plural(len(t['procedencias_independientes']), 'independiente')})"
         )
     print(f"\nBandeja completa: {ruta}")
     print("La prioridad ordena qué revisar; no habilita publicación.")

@@ -35,7 +35,7 @@ from pydantic import BaseModel
 
 from faro_editorial.contexto import normalizar
 from faro_editorial.contrato import Noticia
-from faro_editorial.settings import ROOT_DIR
+from faro_editorial.settings import ROOT_DIR, get_settings
 
 RUTA_CONFIG = ROOT_DIR / "config" / "agrupacion_v1.yaml"
 NOMBRE_GRUPOS = "grupos.jsonl"
@@ -88,17 +88,29 @@ class RepresentadorTfidf:
         return vectorizador.fit_transform(textos).tocsr()  # filas con norma L2 = 1
 
 
+def _en_cache_local(modelo: str) -> bool:
+    """Si el modelo ya está descargado en la caché de Hugging Face (consulta rápida, sin red)."""
+    from huggingface_hub import try_to_load_from_cache
+
+    return isinstance(try_to_load_from_cache(modelo, "config.json"), str)
+
+
 class RepresentadorE5:
     """multilingual-e5-small en CPU. Para tareas simétricas (comparar titulares entre sí) el
     modelo pide el prefijo "query: " en todos los textos."""
 
     metodo: Literal["e5"] = "e5"
 
-    def __init__(self, modelo: str) -> None:
+    def __init__(self, modelo: str, solo_local: bool = False) -> None:
         self.nombre = modelo
+        if solo_local and not _en_cache_local(modelo):
+            # Sin internet y sin el modelo descargado no tiene sentido importar torch (~20 s).
+            raise OSError(f"{modelo} no está en la caché local de Hugging Face")
         from sentence_transformers import SentenceTransformer  # importación diferida
 
-        self._modelo = SentenceTransformer(modelo, device="cpu")
+        # Sin internet (OFFLINE=1) el modelo se busca solo en la caché local: si no está, falla
+        # al instante y se usa TF-IDF, en vez de reintentar la descarga durante casi un minuto.
+        self._modelo = SentenceTransformer(modelo, device="cpu", local_files_only=solo_local)
 
     def vectores(self, textos: list[str]) -> np.ndarray:
         vectores = self._modelo.encode(
@@ -111,12 +123,17 @@ class RepresentadorE5:
         return np.asarray(vectores, dtype=np.float32)
 
 
-def crear_representador(metodo: Metodo, modelo_e5: str) -> tuple[Representador, str | None]:
-    """Devuelve el representador y, si hubo que caer a TF-IDF, el motivo."""
+def crear_representador(
+    metodo: Metodo, modelo_e5: str, solo_local: bool | None = None
+) -> tuple[Representador, str | None]:
+    """Devuelve el representador y, si hubo que caer a TF-IDF, el motivo. Por defecto, con
+    OFFLINE=1 no se intenta descargar el modelo."""
     if metodo == "tfidf":
         return RepresentadorTfidf(), None
+    if solo_local is None:
+        solo_local = get_settings().offline
     try:
-        return RepresentadorE5(modelo_e5), None
+        return RepresentadorE5(modelo_e5, solo_local=solo_local), None
     except Exception as e:  # sin torch, sin modelo descargado y sin internet, etc.
         if metodo == "e5":
             raise

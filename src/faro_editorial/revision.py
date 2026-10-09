@@ -20,6 +20,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, field_validator
 
+from faro_editorial.contexto import ZONA_PANAMA
 from faro_editorial.interfaz import NOMBRES_COMPONENTES, escapar_md, fecha_legible
 from faro_editorial.rules import Reglas
 
@@ -33,6 +34,16 @@ ETIQUETAS_REVISION = {
     "aprobado_como_borrador": "Aprobado como borrador",
     "descartado": "Descartado",
 }
+
+
+def fecha_revision_legible(fecha_utc: str) -> str:
+    """La fecha de la revisión (guardada en UTC) en hora de Panamá, como el resto de la
+    interfaz: "2026-10-09T00:44:49Z" → "8 oct 2026, 19:44"."""
+    try:
+        fecha = datetime.fromisoformat(fecha_utc.replace("Z", "+00:00")).astimezone(ZONA_PANAMA)
+    except (ValueError, AttributeError):
+        return str(fecha_utc)
+    return fecha_legible(fecha.strftime("%Y-%m-%d %H:%M"))
 
 
 def etiqueta_revision(estado: str) -> str:
@@ -85,7 +96,9 @@ def ficha(tema: dict, revision: Revision, reglas: Reglas, ahora: datetime | None
         "estado_revision": revision.estado_revision,
         "revisor": revision.revisor,
         "comentario": revision.comentario,
-        "fecha_revision_utc": (ahora or datetime.now(UTC)).isoformat().replace("+00:00", "Z"),
+        "fecha_revision_utc": (ahora or datetime.now(UTC))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z"),
         # Aprobar un borrador no significa publicar (sección 8).
         "habilita_publicacion": False,
     }
@@ -167,7 +180,7 @@ def texto_para_notion(tema: dict, ultima: dict | None) -> str:
         lineas += [
             f"- Estado: {etiqueta_revision(ultima['estado_revision'])}",
             f"- Persona revisora: {escapar_md(ultima['revisor'])}",
-            f"- Fecha (UTC): {ultima['fecha_revision_utc']}",
+            f"- Fecha (hora de Panamá): {fecha_revision_legible(ultima['fecha_revision_utc'])}",
         ]
         if ultima.get("comentario"):
             lineas.append(f"- Comentario: {escapar_md(ultima['comentario'])}")

@@ -217,3 +217,4 @@ casos:
           Sin conexión, la consulta usa las decisiones de Jev guardadas en la caché; solo una
           pregunta sin respuesta guardada pasa a la compuerta de palabras clave (8/10 y 10/10).
         pr: "#72"
+        issue: "#73"

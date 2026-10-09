@@ -34,6 +34,7 @@ from faro_editorial.interfaz import (
     filas_componentes,
     filtrar,
     leyenda_html,
+    lineas_consulta,
     medios_html,
     noticia_html,
     pasos_html,
@@ -445,18 +446,16 @@ with pestana_consulta:
 
                 cliente = crear_cliente("jev")
             respuesta = buscador.responder(pregunta.strip(), cliente)
-        if respuesta.abstencion:
-            st.warning(f"**Abstención.** {respuesta.motivo}")
-            st.markdown(f"**Qué haría falta:** {respuesta.falta}")
+        # El texto de las fuentes y de la pregunta se escapa (T07): es dato, no formato.
+        textos = lineas_consulta(respuesta)
+        if textos["abstencion"]:
+            st.warning(f"**Abstención.** {textos['motivo']}")
+            st.markdown(f"**Qué haría falta:** {textos['falta']}")
         else:
-            if respuesta.motivo_respaldo:
-                st.caption(f"Nota: {respuesta.motivo_respaldo}")
-            for cita in respuesta.citas:
-                extra = f" · Noul {cita.prob_noul}" if cita.prob_noul is not None else ""
-                st.markdown(
-                    f"- **{cita.puntaje:.2f}** [{cita.id_noticia}] {cita.titulo} "
-                    f"({cita.medio}){extra}"
-                )
+            if textos["nota"]:
+                st.caption(f"Nota: {textos['nota']}")
+            for linea in textos["citas"]:
+                st.markdown(linea)
 
 with pestana_borrador:
     st.info("Pendiente: borrador con citas por afirmación y verificación (#15).")

@@ -61,3 +61,42 @@ def test_sin_jev_queda_registrado_el_metodo(buscador: Buscador):
     r = buscador.responder("canal estable", None)
     assert not r.abstencion
     assert r.motivo_respaldo and "umbral" in r.motivo_respaldo
+
+
+def test_t07_la_consulta_muestra_el_titular_malicioso_como_texto():
+    """Un titular con Markdown que la búsqueda encuentra no se convierte en enlace ni imagen."""
+    from faro_editorial.interfaz import lineas_consulta
+
+    maliciosos = [
+        *DOCS,
+        {
+            "id_noticia": "x1](https://evil.example)",
+            "titulo": "Lluvias en Chiriquí ![img](https://evil.example/a.png) [clic](https://evil.example)",
+            "medio": "[TVN](https://evil.example)",
+        },
+    ]
+    config = load_config().model_copy(update={"umbral": 0.05, "k_recuperados": 4})
+    respuesta = Buscador(maliciosos, config, RepresentadorTfidf()).responder(
+        "lluvias Chiriquí", None
+    )
+    textos = lineas_consulta(respuesta)
+    assert not textos["abstencion"] and textos["citas"]
+    assert any("evil" in linea for linea in textos["citas"])  # la nota maliciosa sí aparece…
+    for linea in textos["citas"]:
+        assert "](" not in linea and "![" not in linea  # …pero como texto, sin enlaces
+
+
+def test_t07_la_abstencion_escapa_sus_motivos():
+    from types import SimpleNamespace
+
+    from faro_editorial.interfaz import lineas_consulta
+
+    respuesta = SimpleNamespace(
+        abstencion=True,
+        motivo="Nada sobre [clic](https://evil.example)",
+        falta="Una fuente ![x](https://evil.example/a.png)",
+    )
+    textos = lineas_consulta(respuesta)
+    assert textos["abstencion"]
+    assert "](" not in textos["motivo"] and "](" not in textos["falta"]
+    assert lineas_consulta(SimpleNamespace(abstencion=True, motivo=None, falta=None))["falta"] == ""

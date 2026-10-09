@@ -102,6 +102,20 @@ class Buscador:
             self.motivo_respaldo = None
         self._representador = representador
         self._titulos = [d["titulo"] for d in documentos]
+        # Con embeddings (E5) cada titular se codifica por separado: la matriz del corpus se
+        # calcula una sola vez y cada consulta solo codifica su propio texto. Antes se
+        # recodificaban los ~5000 titulares en cada pregunta (~22 s en CPU).
+        self._matriz_docs = None
+
+    def preparar(self) -> float:
+        """Codifica el corpus por adelantado (E5) y devuelve los segundos que tardó. Con
+        TF-IDF no hay nada que preparar: el vocabulario se ajusta con cada consulta."""
+        import time
+
+        inicio = time.perf_counter()
+        if getattr(self._representador, "metodo", None) == "e5" and self._matriz_docs is None:
+            self._matriz_docs = self._representador.vectores(self._titulos)
+        return time.perf_counter() - inicio
 
     @staticmethod
     def _modelo_e5() -> str:
@@ -118,10 +132,14 @@ class Buscador:
         bm25_n = [s / max_bm25 if max_bm25 > 0 else 0.0 for s in bm25]
         if metodo == "bm25":
             return bm25_n, bm25_n, hits
-        # Consulta y corpus se vectorizan juntos: comparten el mismo espacio
-        # (imprescindible con TF-IDF, que ajusta su vocabulario al invocarlo).
-        matriz = self._representador.vectores([*self._titulos, consulta])
-        sims = matriz[:-1] @ matriz[-1].T
+        if getattr(self._representador, "metodo", None) == "e5":
+            self.preparar()
+            sims = self._matriz_docs @ self._representador.vectores([consulta])[0]
+        else:
+            # Con TF-IDF, consulta y corpus se vectorizan juntos: comparten el mismo espacio
+            # (el vocabulario se ajusta al invocarlo).
+            matriz = self._representador.vectores([*self._titulos, consulta])
+            sims = matriz[:-1] @ matriz[-1].T
         if hasattr(sims, "todense"):  # dispersa (TF-IDF)
             sims = sims.todense()
         import numpy as np

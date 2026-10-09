@@ -126,6 +126,7 @@ casos:
       - tests/test_interfaz.py::test_medios_y_pasos_no_interpretan_html_ni_markdown
       - tests/test_interfaz.py::test_etiquetas_html_solo_usan_valores_del_sistema
       - tests/test_revision.py::test_texto_para_notion_escapa_el_texto_de_las_fuentes
+      - tests/test_busqueda.py::test_t07_
     correcciones:
       - fallo: El escape del bloque de datos solo cubría </datos> en minúsculas; </DATOS> o </datos > podían cerrarlo antes de tiempo.
         correccion: Expresión regular que ignora mayúsculas y espacios.

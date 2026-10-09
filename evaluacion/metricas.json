@@ -1,0 +1,164 @@
+{
+  "generado_utc": "2026-10-09T03:24:41+00:00",
+  "referencia_snapshot": "2026-10-01 00:00",
+  "cobertura_citas": {
+    "estado": "medida",
+    "borradores": 9,
+    "abstenciones": 0,
+    "numerador": 32,
+    "denominador": 32,
+    "valor": 1.0,
+    "meta": 1.0,
+    "cumple": true,
+    "rechazadas": 0,
+    "borradores_con_marcas_invalidas": [],
+    "fallos": [],
+    "metodo": "Afirmaciones factuales emitidas con al menos una cita a un ID de la evidencia recuperada del tema / afirmaciones factuales emitidas (incluye las rechazadas). Las hipótesis no cuentan: se investigan, no se afirman."
+  },
+  "validez_sustento": {
+    "estado": "medida",
+    "numerador": 30,
+    "denominador": 32,
+    "valor": 0.9375,
+    "meta": 0.9,
+    "minimo_pares": 30,
+    "cumple": true,
+    "suficientes_pares": true,
+    "no_respaldadas": [
+      "g-75a66de0bfb3:a4",
+      "critica-d08d53cd9537:a2"
+    ],
+    "etiquetadores": [
+      "Kenneth"
+    ],
+    "sin_etiquetar": 0,
+    "acuerdo_jev": {
+      "numerador": 28,
+      "denominador": 32,
+      "valor": 0.875,
+      "desacuerdos": [
+        "g-7df90d19a433:a6 (persona: respaldada, Jev: dudosa)",
+        "tvn2-a549c78c052b:a1 (persona: respaldada, Jev: dudosa)",
+        "tvn2-a549c78c052b:a3 (persona: respaldada, Jev: dudosa)",
+        "critica-d08d53cd9537:a2 (persona: no_respaldada, Jev: respaldada)"
+      ],
+      "metodo": "Jev 'respaldada' frente a la persona; 'dudosa' y 'no_respaldada' cuentan como no respaldada."
+    },
+    "metodo": "Afirmaciones que la persona marca 'respaldada' por la evidencia citada / pares etiquetados. Etiquetado a ciegas: el CSV no muestra el veredicto de Jev."
+  },
+  "abstencion": {
+    "estado": "medida",
+    "numerador": 8,
+    "denominador": 10,
+    "valor": 0.8,
+    "meta": 0.8,
+    "cumple": true,
+    "no_respondibles_respondidas": [
+      "N04",
+      "N07"
+    ],
+    "dificiles_rechazadas": {
+      "numerador": 3,
+      "denominador": 4
+    },
+    "abstenciones_incorrectas": {
+      "numerador": 0,
+      "denominador": 10,
+      "valor": 0.0,
+      "ids": []
+    },
+    "respondidas_con_evidencia_esperada": {
+      "numerador": 10,
+      "denominador": 10,
+      "valor": 1.0,
+      "fallos": []
+    },
+    "con_jev": true,
+    "conjunto": "consultas-v1",
+    "revisado_por": "Kenneth",
+    "metodo": "No respondibles rechazadas / no respondibles del conjunto. Una respondible solo cuenta como bien respondida si cita al menos una evidencia esperada."
+  },
+  "clasificacion": {
+    "estado": "medida",
+    "n_etiquetas": 60,
+    "metodo": "macro-F1 sobre los temas presentes en las etiquetas humanas; una abstención de la IA cuenta como error.",
+    "metodo_etiquetado": "docs/etiquetado.md",
+    "variantes": {
+      "palabras": {
+        "macro_f1": 0.7642,
+        "aciertos": 45,
+        "n": 60,
+        "abstenciones": 0
+      },
+      "jev_es": {
+        "macro_f1": 0.7411,
+        "aciertos": 44,
+        "n": 60,
+        "abstenciones": 0
+      },
+      "jev_en": {
+        "macro_f1": 0.8052,
+        "aciertos": 48,
+        "n": 60,
+        "abstenciones": 0
+      }
+    }
+  },
+  "precision_5": {
+    "estado": "medida",
+    "numerador": 1,
+    "denominador": 5,
+    "valor": 0.2,
+    "coinciden": [
+      "g-7df90d19a433"
+    ],
+    "solo_sistema": [
+      "g-75a66de0bfb3",
+      "tvn2-123983567584",
+      "tvn2-5e7b54b3fa43",
+      "tvn2-662b0d8e525c"
+    ],
+    "solo_persona": [
+      "g-17b3e381eca8",
+      "g-acb419946a70",
+      "g-6198e64768be",
+      "laestrella-39e9bc105470"
+    ],
+    "evaluadores": [
+      "Kenneth (integrante del equipo; vio la bandeja antes)"
+    ],
+    "exploratoria": true,
+    "candidatos": 15,
+    "metodo": "Una persona eligió a ciegas 5 de los 15 temas mejor puntuados, presentados en orden aleatorio y sin puntaje; P@5 = coincidencias con el top 5 del sistema / 5. Exploratoria: la eligió un integrante del equipo, no un editor de TVN."
+  },
+  "eficiencia": {
+    "estado": "medida",
+    "meta_mediana_consulta_s": 15.0,
+    "consultas": {
+      "n": 20,
+      "mediana_s": 0.032,
+      "p95_s": 0.035,
+      "cumple_meta": true,
+      "con_jev": true,
+      "llamadas_en_vivo": 0,
+      "costo_usd_en_vivo": 0.0,
+      "costo_usd_por_consulta": 0.0,
+      "tokens_entrada": 0,
+      "tokens_salida": 0,
+      "preparacion_indice_s": 24.723
+    },
+    "borradores": {
+      "n": 9,
+      "mediana_s": 33.445,
+      "p95_s": 57.578,
+      "intentos_promedio": 1.67,
+      "costo_usd_llm": 0.019373,
+      "costo_usd_jev": 0.000872,
+      "nota": "Solo el tiempo del LLM (todos los intentos), sin la verificación con Jev. Es preparación por lotes antes de la demo, no la consulta.",
+      "tokens_registrados": {
+        "entrada": 23196,
+        "salida": 41310
+      }
+    }
+  }
+}

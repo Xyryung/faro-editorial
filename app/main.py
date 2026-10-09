@@ -12,6 +12,7 @@ import streamlit as st
 
 from faro_editorial import __version__
 from faro_editorial.bandeja import nombres_medios
+from faro_editorial.borradores import leer_borradores
 from faro_editorial.contrato import plural
 from faro_editorial.graficos import (
     COLORES_COMPONENTE,
@@ -250,9 +251,159 @@ def mostrar_revision(tema: dict) -> None:
                     for d in reversed(decisiones)
                 )
                 st.markdown(f'<div class="filas">{filas}</div>', unsafe_allow_html=True)
+        borrador = leer_borradores(settings.processed_dir).get(caso)
+        if borrador:
+            st.caption(
+                f"El borrador sugiere: {etiqueta_revision(borrador['estado_sugerido'])}. "
+                "Se guarda junto con tu decisión; míralo en la pestaña Borrador."
+            )
         with st.expander("Copiar ficha para Notion"):
             st.caption("Usa el botón de copiar del recuadro y pégalo en 'Casos y evidencias'.")
-            st.code(texto_para_notion(tema, ultima), language="markdown", wrap_lines=True)
+            st.code(texto_para_notion(tema, ultima, borrador), language="markdown", wrap_lines=True)
+
+
+@st.cache_resource(show_spinner=False)
+def buscador_en_memoria(processed_dir: str, marca: float):
+    """Un solo buscador por base cargada: el índice semántico se prepara una vez y no en cada
+    consulta. `marca` (fecha de la base) hace que se rehaga si se vuelve a cargar."""
+    from faro_editorial.busqueda import Buscador, leer_corpus, load_config
+
+    buscador = Buscador(leer_corpus(Path(processed_dir)), load_config())
+    buscador.preparar()
+    return buscador
+
+
+def marca_base() -> float:
+    from faro_editorial.carga import NOMBRE_DB
+
+    ruta = settings.processed_dir / NOMBRE_DB
+    return ruta.stat().st_mtime if ruta.exists() else 0.0
+
+
+ESTADOS_JEV = {
+    "respaldada": "Respaldada",
+    "dudosa": "Dudosa",
+    "no_respaldada": "No respaldada",
+    "sin_verificar": "Sin verificar",
+    "no_aplica": "No aplica (hipótesis)",
+}
+
+
+def _jev_legible(verificacion: dict) -> str:
+    texto = ESTADOS_JEV.get(verificacion["estado"], verificacion["estado"])
+    if "probabilidad" in verificacion:
+        texto += f" ({verificacion['probabilidad']:.2f})"
+    return texto
+
+
+def mostrar_borrador(id_elegido: str | None) -> None:
+    """Borrador con cita por afirmación (issue #15). Todo texto del LLM se muestra escapado:
+    puede repetir un titular con Markdown o enlaces (T07)."""
+    borradores = leer_borradores(settings.processed_dir)
+    temas_por_id = {t["id_grupo"]: t for t in bandeja["temas"]}
+    opciones = sorted(
+        (i for i in borradores if i in temas_por_id), key=lambda i: temas_por_id[i]["posicion"]
+    )
+    if not opciones:
+        st.info(
+            "Todavía no hay borradores. Genéralos desde la terminal con  "
+            "`uv run python -m faro_editorial.borradores --top 5`  y recarga la página."
+        )
+        return
+    indice = opciones.index(id_elegido) if id_elegido in opciones else 0
+    if id_elegido in temas_por_id and id_elegido not in opciones:
+        st.caption(
+            "El tema abierto en la bandeja no tiene borrador; se muestra el primero que sí. "
+            f"Para generarlo: `uv run python -m faro_editorial.borradores --grupo {id_elegido}`"
+        )
+    caso = st.selectbox(
+        "Tema",
+        opciones,
+        index=indice,
+        format_func=lambda i: f"#{temas_por_id[i]['posicion']} · {temas_por_id[i]['titulo']}",
+        key="borrador_elegido",
+    )
+    f = borradores[caso]
+    e = escapar_md
+
+    with tarjeta("borrador"):
+        st.caption(f["aviso"])
+        if f["abstencion"]:
+            st.warning(f"**Abstención.** {e(f['motivo_abstencion'])}")
+            return
+        b = f["borrador"]
+        if b.get("aviso_alcance"):
+            st.markdown(f"**{b['aviso_alcance']}**")
+        modo = "Nota de investigación" if b["modo"] == "investigacion" else "Paquete editorial"
+        st.markdown(f"#### {e(b['titulo'])}")
+        st.markdown(
+            f"{modo} · sugiere: **{etiqueta_revision(f['estado_sugerido'])}** · "
+            f"generado {fecha_revision_legible(f['generado_utc'])} (hora de Panamá)"
+        )
+        st.markdown(f"**Enfoque de interés público:** {e(b['enfoque_interes_publico'])}")
+        st.markdown(f"**Brief** ({b['palabras']['brief']} palabras)")
+        st.markdown(e(b["brief"]))
+        st.markdown("**Preguntas de investigación**")
+        preguntas = b["preguntas_investigacion"]
+        st.markdown("\n".join(f"{i}. {e(p)}" for i, p in enumerate(preguntas, 1)))
+        if b["guion"]:
+            st.markdown(f"**Guion** (~{b['guion_duracion_s']} s)")
+            st.markdown(e(b["guion"]))
+        if b["copy_digital"]:
+            st.markdown(f"**Copy digital** ({b['palabras']['copy_digital']} palabras)")
+            st.markdown(e(b["copy_digital"]))
+        for c in b["contradicciones"]:
+            versiones = "\n".join(
+                f"- {e(v['texto'])} ({e(', '.join(x['id_evidencia'] for x in v['citas']))})"
+                for v in c["versiones"]
+            )
+            st.markdown(
+                f"**Versiones incompatibles:** {e(c['descripcion'])}\n\n{versiones}\n\n"
+                f"Pendiente: {e(c['verificacion_pendiente'])}"
+            )
+
+    with tarjeta("borrador_citas"):
+        st.markdown("#### Afirmaciones y citas")
+        filas = [
+            {
+                "ID": a["id"],
+                "Tipo": a["tipo"],
+                "Afirmación": a["texto"],
+                "Citas": "; ".join(f"{c['id_evidencia']} · {c['campo']}" for c in a["citas"])
+                or "—",
+                "Jev": _jev_legible(a["verificacion"]),
+            }
+            for a in f["afirmaciones"]
+        ]
+        st.dataframe(filas, hide_index=True, width="stretch")
+        st.caption(
+            "Para ver el registro detrás de una cita:  "
+            "`uv run python -m faro_editorial.evidencia <ID>`"
+        )
+        if f["afirmaciones_rechazadas"]:
+            st.markdown("**Afirmaciones rechazadas** (citaban evidencia que no existe)")
+            st.markdown(
+                "\n".join(
+                    f"- {r['id']}: {e(r['texto'])} — {e(r['motivo'])}"
+                    for r in f["afirmaciones_rechazadas"]
+                )
+            )
+        if b["verificaciones_pendientes"]:
+            st.markdown("**Verificaciones pendientes**")
+            st.markdown("\n".join(f"- {e(p)}" for p in b["verificaciones_pendientes"]))
+        with st.expander("Comprobaciones automáticas"):
+            st.markdown(
+                "\n".join(
+                    f"- {'OK' if c['ok'] else 'FALLA'} · {c['nombre']}: {e(c['detalle'])}"
+                    for c in f["comprobaciones"]
+                )
+            )
+            ia = f.get("ia", {})
+            st.caption(
+                f"Modelo: {ia.get('modelo')} · intentos: {ia.get('intentos')} · "
+                f"costo LLM USD {ia.get('costo_usd_llm')} · Jev USD {ia.get('costo_usd_jev')} · "
+                f"{f['version_borradores']}"
+            )
 
 
 # Barra lateral: filtros arriba, datos abajo (el botón se crea antes de cargar la bandeja).
@@ -437,10 +588,8 @@ with pestana_consulta:
         key="consulta_pregunta",
     )
     if st.button("Consultar", key="consulta_boton") and (pregunta or "").strip():
-        from faro_editorial.busqueda import Buscador, leer_corpus, load_config
-
-        with st.spinner("Buscando evidencia…"):
-            buscador = Buscador(leer_corpus(settings.processed_dir), load_config())
+        with st.spinner("Buscando evidencia… (la primera consulta prepara el índice)"):
+            buscador = buscador_en_memoria(str(settings.processed_dir), marca_base())
             cliente = None
             if not settings.offline:
                 from faro_editorial.proveedores import crear_cliente
@@ -459,7 +608,7 @@ with pestana_consulta:
                 st.markdown(linea)
 
 with pestana_borrador:
-    st.info("Pendiente: borrador con citas por afirmación y verificación (#15).")
+    mostrar_borrador(st.session_state.get("tema_elegido"))
 
 with pestana_config:
     mostrar_configuracion()

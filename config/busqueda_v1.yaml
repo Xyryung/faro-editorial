@@ -1,0 +1,25 @@
+# Búsqueda híbrida y compuerta de abstención (issue #13, T06, CU-04).
+# BM25 es la línea base; la variante híbrida combina BM25 con similitud semántica.
+version: "busqueda-v1.0"
+# Cuántos candidatos pasan a la compuerta de abstención.
+k_recuperados: 5
+# Similitud coseno mínima (0-1, sin normalizar) para considerar un candidato.
+# Se mide sobre el coseno crudo para que el mejor resultado no siempre pase.
+umbral: 0.15
+# Margen mínimo entre el mejor y el segundo candidato cuando la consulta no tiene
+# ninguna coincidencia léxica (BM25 en cero): sin ancla de palabras clave, se exige
+# un ganador semántico claro. Los embeddings dan cosenos altos hasta a lo ajeno.
+margen: 0.08
+# Peso de la señal semántica en la fusión; el resto es BM25.
+alfa: 0.6
+# Probabilidad mínima de "sí" en la pregunta Noul para aceptar una evidencia.
+umbral_noul: 0.6
+# Representador semántico: "auto" usa embeddings y cae a TF-IDF con motivo registrado.
+metodo_semantico: "auto"
+pregunta_noul:
+  instrucciones: >-
+    Decides si la evidencia responde la pregunta del usuario. Responde sí solo si el
+    titular contiene información que responde directamente la pregunta, sin suponer
+    datos que no aparecen.
+  criterio_si: "el titular responde directamente la pregunta"
+  criterio_no: "el titular no contiene la respuesta o exige suponer datos"

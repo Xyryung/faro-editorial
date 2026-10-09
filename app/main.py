@@ -316,11 +316,39 @@ with pestana_bandeja:
         mostrar_ficha(por_id[elegido])
 
 with pestana_consulta:
-    st.info(
-        "Pendiente: consulta en español con citas o abstención (búsqueda híbrida, #13). "
-        "Mientras tanto, cualquier cita se puede verificar con  "
-        "uv run python -m faro_editorial.evidencia <ID>"
+    st.markdown("#### Consulta en español")
+    st.caption(
+        "Búsqueda híbrida (BM25 + semántica) con compuerta de abstención (#13). "
+        "Sin evidencia suficiente, el sistema se abstiene y explica qué falta."
     )
+    pregunta = st.text_input(
+        "Pregunta",
+        placeholder="p. ej. ¿Qué lluvias hubo en Chiriquí?",
+        key="consulta_pregunta",
+    )
+    if st.button("Consultar", key="consulta_boton") and (pregunta or "").strip():
+        from faro_editorial.busqueda import Buscador, leer_corpus, load_config
+
+        with st.spinner("Buscando evidencia…"):
+            buscador = Buscador(leer_corpus(settings.processed_dir), load_config())
+            cliente = None
+            if not settings.offline:
+                from faro_editorial.proveedores import crear_cliente
+
+                cliente = crear_cliente("jev")
+            respuesta = buscador.responder(pregunta.strip(), cliente)
+        if respuesta.abstencion:
+            st.warning(f"**Abstención.** {respuesta.motivo}")
+            st.markdown(f"**Qué haría falta:** {respuesta.falta}")
+        else:
+            if respuesta.motivo_respaldo:
+                st.caption(f"Nota: {respuesta.motivo_respaldo}")
+            for cita in respuesta.citas:
+                extra = f" · Noul {cita.prob_noul}" if cita.prob_noul is not None else ""
+                st.markdown(
+                    f"- **{cita.puntaje:.2f}** [{cita.id_noticia}] {cita.titulo} "
+                    f"({cita.medio}){extra}"
+                )
 
 with pestana_borrador:
     st.info("Pendiente: borrador con citas por afirmación y verificación (#15).")

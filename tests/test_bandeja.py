@@ -196,3 +196,23 @@ def test_nombres_de_medios_como_vienen_en_la_noticia():
     }
     assert nombres_medios(tema) == [["Telemetro", "TVN"]]
     assert nombres_medios({**tema, "procedencias_independientes": []}) == [["Telemetro"], ["TVN"]]
+
+
+def test_el_comando_corre_como_programa(processed: Path):
+    """Como lo ejecuta una persona (python -m), no solo llamando a main(): detecta funciones
+    definidas después del arranque del programa."""
+    import os
+    import subprocess
+    import sys
+
+    entorno = {**os.environ, "DATA_DIR": str(processed.parent), "PYTHONIOENCODING": "utf-8"}
+    resultado = subprocess.run(
+        [sys.executable, "-m", "faro_editorial.bandeja", "--top", "2"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=entorno,
+        timeout=120,
+    )
+    assert resultado.returncode == 0, resultado.stderr[-500:]
+    assert "temas que merecen revisión" in resultado.stdout

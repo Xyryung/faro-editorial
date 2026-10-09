@@ -1,7 +1,7 @@
 {
   "version": "matriz-v1",
-  "generado_utc": "2026-10-09T04:50:17+00:00",
-  "commit": "5e54da3",
+  "generado_utc": "2026-10-09T08:25:54+00:00",
+  "commit": "d97d10f con cambios locales",
   "advertencias": [],
   "casos": [
     {
@@ -41,7 +41,7 @@
         "tests/test_extraccion_snapshot.py::test_con_la_misma_ventana_la_carga_no_rechaza_nada": "pasa",
         "tests/test_extraccion_snapshot.py::test_la_carga_acepta_todo_lo_que_escribe_el_extractor": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 26/26 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 26/26 pruebas",
       "correcciones": [],
       "issues": [
         "#3",
@@ -65,7 +65,7 @@
         "tests/test_puntaje.py::test_duplicar_noticias_no_infla_el_puntaje": "pasa",
         "tests/test_puntaje.py::test_medios_con_titulares_propios_son_independientes": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 6/6 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 6/6 pruebas",
       "correcciones": [],
       "issues": [
         "#9",
@@ -88,7 +88,7 @@
         "tests/test_puntaje.py::test_noticia_recirculada_no_es_novedad": "pasa",
         "tests/test_puntaje.py::test_una_sola_nota_vieja_detectada_hoy_no_es_novedad": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 5/5 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 5/5 pruebas",
       "correcciones": [
         {
           "fallo": "Una sola nota vieja detectada hoy por GDELT daba novedad máxima, porque solo se usaba la fecha de publicación.",
@@ -122,7 +122,7 @@
         "tests/test_evidencia.py::test_indicador_muestra_fuente_anio_unidad_y_url": "pasa",
         "tests/test_extraccion_fuentes.py::test_banco_mundial_completa_la_cuadricula_con_nulos": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 9/9 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 9/9 pruebas",
       "correcciones": [],
       "issues": [
         "#3",
@@ -141,7 +141,7 @@
       "pruebas": {
         "tests/test_borradores.py::test_t05_versiones_incompatibles_se_muestran_sin_escoger": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 1/1 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 1/1 pruebas",
       "correcciones": [],
       "issues": [
         "#14",
@@ -177,7 +177,7 @@
         "tests/test_evidencia.py::test_id_inexistente_no_inventa[USGS:no-existe]": "pasa",
         "tests/test_evidencia.py::test_id_inexistente_no_inventa[zzz]": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 18/18 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 18/18 pruebas",
       "correcciones": [],
       "issues": [
         "#10",
@@ -216,7 +216,7 @@
         "tests/test_revision.py::test_texto_para_notion_escapa_el_texto_de_las_fuentes": "pasa",
         "tests/test_smoke.py::test_claves_no_aparecen_en_repr": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 20/20 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 20/20 pruebas",
       "correcciones": [
         {
           "fallo": "El escape del bloque de datos solo cubría </datos> en minúsculas; </DATOS> o </datos > podían cerrarlo antes de tiempo.",
@@ -249,7 +249,7 @@
         "tests/test_revision.py::test_la_ficha_tiene_los_campos_del_contrato_y_no_habilita_publicar": "pasa",
         "tests/test_revision.py::test_solo_se_aceptan_los_cinco_estados_del_reto": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 6/6 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 6/6 pruebas",
       "correcciones": [],
       "issues": [
         "#11",
@@ -276,7 +276,7 @@
         "tests/test_borradores.py::test_reintento_con_errores_corrige_el_borrador": "pasa",
         "tests/test_borradores.py::test_t09_paquete_editorial_con_citas_por_afirmacion": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 9/9 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 9/9 pruebas",
       "correcciones": [],
       "issues": [
         "#15",
@@ -288,13 +288,14 @@
       "prueba": "Sin internet durante la demo",
       "entrada": "OFFLINE=1 con y sin respuestas en caché; carga y bandeja sin red; el extractor guarda cada respuesta cruda y la registra en manifest.json, así el snapshot se reproduce sin volver a consultar; la interfaz sin snapshot explica cómo cargarlo.",
       "esperado": "Funcionar con snapshot y fallback documentado; dejar evidencia en Notion.",
-      "observado": "11 de 11 pruebas pasan. Falta: Ensayo completo sin internet (#21) y entrega de la caché de IA, que no se versiona.",
+      "observado": "12 de 12 pruebas pasan. Falta: Ensayo completo sin internet (#21) y entrega de la caché de IA, que no se versiona.",
       "estado": "pasa (parcial)",
-      "pruebas_pasan": 11,
-      "pruebas_total": 11,
+      "pruebas_pasan": 12,
+      "pruebas_total": 12,
       "pruebas": {
         "tests/test_bandeja.py::test_comando_escribe_bandeja_y_muestra_top": "pasa",
         "tests/test_borradores.py::test_t10_offline_reproduce_desde_cache_y_sin_cache_se_abstiene": "pasa",
+        "tests/test_busqueda.py::test_t10_sin_conexion_jev_responde_desde_la_cache": "pasa",
         "tests/test_clasificacion.py::test_offline_sin_cache_usa_la_linea_base_y_con_cache_usa_jev": "pasa",
         "tests/test_clasificacion.py::test_segunda_corrida_sale_de_la_cache": "pasa",
         "tests/test_decisiones.py::test_estado_con_fechas_no_lanza_excepcion_y_se_guarda": "pasa",
@@ -305,13 +306,19 @@
         "tests/test_interfaz.py::test_app_sin_snapshot_explica_como_cargarlo": "pasa",
         "tests/test_proveedores.py::test_crear_cliente_respeta_offline_y_la_carpeta_de_cache": "pasa"
       },
-      "evidencia": "2026-10-09 04:50 UTC, commit 5e54da3: 11/11 pruebas",
+      "evidencia": "2026-10-09 08:25 UTC, commit d97d10f con cambios locales: 12/12 pruebas",
       "correcciones": [
         {
           "fallo": "Un estado con fechas lanzaba TypeError en vez de decidir o abstenerse, contra la regla \"nunca un error\".",
           "correccion": "Serialización con default=str en la clave y en la caché.",
           "pr": "#40",
           "issue": "#44"
+        },
+        {
+          "fallo": "En el ensayo sin internet en la laptop de la demo, la consulta ignoraba la caché de Jev y decidía solo con palabras clave; \"¿salario mínimo aprobado para 2027?\" respondía con el presupuesto del Canal (5/10 abstenciones en vez de 8/10).",
+          "correccion": "Sin conexión, la consulta usa las decisiones de Jev guardadas en la caché; solo una pregunta sin respuesta guardada pasa a la compuerta de palabras clave (8/10 y 10/10).",
+          "pr": "#72",
+          "issue": null
         }
       ],
       "issues": [

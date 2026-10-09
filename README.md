@@ -197,6 +197,17 @@ uv run python -m faro_editorial.paquete
 Genera en `dist/` un `.zip` con el snapshot, el manifest, el diccionario, el catálogo con las
 licencias y condiciones de cada fuente y el reporte de calidad.
 
+Para la demo se usa un recorte de **300 noticias de los 30 días previos al corte**, como pide el
+reto (meta: 200 registros únicos; mínimo: 100, con al menos 20 de TVN). Se reparten por día y,
+dentro de cada día, alternando medios; el manifest del recorte registra el criterio y la
+cobertura efectiva (días, medios y cuántas son de TVN), y la carga verifica su integridad igual
+que con el snapshot completo:
+
+```powershell
+uv run python -m faro_editorial.recorte --n 300 --dias 30 --destino data/demo300/raw
+$env:DATA_DIR = "data/demo300"   # luego carga, agrupacion, clasificacion y bandeja
+```
+
 ## Demo y preguntas del jurado
 
 Respuestas preparadas para las cuatro pruebas dinámicas del jurado, con qué mostrar en pantalla:

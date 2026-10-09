@@ -1,5 +1,5 @@
 {
-  "generado_utc": "2026-10-09T06:59:53+00:00",
+  "generado_utc": "2026-10-09T08:00:23+00:00",
   "referencia_snapshot": "2026-10-01 00:00",
   "cobertura_citas": {
     "estado": "medida",
@@ -133,9 +133,111 @@
     }
   },
   "agrupacion": {
-    "estado": "pendiente",
-    "motivo": "No hay pares de titulares etiquetados para la agrupación.",
-    "comando": "uv run python -m faro_editorial.evaluacion_agrupacion pares (y luego evaluar)"
+    "estado": "medida",
+    "metodo": "Pares de titulares etiquetados a ciegas como 'mismo evento' o no; precisión = pares agrupados que son el mismo evento / pares agrupados; recall = pares del mismo evento que el método agrupó / pares del mismo evento de la muestra. Muestra estratificada, no poblacional.",
+    "pares": 40,
+    "mismo_evento": 24,
+    "etiquetadores": [
+      "David",
+      "Kenneth",
+      "Rafael"
+    ],
+    "estratos": {
+      "solo_tfidf": 9,
+      "parecido_no_agrupado": 13,
+      "agrupado_snapshot": 18
+    },
+    "metodos": {
+      "e5": {
+        "tp": 15,
+        "fp": 3,
+        "fn": 9,
+        "tn": 13,
+        "precision": {
+          "numerador": 15,
+          "denominador": 18,
+          "valor": 0.8333,
+          "ic95": [
+            0.6078,
+            0.9416
+          ]
+        },
+        "recall": {
+          "numerador": 15,
+          "denominador": 24,
+          "valor": 0.625,
+          "ic95": [
+            0.4271,
+            0.7884
+          ]
+        },
+        "f1": 0.7143,
+        "errores": [
+          "P02",
+          "P07",
+          "P10",
+          "P13",
+          "P17",
+          "P21",
+          "P26",
+          "P27",
+          "P29",
+          "P34",
+          "P39",
+          "P40"
+        ]
+      },
+      "tfidf": {
+        "tp": 6,
+        "fp": 5,
+        "fn": 18,
+        "tn": 11,
+        "precision": {
+          "numerador": 6,
+          "denominador": 11,
+          "valor": 0.5455,
+          "ic95": [
+            0.2801,
+            0.7873
+          ]
+        },
+        "recall": {
+          "numerador": 6,
+          "denominador": 24,
+          "valor": 0.25,
+          "ic95": [
+            0.12,
+            0.449
+          ]
+        },
+        "f1": 0.3429,
+        "errores": [
+          "P01",
+          "P03",
+          "P08",
+          "P09",
+          "P11",
+          "P12",
+          "P17",
+          "P19",
+          "P20",
+          "P21",
+          "P22",
+          "P23",
+          "P24",
+          "P25",
+          "P26",
+          "P27",
+          "P28",
+          "P30",
+          "P32",
+          "P33",
+          "P34",
+          "P36",
+          "P38"
+        ]
+      }
+    }
   },
   "precision_5": {
     "estado": "medida",

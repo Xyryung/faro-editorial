@@ -20,7 +20,7 @@ Recorrido sugerido: **Bandeja → ficha de un tema → Borrador → Revisión �
 | Etapa del reto | Dónde verlo | Prueba (matriz) | Métrica o evidencia |
 |---|---|---|---|
 | 1 · Cargar | Configuración: snapshot, corte y versión de reglas. `uv run python -m faro_editorial.carga` imprime el reporte de calidad | T01 · 26 pruebas | Integridad por SHA-256 del manifest; rechazos con motivo en `reporte_calidad.json` |
-| 2 · Organizar | Bandeja: tema de cada fila; ficha: noticias del grupo con su medio | T02 · 6 pruebas | Clasificación: macro-F1 0,805 (Jev) vs 0,764 (palabras clave), 60 titulares. Agrupación: e5 vs TF-IDF con pares a ciegas (`evaluacion_agrupacion`) |
+| 2 · Organizar | Bandeja: tema de cada fila; ficha: noticias del grupo con su medio | T02 · 6 pruebas | Clasificación: macro-F1 0,805 (Jev) vs 0,764 (palabras clave), 60 titulares. Agrupación: F1 0,714 (e5) vs 0,343 (TF-IDF), 40 pares a ciegas |
 | 3 · Contextualizar | Ficha: bloque de respaldo oficial (Banco Mundial o USGS) con año, unidad y limitación | T04 · 9 pruebas, T06 | 68 temas con vínculo oficial; sin relación sustentada, no se vincula |
 | 4 · Priorizar | Bandeja ordenada; ficha: desglose R, I, U, N, E con el criterio de cada uno | T08 · 6 pruebas | Precision@5 exploratoria 1/5; puntaje reproducible (`reglas-v1.0`, `criterios-v2.0`) |
 | 5 · Explicar | Ficha: qué se reporta, quién, qué está respaldado, qué falta y acción recomendada | T03, T05 | Estado de evidencia aparte del puntaje: 4.264 sin corroborar, 68 parciales, 42 suficientes |

@@ -102,6 +102,10 @@ El CSV va en orden aleatorio y sin la predicción de ningún método (quedan apa
 - **no**: hechos distintos, aunque sean del mismo tema, del mismo actor o del mismo tipo
   ("Condenan a 20 años a hombre en Chiriquí" y "Condenan a 16 años a un hombre en Coclé").
 
+Si un titular es otro aspecto o una actualización del mismo acontecimiento (la asistencia y las claves de una misma feria; 72 y luego 75 muertos), también es **si**. La pregunta guía: ¿un editor querría ver las dos notas en una sola ficha porque son el mismo asunto?
+
+Los 40 pares los etiquetaron Rafael (P01–P20), David (P21–P30) y Kenneth (P31–P40), con esta regla acordada antes de empezar y sin ver las respuestas de los demás. Cada par tuvo una sola persona, así que no hay medida de acuerdo entre etiquetadores.
+
 Sin consultar a la IA. Luego `evaluacion_agrupacion evaluar` calcula precisión, recall y F1 de
 cada método con su intervalo de Wilson. La muestra es estratificada: el recall se mide sobre los
 pares "mismo evento" de la muestra, no sobre todo el snapshot.

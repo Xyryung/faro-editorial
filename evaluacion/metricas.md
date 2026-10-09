@@ -1,6 +1,6 @@
 # Métricas de la ejecución final
 
-Generado el 2026-10-09T06:59:53+00:00 con `uv run python -m faro_editorial.metricas reporte` · snapshot con corte 2026-10-01 00:00 (hora de Panamá).
+Generado el 2026-10-09T08:00:23+00:00 con `uv run python -m faro_editorial.metricas reporte` · snapshot con corte 2026-10-01 00:00 (hora de Panamá).
 
 Metas orientativas de la sección 9.1 del reto, no resultados. Cada métrica muestra numerador, denominador y fallos. Una métrica pendiente no tiene número: dice qué falta.
 
@@ -13,7 +13,8 @@ Metas orientativas de la sección 9.1 del reto, no resultados. Cada métrica mue
 | Macro-F1 clasificación · palabras | 0.764 (45/60 aciertos) | 62.8–84.2 % (aciertos) | — | — |
 | Macro-F1 clasificación · jev_es | 0.741 (44/60 aciertos) | 61.0–82.9 % (aciertos) | — | — |
 | Macro-F1 clasificación · jev_en | 0.805 (48/60 aciertos) | 68.2–88.2 % (aciertos) | — | — |
-| Agrupación (precisión y recall) | pendiente | — | — | — |
+| Agrupación · e5 | F1 0.714 · precisión 15/18 (83.3 %) · recall 15/24 (62.5 %) | P 60.8–94.2 % · R 42.7–78.8 % | — | — |
+| Agrupación · tfidf | F1 0.343 · precisión 6/11 (54.5 %) · recall 6/24 (25.0 %) | P 28.0–78.7 % · R 12.0–44.9 % | — | — |
 | Mediana por consulta (p95) | 0.032 s (0.035 s) | — | ≤ 15 s | sí |
 
 ## Cobertura de citas
@@ -61,7 +62,11 @@ Método: macro-F1 sobre los temas presentes en las etiquetas humanas; una absten
 
 ## Agrupación
 
-Pendiente: No hay pares de titulares etiquetados para la agrupación. Comando: `uv run python -m faro_editorial.evaluacion_agrupacion pares (y luego evaluar)`
+Método: Pares de titulares etiquetados a ciegas como 'mismo evento' o no; precisión = pares agrupados que son el mismo evento / pares agrupados; recall = pares del mismo evento que el método agrupó / pares del mismo evento de la muestra. Muestra estratificada, no poblacional.
+
+- 40 pares etiquetados por David, Kenneth, Rafael, 24 del mismo evento · estratos: solo_tfidf 9, parecido_no_agrupado 13, agrupado_snapshot 18.
+- e5: TP 15 · FP 3 · FN 9 · TN 13; errores: P02, P07, P10, P13, P17, P21, P26, P27, P29, P34, P39, P40.
+- tfidf: TP 6 · FP 5 · FN 18 · TN 11; errores: P01, P03, P08, P09, P11, P12, P17, P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P30, P32, P33, P34, P36, P38.
 
 ## Ahorro de tiempo
 

@@ -261,6 +261,24 @@ def mostrar_revision(tema: dict) -> None:
             st.code(texto_para_notion(tema, ultima, borrador), language="markdown", wrap_lines=True)
 
 
+@st.cache_resource(show_spinner=False)
+def buscador_en_memoria(processed_dir: str, marca: float):
+    """Un solo buscador por base cargada: el índice semántico se prepara una vez y no en cada
+    consulta. `marca` (fecha de la base) hace que se rehaga si se vuelve a cargar."""
+    from faro_editorial.busqueda import Buscador, leer_corpus, load_config
+
+    buscador = Buscador(leer_corpus(Path(processed_dir)), load_config())
+    buscador.preparar()
+    return buscador
+
+
+def marca_base() -> float:
+    from faro_editorial.carga import NOMBRE_DB
+
+    ruta = settings.processed_dir / NOMBRE_DB
+    return ruta.stat().st_mtime if ruta.exists() else 0.0
+
+
 ESTADOS_JEV = {
     "respaldada": "Respaldada",
     "dudosa": "Dudosa",
@@ -569,10 +587,8 @@ with pestana_consulta:
         key="consulta_pregunta",
     )
     if st.button("Consultar", key="consulta_boton") and (pregunta or "").strip():
-        from faro_editorial.busqueda import Buscador, leer_corpus, load_config
-
-        with st.spinner("Buscando evidencia…"):
-            buscador = Buscador(leer_corpus(settings.processed_dir), load_config())
+        with st.spinner("Buscando evidencia… (la primera consulta prepara el índice)"):
+            buscador = buscador_en_memoria(str(settings.processed_dir), marca_base())
             cliente = None
             if not settings.offline:
                 from faro_editorial.proveedores import crear_cliente

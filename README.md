@@ -196,6 +196,21 @@ uv run python -m faro_editorial.clasificacion muestra   # titulares para etiquet
 uv run python -m faro_editorial.clasificacion evaluar   # macro-F1 de Jev y de la línea base
 ```
 
+El reporte de las métricas de la sección 9.1 (numerador, denominador y fallos de cada una) se
+arma con `metricas`. Las entradas con titulares quedan en `data/evaluacion/` (no se versiona);
+el reporte, en [`evaluacion/metricas.md`](evaluacion/metricas.md), solo lleva conteos e IDs. Una
+métrica sin su entrada queda "pendiente" con el comando que la produce, nunca con un número:
+
+```powershell
+uv run python -m faro_editorial.metricas pares       # afirmación-evidencia para revisión humana
+uv run python -m faro_editorial.metricas seleccion   # 15 temas a ciegas para Precision@5
+uv run python -m faro_editorial.metricas consultas   # abstención con config/consultas_v1.yaml
+uv run python -m faro_editorial.metricas reporte     # escribe evaluacion/metricas.md
+```
+
+`consultas` mide la compuerta completa (umbral + Jev Noul) solo con `OFFLINE=0`; con
+`OFFLINE=1` decide solo el umbral, igual que la interfaz sin internet.
+
 ## Datos
 
 Ver [`data/README.md`](data/README.md) y el diccionario de datos en

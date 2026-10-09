@@ -13,11 +13,9 @@ import streamlit as st
 from faro_editorial import __version__
 from faro_editorial.graficos import (
     COLORES_COMPONENTE,
-    colores_evidencia,
     colores_prioridad,
     grafico_aportes,
     grafico_desglose,
-    grafico_evidencia,
     grafico_noticias_por_dia,
     periodo_noticias,
 )
@@ -45,6 +43,8 @@ from faro_editorial.interfaz import (
 from faro_editorial.revision import (
     ESTADO_INICIAL,
     Revision,
+    avance_revision_html,
+    conteo_revision,
     etiqueta_revision,
     guardar_revision,
     historial,
@@ -349,10 +349,13 @@ with pestana_bandeja:
     ]
     if visibles:
         evidencia, por_dia, aportes = cuadricula(dividir_derecha=False)
-        with evidencia, tarjeta("g_evidencia"):
-            st.markdown("#### Evidencia")
-            grafico(grafico_evidencia(visibles), "Temas por estado de evidencia")
-            st.markdown(leyenda_html(colores_evidencia(visibles)), unsafe_allow_html=True)
+        with evidencia, tarjeta("g_revision"):
+            # Avance de la revisión humana: cuánto le falta al editor (cambia al revisar).
+            st.markdown("#### Revisión")
+            st.markdown(
+                avance_revision_html(conteo_revision(visibles, vigentes)),
+                unsafe_allow_html=True,
+            )
         with por_dia, tarjeta("g_dias"):
             periodo = periodo_noticias(visibles)
             st.markdown(f"#### Noticias por {periodo}")

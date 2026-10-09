@@ -173,3 +173,48 @@ def texto_para_notion(tema: dict, ultima: dict | None) -> str:
             lineas.append(f"- Comentario: {escapar_md(ultima['comentario'])}")
     lineas.append("- Aprobar como borrador no significa publicar.")
     return "\n".join(lineas)
+
+
+# Colores del avance: gris lo pendiente, verde lo aprobado, ámbar lo que pide más evidencia.
+COLORES_REVISION = {
+    "nuevo": "#C9D0DC",
+    "en_revision": "#7D8FA6",
+    "requiere_evidencia": "#C98A4B",
+    "aprobado_como_borrador": "#5E9C76",
+    "descartado": "#8E86B0",
+}
+
+
+def conteo_revision(temas: list[dict], vigentes: dict[str, str]) -> dict[str, int]:
+    """Cuántos temas hay en cada estado de revisión (los no revisados cuentan como "nuevo")."""
+    conteo = dict.fromkeys(ETIQUETAS_REVISION, 0)
+    for t in temas:
+        estado = vigentes.get(t["id_grupo"], ESTADO_INICIAL)
+        conteo[estado if estado in conteo else ESTADO_INICIAL] += 1
+    return conteo
+
+
+def avance_revision_html(conteo: dict[str, int]) -> str:
+    """Avance de la revisión: cuántos temas ya decidió una persona, una barra con cada estado y
+    el detalle con números. Solo usa valores propios del sistema."""
+    total = sum(conteo.values())
+    revisados = total - conteo.get(ESTADO_INICIAL, 0)
+    partes = "".join(
+        f'<span style="width:{100 * n / total:.2f}%;background:{COLORES_REVISION[e]}" '
+        f'title="{ETIQUETAS_REVISION[e]}: {n}"></span>'
+        for e, n in conteo.items()
+        if n and total
+    )
+    filas = "".join(
+        f'<li><i style="background:{COLORES_REVISION[e]}"></i>{ETIQUETAS_REVISION[e]}'
+        f"<b>{n}</b></li>"
+        for e, n in conteo.items()
+    )
+    return (
+        '<div class="avance">'
+        f'<p class="avance-total"><b>{revisados}</b> de {total} '
+        f"{'tema revisado' if total == 1 else 'temas revisados'}</p>"
+        f'<div class="avance-barra">{partes}</div>'
+        f'<ul class="avance-lista">{filas}</ul>'
+        "</div>"
+    )

@@ -167,3 +167,17 @@ def test_guardar_una_revision_desde_la_ficha(monkeypatch, data_dir: Path):
     tabla = app.dataframe[0].value
     assert "Aprobado como borrador" in list(tabla["Revisión"])
     assert any("Persona revisora: Ana" in c.value for c in app.code)
+
+
+def test_avance_de_la_revision_cuenta_los_no_revisados_como_nuevos():
+    from faro_editorial.revision import avance_revision_html, conteo_revision
+
+    temas = [{"id_grupo": "a"}, {"id_grupo": "b"}, {"id_grupo": "c"}]
+    conteo = conteo_revision(temas, {"a": "aprobado_como_borrador", "b": "estado_raro"})
+    assert conteo["nuevo"] == 2 and conteo["aprobado_como_borrador"] == 1
+    html = avance_revision_html(conteo)
+    assert "<b>1</b> de 3 temas revisados" in html
+    assert html.count("<li>") == 5  # los cinco estados, aunque estén en cero
+    assert "<b>0</b> de 0" in avance_revision_html(
+        dict.fromkeys(conteo, 0)
+    )  # sin división por cero

@@ -12,6 +12,9 @@ umbral: 0.15
 margen: 0.08
 # Peso de la señal semántica en la fusión; el resto es BM25.
 alfa: 0.6
+# Sin Jev (offline sin caché): parte mínima (0-1) de las palabras clave de la pregunta que
+# debe contener el titular; si ninguno llega, la consulta se abstiene (T06).
+cobertura_minima: 0.6
 # Probabilidad mínima de "sí" en la pregunta Noul para aceptar una evidencia.
 umbral_noul: 0.6
 # Representador semántico: "auto" usa embeddings y cae a TF-IDF con motivo registrado.

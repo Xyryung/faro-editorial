@@ -17,6 +17,7 @@ Comandos (desde la raíz del repo, después de la carga):
 """
 
 import argparse
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -46,6 +47,8 @@ class ConfigBusqueda(BaseModel):
     alfa: float = Field(ge=0, le=1)
     umbral_noul: float = Field(ge=0, le=1)
     metodo_semantico: str = "auto"
+    # Sin Jev: parte mínima de las palabras clave de la pregunta que debe tener el titular.
+    cobertura_minima: float = Field(default=0.6, ge=0, le=1)
     pregunta_noul: PreguntaNoulConfig
 
 
@@ -56,6 +59,68 @@ def load_config(path: Path = RUTA_CONFIG) -> ConfigBusqueda:
 
 def _tokens(texto: str) -> list[str]:
     return normalizar(texto).split()
+
+
+# Palabras de la pregunta que no dicen de qué trata (sin tildes, como las deja normalizar).
+_VACIAS = {
+    "hubo",
+    "cual",
+    "cuales",
+    "como",
+    "donde",
+    "cuando",
+    "cuanto",
+    "cuanta",
+    "cuantos",
+    "cuantas",
+    "quien",
+    "quienes",
+    "sobre",
+    "para",
+    "esta",
+    "este",
+    "esto",
+    "estos",
+    "estas",
+    "entre",
+    "tiene",
+    "tienen",
+    "desde",
+    "hasta",
+    "segun",
+    "dice",
+    "dijo",
+    "hace",
+    "algun",
+    "alguna",
+    "algo",
+    "noticia",
+    "noticias",
+    "informacion",
+    "pasa",
+    "paso",
+    "ocurrio",
+}
+
+
+def _palabras(texto: str) -> list[str]:
+    # Solo letras y números: "¿qué" o "chiriquí?" no deben llevar el signo pegado.
+    return re.findall(r"\w+", normalizar(texto))
+
+
+def palabras_clave(texto: str) -> list[str]:
+    """Palabras de la pregunta que dicen de qué trata: 4 letras o más y no vacías."""
+    return list(dict.fromkeys(t for t in _palabras(texto) if len(t) >= 4 and t not in _VACIAS))
+
+
+def cobertura(consulta: str, titulo: str) -> float:
+    """Parte de las palabras clave de la consulta que aparecen en el titular. Compara los
+    primeros 5 caracteres, así "tránsito" coincide con "tránsitos"."""
+    clave = palabras_clave(consulta)
+    if not clave:
+        return 0.0
+    raices = {t[:5] for t in _palabras(titulo)}
+    return sum(t[:5] in raices for t in clave) / len(clave)
 
 
 @dataclass
@@ -204,6 +269,19 @@ class Buscador:
                 f"{rechazo or 'sin candidatos'}; {self.config.version}.",
             )
         if cliente is None:
+            # Sin Jev no hay quien juzgue si el titular responde: además del umbral, el titular
+            # debe contener la mayoría de las palabras clave de la pregunta. Si no, abstención
+            # (T06): "resultados del campeonato de ajedrez" no puede responderse con "resultados
+            # del sorteo de la lotería" solo por compartir una palabra.
+            minimo = self.config.cobertura_minima
+            candidatos = [c for c in candidatos if cobertura(consulta, c.titulo) >= minimo]
+            if not candidatos:
+                return self._abstencion(
+                    consulta,
+                    metodo,
+                    "sin Jev, ningún titular contiene la mayoría de las palabras clave de la "
+                    f"pregunta (cobertura mínima {minimo}); {self.config.version}.",
+                )
             for c in candidatos:
                 c.metodo = f"{metodo}+umbral"
             notas = [

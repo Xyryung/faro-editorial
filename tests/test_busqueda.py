@@ -141,3 +141,40 @@ def test_preparar_y_sin_preparar_dan_el_mismo_resultado():
     ra, rb = a.responder("lluvias en Chiriquí", None), b.responder("lluvias en Chiriquí", None)
     assert [c.id_noticia for c in ra.citas] == [c.id_noticia for c in rb.citas]
     assert [c.puntaje for c in ra.citas] == [c.puntaje for c in rb.citas]
+
+
+def test_t06_sin_jev_no_responde_con_un_titular_que_solo_comparte_una_palabra():
+    """Caso real del recorte de la demo: sin Jev, la pregunta sobre ajedrez respondía con los
+    resultados de la lotería porque ambos dicen "resultados del"."""
+    docs = [
+        *DOCS,
+        {
+            "id_noticia": "l1",
+            "titulo": "Resultados del sorteo de la lotería del domingo",
+            "medio": "TVN",
+        },
+    ]
+    config = load_config().model_copy(update={"umbral": 0.05, "k_recuperados": 4})
+    buscador = Buscador(docs, config, RepresentadorTfidf())
+    r = buscador.responder("resultados del campeonato mundial de ajedrez en Noruega", None)
+    assert r.abstencion and "palabras clave" in r.motivo
+    # Con dos palabras clave hacen falta las dos: "precio de la gasolina" no es "El precio de
+    # la historia".
+    docs.append(
+        {"id_noticia": "h1", "titulo": "El precio de la historia, en televisión", "medio": "TVN"}
+    )
+    buscador = Buscador(docs, config, RepresentadorTfidf())
+    assert buscador.responder("precio de la gasolina", None).abstencion
+    # Una pregunta que sí está en el corpus sigue respondiendo, aunque cambie el plural.
+    r = buscador.responder("¿hubo tránsitos en el Canal?", None)
+    assert not r.abstencion and r.citas[0].id_noticia == "n3"
+
+
+def test_palabras_clave_y_cobertura():
+    from faro_editorial.busqueda import cobertura, palabras_clave
+
+    assert palabras_clave("¿Qué lluvias hubo en Chiriquí?") == ["lluvias", "chiriqui"]
+    assert cobertura("lluvias en Chiriquí", "Lluvias, crecidas y alertas en Chiriquí") == 1
+    assert cobertura("tránsito del canal", "Tránsitos por el Canal") == 1  # singular y plural
+    assert cobertura("ajedrez en Noruega", "Resultados del sorteo de la lotería") == 0
+    assert cobertura("¿qué?", "cualquier titular") == 0

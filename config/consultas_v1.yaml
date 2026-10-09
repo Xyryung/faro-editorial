@@ -1,0 +1,94 @@
+# Conjunto de consultas para medir la abstención (sección 9.1 del reto, issue #19).
+#
+# Cada consulta lleva una etiqueta que es un hecho sobre el corpus de la demo, no una opinión
+# del sistema: "respondible" si algún titular del snapshot contiene la respuesta (sus IDs van
+# en evidencia_esperada) y "no_respondible" si ninguno la contiene. Se comprobaron buscando
+# los términos en los 5138 titulares del snapshot de la demo (octubre 2025 a septiembre 2026).
+#
+# Las no respondibles "dificil: true" tratan un tema que sí está en el corpus, pero piden un
+# dato que el titular no trae (por ejemplo, el monto que un titular anuncia sin decir). Son
+# las que prueban la pregunta Noul: el umbral de recuperación solo no basta para rechazarlas.
+#
+# Los IDs son del snapshot de la demo: con otro snapshot hay que revisar el conjunto.
+version: "consultas-v1"
+revisado_por: "Kenneth"  # quién del equipo revisó las etiquetas (completar antes de reportar)
+
+consultas:
+  # --- Respondibles -------------------------------------------------------------------
+  - id: R01
+    pregunta: ¿Cuántos tránsitos diarios tendrá el Canal de Panamá desde el 15 de octubre?
+    etiqueta: respondible
+    evidencia_esperada: [tvn2-c044e2e54697, prensa-47f1d3b4293b, diaadia-86a54efebbdf,
+      critica-0aed80a73339, laestrella-18b3494161b8, spanish-d190e659d2d8]
+  - id: R02
+    pregunta: ¿Se aprobó el presupuesto del Canal de Panamá para el año fiscal 2027?
+    etiqueta: respondible
+    evidencia_esperada: [pancanal-69a8bbe0a4a7, tvn2-ac8dcb4d7c1c, panamaameric-648ed3f32bce]
+  - id: R03
+    pregunta: ¿Qué recomendó la comisión sobre la mina de cobre y First Quantum?
+    etiqueta: respondible
+    evidencia_esperada: [tvn2-0a8999f7c42f]
+  - id: R04
+    pregunta: ¿Cuánto cayeron las exportaciones de Panamá este año?
+    etiqueta: respondible
+    evidencia_esperada: [tvn2-5e7b54b3fa43]
+  - id: R05
+    pregunta: ¿Cuándo vence el plazo para aplicar a las becas de maestría de Senacyt?
+    etiqueta: respondible
+    evidencia_esperada: [tvn2-1b26f9a453c1]
+  - id: R06
+    pregunta: ¿Hasta cuánto llegan las matrículas de los colegios privados para 2027?
+    etiqueta: respondible
+    evidencia_esperada: [tvn2-298a76b94cec]
+  - id: R07
+    pregunta: ¿Cuánto podría costar el tren Panamá-David?
+    etiqueta: respondible
+    evidencia_esperada: [tvn2-c38aca384c85]
+  - id: R08
+    pregunta: ¿Qué advirtió MiBus sobre la compra de buses para 2027?
+    etiqueta: respondible
+    evidencia_esperada: [tvn2-dae0d1e6d1ba]
+  - id: R09
+    pregunta: ¿Por qué reubicaron las cirugías de la policlínica de La Chorrera?
+    etiqueta: respondible
+    evidencia_esperada: [tvn2-db0ad21e3ade, tvn2-e56fda02b6db]
+  - id: R10
+    pregunta: ¿Cómo han cambiado los casos de dengue en Panamá?
+    etiqueta: respondible
+    evidencia_esperada: [tvn2-dfa8a00ca2f1, tvn2-7be84659c0af]
+
+  # --- No respondibles ----------------------------------------------------------------
+  - id: N01
+    pregunta: ¿Cuál es el salario mínimo aprobado en Panamá para 2027?
+    etiqueta: no_respondible
+  - id: N02
+    pregunta: ¿Qué resultado tuvo el partido de fútbol de Panamá contra México?
+    etiqueta: no_respondible
+  - id: N03
+    pregunta: ¿Cuánto costará la entrada al Biomuseo en 2027?
+    etiqueta: no_respondible
+  - id: N04
+    pregunta: ¿Qué aranceles aplicó Estados Unidos al café panameño?
+    etiqueta: no_respondible
+  - id: N05
+    pregunta: ¿Cuántos jonrones bateó la selección de béisbol de Panamá?
+    etiqueta: no_respondible
+  - id: N06
+    pregunta: ¿Cuál es la tasa de interés de las hipotecas en Panamá en septiembre de 2026?
+    etiqueta: no_respondible
+  - id: N07
+    pregunta: ¿Cuál es el monto exacto que el Canal de Panamá aportará al Estado en 2027?
+    etiqueta: no_respondible
+    dificil: true  # el titular de Telemetro anuncia "la millonaria cifra" sin decirla
+  - id: N08
+    pregunta: ¿Cómo se llamaba el capitán del remolcador del Canal que falleció?
+    etiqueta: no_respondible
+    dificil: true  # el titular no da el nombre
+  - id: N09
+    pregunta: ¿Cuál fue la tasa de inflación de Panamá en agosto de 2026?
+    etiqueta: no_respondible
+    dificil: true  # hay titulares sobre la amenaza de inflación, ninguno con la cifra
+  - id: N10
+    pregunta: ¿Qué día exacto salió Panamá de la lista fiscal de la Unión Europea?
+    etiqueta: no_respondible
+    dificil: true  # los titulares dicen que "podría salir en octubre"

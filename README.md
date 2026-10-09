@@ -16,7 +16,7 @@ se vincula con su fuente, fecha y alcance; cuando no hay evidencia suficiente, e
 | 3 · Contextualizar | `contexto.py` | Implementada (#12) |
 | 4 · Priorizar | `puntaje.py`, `rules.py`, `bandeja.py` | Implementada con reglas; R, I y U admiten Jev (#11, #8) |
 | 5 · Explicar | `app/main.py`, `interfaz.py`, `busqueda.py` | Bandeja y ficha de evidencia en Streamlit (#16); consulta en español con búsqueda híbrida (BM25 + semántica) y compuerta de abstención (#13); contradicciones en desarrollo (#14) |
-| 6 · Producir | | En desarrollo (#15) |
+| 6 · Producir | `borradores.py`, `app/main.py` | Brief, guion y copy con una cita por afirmación, verificación con Jev y pestaña Borrador; el borrador vigente vive en `borradores.jsonl` y la revisión lo copia en la ficha (#15) |
 | 7 · Revisar | `revision.py`, `app/main.py` | Revisión humana en la ficha: estado, persona revisora y comentario en `fichas.jsonl` con historial, y ficha lista para Notion (#17) |
 
 ## Modalidad y usuario
@@ -114,6 +114,18 @@ Completa `.env` solo si vas a hacer llamadas en vivo. Sin `.env`, la app arranca
    uv run python -m faro_editorial.bandeja --top 5
    ```
 
+   Redacta el borrador de los temas principales: brief (≤ 250 palabras), guion de 45–60 s y
+   copy (≤ 80 palabras), con una cita `{id_evidencia, campo}` por afirmación, afirmaciones
+   tipadas (hecho, declaración, inferencia, hipótesis) y verificación de cada una con Jev.
+   Escribe `data/processed/borradores.jsonl` (se ve en la pestaña Borrador) y un Markdown por
+   tema en `data/processed/borradores/`. Al guardar una revisión, la ficha copia el borrador
+   vigente. La primera vez necesita `OFFLINE=0`, la clave de OpenRouter y `LLM_MODEL`; después
+   funciona sin internet desde la caché:
+
+   ```powershell
+   uv run python -m faro_editorial.borradores --top 5
+   ```
+
 3. Abre la interfaz:
 
    ```powershell
@@ -183,6 +195,21 @@ tiempos) se registran en #19. La clasificación se evalúa contra etiquetas huma
 uv run python -m faro_editorial.clasificacion muestra   # titulares para etiquetar a mano
 uv run python -m faro_editorial.clasificacion evaluar   # macro-F1 de Jev y de la línea base
 ```
+
+El reporte de las métricas de la sección 9.1 (numerador, denominador y fallos de cada una) se
+arma con `metricas`. Las entradas con titulares quedan en `data/evaluacion/` (no se versiona);
+el reporte, en [`evaluacion/metricas.md`](evaluacion/metricas.md), solo lleva conteos e IDs. Una
+métrica sin su entrada queda "pendiente" con el comando que la produce, nunca con un número:
+
+```powershell
+uv run python -m faro_editorial.metricas pares       # afirmación-evidencia para revisión humana
+uv run python -m faro_editorial.metricas seleccion   # 15 temas a ciegas para Precision@5
+uv run python -m faro_editorial.metricas consultas   # abstención con config/consultas_v1.yaml
+uv run python -m faro_editorial.metricas reporte     # escribe evaluacion/metricas.md
+```
+
+`consultas` mide la compuerta completa (umbral + Jev Noul) solo con `OFFLINE=0`; con
+`OFFLINE=1` decide solo el umbral, igual que la interfaz sin internet.
 
 ## Datos
 

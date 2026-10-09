@@ -10,8 +10,10 @@ estado_evidencia, borrador y estado_revision, más quién revisó, cuándo y su 
 archivo solo crece: una decisión nueva no borra la anterior, así queda el historial ("documentar
 revisiones"). El estado vigente de un tema es su última línea.
 
-afirmaciones, citas y borrador quedan vacíos hasta que exista el borrador con citas (#15): no se
-rellenan con contenido inventado.
+afirmaciones, citas y borrador se copian del borrador vigente del tema (borradores.jsonl, #15)
+en el momento de guardar la decisión, así cada línea conserva el texto exacto que se revisó. Si
+el tema no tiene borrador (o el borrador es una abstención), quedan vacíos: no se rellenan con
+contenido inventado.
 """
 
 import json
@@ -20,6 +22,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, field_validator
 
+from faro_editorial.borradores import borrador_markdown, leer_borradores
 from faro_editorial.contexto import ZONA_PANAMA
 from faro_editorial.interfaz import (
     ETIQUETAS_ESTADO,
@@ -84,20 +87,30 @@ def ids_fuente(tema: dict) -> list[str]:
     return list(dict.fromkeys(ids))
 
 
-def ficha(tema: dict, revision: Revision, reglas: Reglas, ahora: datetime | None = None) -> dict:
-    """La ficha del tema con la decisión de revisión, en el formato de la sección 7."""
+def ficha(
+    tema: dict,
+    revision: Revision,
+    reglas: Reglas,
+    ahora: datetime | None = None,
+    borrador: dict | None = None,
+) -> dict:
+    """La ficha del tema con la decisión de revisión, en el formato de la sección 7. `borrador`
+    es la línea vigente de borradores.jsonl para este tema (#15), si existe."""
     validar_estado(revision.estado_revision, reglas)
+    con_borrador = bool(borrador) and not borrador.get("abstencion")
     return {
         "id_caso": tema["id_grupo"],
         "modalidad": MODALIDAD,
         "titulo": tema["titulo"],
         "ids_fuente": ids_fuente(tema),
-        "afirmaciones": [],  # hasta que exista el borrador con citas (#15)
-        "citas": [],
+        "afirmaciones": borrador["afirmaciones"] if con_borrador else [],
+        "citas": borrador["citas"] if con_borrador else [],
         "puntaje": tema["puntaje"],
         "componentes": tema["componentes"],
         "estado_evidencia": tema["estado_evidencia"],
-        "borrador": None,
+        "borrador": borrador["borrador"] if con_borrador else None,
+        # Qué versión del borrador se revisó (None si no había borrador).
+        "borrador_generado_utc": borrador.get("generado_utc") if con_borrador else None,
         "estado_revision": revision.estado_revision,
         "revisor": revision.revisor,
         "comentario": revision.comentario,
@@ -116,8 +129,10 @@ def guardar_revision(
     reglas: Reglas,
     ahora: datetime | None = None,
 ) -> dict:
-    """Agrega la decisión al historial (fichas.jsonl) y devuelve la ficha guardada."""
-    registro = ficha(tema, revision, reglas, ahora)
+    """Agrega la decisión al historial (fichas.jsonl) y devuelve la ficha guardada. Copia el
+    borrador vigente del tema (borradores.jsonl), si existe."""
+    borrador = leer_borradores(processed_dir).get(tema["id_grupo"])
+    registro = ficha(tema, revision, reglas, ahora, borrador)
     ruta = Path(processed_dir) / NOMBRE_FICHAS
     ruta.parent.mkdir(parents=True, exist_ok=True)
     with ruta.open("a", encoding="utf-8") as f:
@@ -146,7 +161,7 @@ def estados_vigentes(processed_dir: Path) -> dict[str, str]:
     return {caso: regs[-1]["estado_revision"] for caso, regs in historial(processed_dir).items()}
 
 
-def texto_para_notion(tema: dict, ultima: dict | None) -> str:
+def texto_para_notion(tema: dict, ultima: dict | None, borrador: dict | None = None) -> str:
     """La ficha en Markdown, lista para pegar en la página "Casos y evidencias" de Notion. El
     texto de las fuentes va escapado para que no se convierta en enlaces o formato al pegarlo."""
     evidencia = ETIQUETAS_ESTADO.get(tema["estado_evidencia"], tema["estado_evidencia"])
@@ -177,7 +192,10 @@ def texto_para_notion(tema: dict, ultima: dict | None) -> str:
     if tema.get("pendientes"):
         lineas += ["", "**Qué falta comprobar**"]
         lineas += [f"- {escapar_md(p)}" for p in tema["pendientes"]]
-    lineas += ["", "**Borrador:** pendiente (todavía no hay borrador con citas)."]
+    if borrador:
+        lineas += ["", borrador_markdown(borrador)]
+    else:
+        lineas += ["", "**Borrador:** pendiente (todavía no hay borrador con citas)."]
     lineas += ["", "**Revisión humana**"]
     if ultima is None:
         lineas.append("- Estado: Nuevo (sin revisar)")

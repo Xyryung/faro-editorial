@@ -100,3 +100,44 @@ def test_t07_la_abstencion_escapa_sus_motivos():
     assert textos["abstencion"]
     assert "](" not in textos["motivo"] and "](" not in textos["falta"]
     assert lineas_consulta(SimpleNamespace(abstencion=True, motivo=None, falta=None))["falta"] == ""
+
+
+class _RepresentadorContado:
+    """Representador "e5" falso: cuenta cuántos textos codifica en cada llamada."""
+
+    metodo = "e5"
+    nombre = "falso-e5"
+
+    def __init__(self) -> None:
+        self.llamadas: list[int] = []
+
+    def vectores(self, textos):
+        import numpy as np
+
+        self.llamadas.append(len(textos))
+        filas = []
+        for t in textos:
+            v = np.array([t.lower().count(c) for c in "aeiouclnst"], dtype=np.float32) + 0.01
+            filas.append(v / np.linalg.norm(v))
+        return np.vstack(filas)
+
+
+def test_con_embeddings_el_corpus_se_codifica_una_sola_vez():
+    """Antes cada consulta recodificaba todo el corpus (~22 s con ~5000 titulares)."""
+    rep = _RepresentadorContado()
+    config = load_config().model_copy(update={"umbral": 0.0, "k_recuperados": 3})
+    buscador = Buscador(DOCS, config, rep)
+    assert buscador.preparar() >= 0 and rep.llamadas == [len(DOCS)]
+    for consulta in ("lluvias en Chiriquí", "tránsito del Canal", "turismo"):
+        buscador.responder(consulta, None)
+    assert rep.llamadas == [len(DOCS), 1, 1, 1]  # luego, solo la consulta
+
+
+def test_preparar_y_sin_preparar_dan_el_mismo_resultado():
+    config = load_config().model_copy(update={"umbral": 0.0, "k_recuperados": 3})
+    a = Buscador(DOCS, config, _RepresentadorContado())
+    b = Buscador(DOCS, config, _RepresentadorContado())
+    a.preparar()
+    ra, rb = a.responder("lluvias en Chiriquí", None), b.responder("lluvias en Chiriquí", None)
+    assert [c.id_noticia for c in ra.citas] == [c.id_noticia for c in rb.citas]
+    assert [c.puntaje for c in ra.citas] == [c.puntaje for c in rb.citas]

@@ -1,0 +1,38 @@
+# Etapa 6 · Producir: paquete editorial de TVN (issue #15, T09).
+# Los límites vienen de la sección 3 del reto y se comprueban en código, no solo en el prompt.
+# Cambiar un valor cambia la versión de la ficha; cambiar el prompt cambia la clave de caché.
+version: "borradores-v1.1"
+
+limites:
+  brief_max_palabras: 250
+  copy_max_palabras: 80
+  preguntas_investigacion: 3
+  guion_min_s: 45
+  guion_max_s: 60
+  # Ritmo de lectura en noticiero en español (~150 palabras por minuto). Con 2.5 palabras/s,
+  # 45-60 s equivalen a 113-150 palabras. Supuesto del equipo: ajustarlo si la persona
+  # editorial lee a otro ritmo.
+  palabras_por_segundo: 2.5
+  # v1.1: el prompt pide 121-142 palabras (8 de margen por lado); el código sigue exigiendo
+  # 45-60 s. En la primera prueba en vivo el modelo apuntó al borde y entregó 151 palabras.
+  guion_margen_palabras: 8
+
+# Reintentos con la lista de errores devuelta al LLM (citas inválidas, límites, cifras).
+reintentos: 1
+
+# Formato de salida pedido al LLM: json_schema (estricto) o json_object, para modelos de
+# OpenRouter que no admiten esquemas estrictos.
+formato_salida: json_schema
+# Un borrador completo tarda más que una decisión de Jev (IA_TIMEOUT_S solo aplica a Jev).
+generacion_timeout_s: 120
+
+# Verificación de cada afirmación con Jev Noul (probabilidad de que la evidencia la respalde).
+verificacion:
+  version_prompt: "verificacion-v1"
+  respaldada_desde: 0.7      # >= 0.7: respaldada
+  no_respaldada_hasta: 0.4   # < 0.4: no respaldada; entre ambos: dudosa
+  hilos: 8
+
+# Campos de una noticia que se pueden citar. La URL no es cita válida por sí sola
+# (sección 7) y la descripción del RSS no entra en borradores (decisión #35).
+campos_noticia: [titulo, medio, fecha_publicacion, fecha_deteccion, origen]

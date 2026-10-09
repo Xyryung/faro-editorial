@@ -212,6 +212,17 @@ def escribir_bandeja(bandeja: dict[str, Any], processed_dir: Path) -> Path:
     return ruta
 
 
+def nombres_medios(tema: dict) -> list[list[str]]:
+    """Procedencias independientes con el nombre del medio como viene en la noticia ("TVN"),
+    no con la clave normalizada que usa el puntaje para comparar ("tvn")."""
+    nombres: dict[str, str] = {}
+    for n in tema["noticias"]:
+        medio = (n.get("medio") or "").strip()
+        nombres.setdefault(medio.lower(), medio)
+    grupos = tema.get("procedencias_independientes") or [[m] for m in tema["procedencias"]]
+    return [[nombres.get(m, m) for m in grupo] for grupo in grupos]
+
+
 def main(argv: list[str] | None = None) -> None:
     from faro_editorial.settings import get_settings
 
@@ -264,14 +275,3 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-
-
-def nombres_medios(tema: dict) -> list[list[str]]:
-    """Procedencias independientes con el nombre del medio como viene en la noticia ("TVN"),
-    no con la clave normalizada que usa el puntaje para comparar ("tvn")."""
-    nombres: dict[str, str] = {}
-    for n in tema["noticias"]:
-        medio = (n.get("medio") or "").strip()
-        nombres.setdefault(medio.lower(), medio)
-    grupos = tema.get("procedencias_independientes") or [[m] for m in tema["procedencias"]]
-    return [[nombres.get(m, m) for m in grupo] for grupo in grupos]

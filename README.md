@@ -17,7 +17,7 @@ se vincula con su fuente, fecha y alcance; cuando no hay evidencia suficiente, e
 | 4 · Priorizar | `puntaje.py`, `rules.py`, `bandeja.py` | Implementada con reglas; R, I y U admiten Jev (#11, #8) |
 | 5 · Explicar | `app/main.py`, `interfaz.py` | Bandeja y ficha de evidencia en Streamlit (#16); consulta y contradicciones en desarrollo (#13, #14) |
 | 6 · Producir | | En desarrollo (#15) |
-| 7 · Revisar | | En desarrollo (#16, #17) |
+| 7 · Revisar | `revision.py`, `app/main.py` | Revisión humana en la ficha: estado, persona revisora y comentario en `fichas.jsonl` con historial, y ficha lista para Notion (#17) |
 
 ## Modalidad y usuario
 

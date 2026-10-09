@@ -92,8 +92,16 @@ Las pruebas T01–T10 y su estado están en la
   [`rules_v1.yaml`](https://github.com/Xyryung/faro-editorial/blob/main/config/rules_v1.yaml):
   nuevo, en revisión, requiere evidencia, aprobado como borrador y descartado. **Aprobar un
   borrador no significa publicarlo.**
-- **Pendiente:** el flujo de revisión en la interfaz
-  ([#17](https://github.com/Xyryung/faro-editorial/issues/17)).
+- La persona revisora registra su decisión en la ficha de la interfaz: estado, nombre y comentario.
+  Cada decisión se agrega a `data/processed/fichas.jsonl` con los campos de la sección 7, quién
+  revisó y cuándo; una decisión nueva no borra la anterior (historial). Solo se aceptan los cinco
+  estados de las reglas y la ficha guardada lleva `habilita_publicacion: false`
+  ([`revision.py`](https://github.com/Xyryung/faro-editorial/blob/main/src/faro_editorial/revision.py);
+  `test_la_ficha_tiene_los_campos_del_contrato_y_no_habilita_publicar`,
+  `test_solo_se_aceptan_los_cinco_estados_del_reto`,
+  `test_el_historial_no_se_pierde_y_vale_la_ultima_decision`,
+  `test_guardar_una_revision_desde_la_ficha`
+  ([pruebas](https://github.com/Xyryung/faro-editorial/blob/main/tests/test_revision.py))).
 
 ## 6. Escenarios fuera de alcance
 

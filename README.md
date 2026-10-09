@@ -16,7 +16,7 @@ se vincula con su fuente, fecha y alcance; cuando no hay evidencia suficiente, e
 | 3 · Contextualizar | `contexto.py` | Implementada (#12) |
 | 4 · Priorizar | `puntaje.py`, `rules.py`, `bandeja.py` | Implementada con reglas; R, I y U admiten Jev (#11, #8) |
 | 5 · Explicar | `app/main.py`, `interfaz.py`, `busqueda.py` | Bandeja y ficha de evidencia en Streamlit (#16); consulta en español con búsqueda híbrida (BM25 + semántica) y compuerta de abstención (#13); contradicciones en desarrollo (#14) |
-| 6 · Producir | | En desarrollo (#15) |
+| 6 · Producir | `borradores.py`, `app/main.py` | Brief, guion y copy con una cita por afirmación, verificación con Jev y pestaña Borrador; el borrador vigente vive en `borradores.jsonl` y la revisión lo copia en la ficha (#15) |
 | 7 · Revisar | `revision.py`, `app/main.py` | Revisión humana en la ficha: estado, persona revisora y comentario en `fichas.jsonl` con historial, y ficha lista para Notion (#17) |
 
 ## Modalidad y usuario
@@ -112,6 +112,18 @@ Completa `.env` solo si vas a hacer llamadas en vivo. Sin `.env`, la app arranca
 
    ```powershell
    uv run python -m faro_editorial.bandeja --top 5
+   ```
+
+   Redacta el borrador de los temas principales: brief (≤ 250 palabras), guion de 45–60 s y
+   copy (≤ 80 palabras), con una cita `{id_evidencia, campo}` por afirmación, afirmaciones
+   tipadas (hecho, declaración, inferencia, hipótesis) y verificación de cada una con Jev.
+   Escribe `data/processed/borradores.jsonl` (se ve en la pestaña Borrador) y un Markdown por
+   tema en `data/processed/borradores/`. Al guardar una revisión, la ficha copia el borrador
+   vigente. La primera vez necesita `OFFLINE=0`, la clave de OpenRouter y `LLM_MODEL`; después
+   funciona sin internet desde la caché:
+
+   ```powershell
+   uv run python -m faro_editorial.borradores --top 5
    ```
 
 3. Abre la interfaz:

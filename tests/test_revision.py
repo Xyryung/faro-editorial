@@ -198,3 +198,41 @@ def test_la_fecha_de_la_revision_se_muestra_en_hora_de_panama(data_dir: Path, re
     assert fecha_revision_legible(ficha["fecha_revision_utc"]).startswith("8 oct 2026, ")
     assert "19:44" in fecha_revision_legible(ficha["fecha_revision_utc"])
     assert fecha_revision_legible("no es fecha") == "no es fecha"
+
+
+def test_pestana_borrador_muestra_el_borrador_escapado(monkeypatch, data_dir: Path):
+    """La pestaña Borrador (#15) muestra el borrador vigente del tema y escapa el texto del LLM
+    (T07): un enlace o formato que repita un titular no se convierte en Markdown."""
+    from test_borradores import CONFIG, FalsoLLM, _generador, _salida
+
+    from faro_editorial.borradores import generar_ficha, guardar_borradores
+
+    tema = _tema(data_dir)
+    id_noticia = tema["noticias"][0]["id_noticia"]
+    salida = _salida(
+        afirmaciones=[
+            {
+                "id": "a1",
+                "tipo": "declaracion",
+                "texto": "El medio lo reporta en su titular.",
+                "citas": [{"id_evidencia": id_noticia, "campo": "titulo"}],
+            }
+        ],
+        brief="El medio lo reporta [a1]. [clic aquí](http://malo.example) **urgente**",
+        guion="",
+        copy_digital="",
+    )
+    borrador = generar_ficha(tema, _generador(data_dir, FalsoLLM(salida, salida)), None, CONFIG)
+    guardar_borradores([borrador], data_dir / "processed")
+
+    monkeypatch.setenv("DATA_DIR", str(data_dir))
+    get_settings.cache_clear()
+    app = AppTest.from_file(APP, default_timeout=60).run()
+    assert not app.exception
+    assert app.selectbox(key="borrador_elegido").value == tema["id_grupo"]
+    textos = " ".join(m.value for m in app.markdown)
+    assert "El medio lo reporta" in textos
+    assert "](http://malo.example)" not in textos and "**urgente**" not in textos
+    assert any("Basado únicamente en titular/metadatos" in m.value for m in app.markdown)
+    # La ficha para Notion de la revisión ya no dice "pendiente": trae el borrador.
+    assert any("El medio lo reporta" in c.value for c in app.code)

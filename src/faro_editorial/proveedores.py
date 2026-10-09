@@ -160,16 +160,25 @@ def esquema_json(preguntas: dict[str, Pregunta]) -> dict[str, Any]:
 _CIERRE_DATOS = re.compile(r"<\s*/\s*datos\s*>", re.IGNORECASE)
 
 
-def mensajes_llm(estado: Estado, preguntas: dict[str, Pregunta]) -> list[dict[str, str]]:
+def delimitar_datos(estado: Estado) -> str:
+    """Envuelve el estado en un bloque <datos> que el propio dato no puede cerrar.
+
+    Lo usan la clasificación (#8) y los borradores (#15): el texto de las fuentes viaja
+    siempre como dato, nunca como instrucción (T07).
+    """
     texto = (
         estado if isinstance(estado, str) else json.dumps(estado, ensure_ascii=False, default=str)
     )
     # El dato no puede cerrar el bloque: cubre mayúsculas y espacios (</DATOS>, </datos >).
     texto = _CIERRE_DATOS.sub("<\\/datos>", texto)
+    return f"<datos>\n{texto}\n</datos>"
+
+
+def mensajes_llm(estado: Estado, preguntas: dict[str, Pregunta]) -> list[dict[str, str]]:
     descripcion = "\n".join(_describir(k, p) for k, p in preguntas.items())
     return [
         {"role": "system", "content": PROMPT_SISTEMA.format(preguntas=descripcion)},
-        {"role": "user", "content": f"<datos>\n{texto}\n</datos>"},
+        {"role": "user", "content": delimitar_datos(estado)},
     ]
 
 
